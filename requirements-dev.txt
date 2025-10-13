@@ -1,0 +1,21 @@
+-r requirements.txt   # include all production dependencies
+
+# Dev & debugging
+django-debug-toolbar>=4.3.0
+django-extensions>=3.2.3
+
+# Testing
+pytest>=8.0.0
+pytest-django>=4.7.0
+factory-boy>=3.3.0
+faker>=23.0.0
+
+# Code quality / formatting
+black>=24.1.1
+flake8>=7.0.0
+isort>=5.13.0
+mypy>=1.8.0
+
+# Environment management
+python-dotenv>=1.0.0
+pre-commit >= 4.3.0
