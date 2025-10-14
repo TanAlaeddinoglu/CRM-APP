@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 
 from accounts.models import CustomUser
 
@@ -46,4 +47,4 @@ class UserLoginSerializer(serializers.Serializer):
         user = authenticate(**data)
         if user and user.is_active:
             return user
-        raise serializers.ValidationError("Incorrect Credentials")
+        raise AuthenticationFailed("Incorrect credentials.")

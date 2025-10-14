@@ -32,5 +32,20 @@ class CustomUser(AbstractUser):
         """Custom shortcut check"""
         return self.role == self.Role.ADMIN or self.is_superuser
 
+    def save(self, *args, **kwargs):
+        """Keep is_staff aligned with the selected role."""
+        if self.is_superuser:
+            self.is_staff = True
+        else:
+            self.is_staff = self.role == self.Role.ADMIN
+
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            update_fields.add("is_staff")
+            kwargs["update_fields"] = list(update_fields)
+
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.username
