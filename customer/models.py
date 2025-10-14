@@ -37,6 +37,7 @@ class Tag(models.Model):
             self.slug = candidate
         super().save(*args, **kwargs)
 
+
 class Customer(models.Model):
     STATUS_CHOICES = [
         ("active", "active"),
