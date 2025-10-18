@@ -58,6 +58,9 @@ db.sqlite3-journal
 media/
 staticfiles/
 static/
+**/migrations/
+!**/migrations/__init__.py
+
 
 # Environment variables / secrets
 .env

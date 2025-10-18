@@ -11,6 +11,7 @@ from accounts.models import CustomUser
 class Tag(models.Model):
     tag_name = models.CharField(max_length=50)
     slug = models.SlugField(unique=True, null=False, blank=True)
+    #TODO: Create colours dictionary and choose colour from there
     color = models.CharField(
         max_length=7,
         validators=[
@@ -52,7 +53,7 @@ class Customer(models.Model):
 
     customer_name = models.CharField(max_length=50)
     customer_surname = models.CharField(max_length=50)
-    customer_email = models.EmailField(max_length=50)
+    customer_email = models.EmailField(max_length=50, null=True, blank=True)
     email_normalized = models.EmailField(editable=False)
     customer_phone = models.CharField(
         max_length=13,
@@ -66,12 +67,12 @@ class Customer(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     assigned_to = models.ForeignKey(CustomUser,
-                                    on_delete=models.SET_NULL,
+                                    on_delete=models.RESTRICT,
                                     related_name="assigned_customers",
                                     null=True, blank=True,
                                     )
     tag = models.ForeignKey(Tag,
-                            on_delete=models.SET_NULL,
+                            on_delete=models.RESTRICT,
                             related_name="customers",
                             blank=True,
                             null=True,
@@ -116,7 +117,7 @@ class Customer(models.Model):
         return years
 
     def save(self, *args, **kwargs):
-        # keep normalized email in sync (lowercase + strip spaces)
+        self.is_active = self.status == "active"
         self.email_normalized = (self.customer_email or "").strip().lower()
         super().save(*args, **kwargs)
 
@@ -148,14 +149,14 @@ class CustomerTagHistory(models.Model):
     )
     from_tag = models.ForeignKey(
         Tag,
-        on_delete=models.SET_NULL,
+        on_delete=models.RESTRICT,
         related_name="history_from",
         blank=True,
         null=True,
     )
     to_tag = models.ForeignKey(
         Tag,
-        on_delete=models.SET_NULL,
+        on_delete=models.RESTRICT,
         related_name="history_to",
         null=True,
         blank=True,
@@ -163,7 +164,7 @@ class CustomerTagHistory(models.Model):
     changed_at = models.DateTimeField(auto_now_add=True)
     changed_by = models.ForeignKey(
         CustomUser,
-        on_delete=models.SET_NULL,
+        on_delete=models.RESTRICT,
         related_name="tag_changes",
         null=True,
         blank=True,

@@ -55,7 +55,24 @@ class UserLoginView(APIView):
                     samesite=settings.SIMPLE_JWT['AUTH_COOKIE_SAMESITE']
                 )
                 return response
-        raise AuthenticationFailed("Invalid username or password")
+        return Response({"error : Wrong Credentials! "}, status=status.HTTP_403_FORBIDDEN)
+
+
+class LogoutView(APIView):
+    def post(self, request, format=None):
+        refresh_token = request.COOKIES.get('refresh')
+
+        if refresh_token:
+            try:
+                refresh = RefreshToken(refresh_token)
+                refresh.blacklist()
+            except TokenError:
+                return Response({"error": "Error in Invalidating Token! "}, status=status.HTTP_400_BAD_REQUEST)
+
+        response = Response({'message': 'Succesfully logged out!'}, status=status.HTTP_200_OK)
+        response.delete_cookie(key=settings.SIMPLE_JWT['AUTH_COOKIE'])
+        response.delete_cookie(key=settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"])
+        return response
 
 
 class UserViewSetListCreate(generics.ListCreateAPIView):

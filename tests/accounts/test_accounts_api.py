@@ -142,5 +142,16 @@ def test_login_with_invalid_credentials_fails(csrf_post, login_url, django_user_
         {"username": "badlogin", "password": "WrongPass!"},
     )
 
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     assert "detail" in response.data
+
+
+@pytest.mark.django_db
+def test_admin_can_delete_all_users(admin_client, user_list_url, django_user_model):
+    django_user_model.objects.create_user(username="user1", email="u1@example.com", password="pass12345")
+    django_user_model.objects.create_user(username="user2", email="u2@example.com", password="pass12345")
+
+    response = admin_client.delete(user_list_url)
+
+    assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+    assert django_user_model.objects.filter(is_superuser=False).count() >= 2

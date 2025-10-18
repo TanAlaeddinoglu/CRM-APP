@@ -1,22 +1,8 @@
-from rest_framework.exceptions import ValidationError
-
-from customer.models import Customer
+from rest_framework.exceptions import NotFound
 
 
-def validate_customer_phone(phone_number: str) -> str:
-    """
-    Ensure phone numbers are present, unique, and exactly 11 digits long.
-    Returns the validated phone number or raises a ValidationError.
-    """
-    if not phone_number:
-        raise ValidationError({"customer_phone": ["Phone number is required."]})
+def is_admin_or_assigned_to_user(request, customer, user):
+    is_admin = getattr(user, "is_staff", False) or getattr(user, "is_superuser", False)
 
-    trimmed = str(phone_number).strip()
-
-    if len(trimmed) != 11 or not trimmed.isdigit():
-        raise ValidationError({"customer_phone": ["Phone number must be exactly 11 digits."]})
-
-    if Customer.objects.filter(customer_phone=trimmed).exists():
-        raise ValidationError({"customer_phone": ["Phone number already exists."]})
-
-    return trimmed
+    if not is_admin and customer.assigned_to_id != user.id:
+        raise NotFound({"detail": "Not found."})
