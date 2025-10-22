@@ -32,5 +32,7 @@ urlpatterns = [
                                                                      "put": "update",
                                                                      "patch": "partial_update",
                                                                      "delete": "destroy"}), name="tag-history-detail-update-destroy"),
+    path("tag-history/by-customer/", CustomerTagHistoryViewSet.as_view({"get": "customers_tag_history"}),
+         name="tag-history-by-customer"),
 
 ]

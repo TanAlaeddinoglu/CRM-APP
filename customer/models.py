@@ -6,21 +6,17 @@ from django.utils.text import slugify
 from django.utils.translation import gettext_lazy as _
 
 from accounts.models import CustomUser
+from common.utils import STATUS_CHOICES, SOURCE_CHOICES, COLOUR_CHOICES
 
 
 class Tag(models.Model):
     tag_name = models.CharField(max_length=50)
     slug = models.SlugField(unique=True, null=False, blank=True)
-    #TODO: Create colours dictionary and choose colour from there
     color = models.CharField(
         max_length=7,
-        validators=[
-            RegexValidator(
-                regex=r"^#[0-9a-fA-F]{6}$",
-                message="Color must be a valid HEX value like #AABBCC.",
-            )
-        ],
+        choices=COLOUR_CHOICES,
     )
+
     description = models.TextField(max_length=100)
 
     def __str__(self):
@@ -40,17 +36,6 @@ class Tag(models.Model):
 
 
 class Customer(models.Model):
-    STATUS_CHOICES = [
-        ("active", "active"),
-        ("archived", "archived"),
-        ("quarantine", "quarantine"),
-    ]
-    SOURCE_CHOICES = [
-        ("meta", "meta"),
-        ("google", "google"),
-        ("manual", "manual"),
-    ]
-
     customer_name = models.CharField(max_length=50)
     customer_surname = models.CharField(max_length=50)
     customer_email = models.EmailField(max_length=50, null=True, blank=True)

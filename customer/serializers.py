@@ -85,7 +85,6 @@ class CustomerSerializer(serializers.ModelSerializer):
             if status_value == "archived":
                 validated_data["archived_at"] = datetime.datetime.now()
 
-
         new_tag = validated_data.pop("tag", serializers.empty)
 
         if user:
@@ -130,4 +129,5 @@ class CustomerTagHistorySerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ["changed_at",
                             "changed_by",
-                            "customer"]
+                            ]
+

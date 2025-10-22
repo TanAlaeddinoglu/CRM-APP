@@ -288,3 +288,37 @@ def test_user_partial_update_denied_for_unassigned_user(regular_client, regular_
     assert response.status_code == status.HTTP_404_NOT_FOUND
     customer.refresh_from_db()
     assert customer.tag is None
+
+
+@pytest.mark.django_db
+def test_tag_history_by_customer_returns_records_for_assigned_user(regular_client, regular_user, admin_user):
+    customer = Customer.objects.create(
+        customer_name="Morgan",
+        customer_surname="History",
+        customer_email="morgan@example.com",
+        customer_phone="16161616161",
+        assigned_to=regular_user,
+        created_by=admin_user,
+    )
+    tag = Tag.objects.create(tag_name="Premium")
+    CustomerTagHistory.objects.create(
+        customer=customer,
+        from_tag=None,
+        to_tag=tag,
+        changed_by=admin_user,
+    )
+
+    url = reverse("tag-history-by-customer")
+    response = regular_client.get(url, {"customer_id": customer.pk})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert len(response.data) == 1
+    assert response.data[0]["customer"] == customer.id
+
+
+@pytest.mark.django_db
+def test_tag_history_by_customer_requires_customer_id(admin_client):
+    url = reverse("tag-history-by-customer")
+    response = admin_client.get(url)
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST

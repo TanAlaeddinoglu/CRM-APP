@@ -3,8 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
-from rest_framework import status, viewsets
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly, SAFE_METHODS
+from rest_framework import status, viewsets, permissions, request
 
 from accounts.authenticate import CustomAuthentication
 from accounts.models import CustomUser
@@ -81,13 +81,16 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
     queryset = Customer.objects.all().order_by('-created_at')
     authentication_classes = [CustomAuthentication]
     serializer_class = CustomerSerializer
-    permission_classes = [IsAuthenticated, IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
     lookup_field = 'pk'
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset()).filter(assigned_to=self.request.user,
                                                                     status="active").order_by('id')
         serializer = self.get_serializer(queryset, many=True)
+        if serializer.data is None:
+            return Response({"error": " Customer is not assigned to you"}, status=status.HTTP_400_BAD_REQUEST)
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
@@ -103,6 +106,7 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
         Sadece tag fieldi kabul eder.
         e.g: { "tag": 7 }
         """
+
         customer = self.get_object()
         user = request.user
         is_admin_or_assigned_to_user(request, customer, user)
@@ -131,29 +135,23 @@ class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all().order_by('id')
     serializer_class = TagSerializer
     authentication_classes = [CustomAuthentication]
-    permission_classes = [IsAuthenticated, IsAdminUser]
     lookup_field = 'pk'
 
+    def get_permissions(self):
+        if self.request.method in SAFE_METHODS:
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminUser()]
 
-#TODO: 	# TAG HISTORY ENDPOINTS
-    # GET /customers/tag-history/		- tüm tag history verileri (admin)
-    # POST /customers/tag-history/		- tag history yaratman (admin)
-    # GET /customers/tag-history/{id} 	— ilgili müşterinin tag geçmişi (user)
-    # PUT /customers/tag-history/{id} 	— tag history guncelleme (admin)
-    # DELETE /customers/tag-history/{id}  	— tag history silme (admin)
-    # permission ve role kontrolunun nasil yapilacak
+
 class CustomerTagHistoryViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerTagHistorySerializer
     authentication_classes = [CustomAuthentication]
     lookup_field = 'pk'
 
     def get_permissions(self):
-        admin_actions = {"list", "create", "update", "partial_update", "destroy"}
-        if self.action in admin_actions:
-            permission_classes = [IsAuthenticated, IsAdminUser]
-        else:
-            permission_classes = [IsAuthenticated]
-        return [permission() for permission in permission_classes]
+        if self.action in {"customers_tag_history"}:
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminUser()]
 
     def get_queryset(self):
         base_qs = CustomerTagHistory.objects.select_related("customer", "from_tag", "to_tag")
@@ -161,3 +159,19 @@ class CustomerTagHistoryViewSet(viewsets.ModelViewSet):
         if user and (user.is_staff or user.is_superuser):
             return base_qs.order_by('-changed_at')
         return base_qs.filter(customer__assigned_to=user).order_by('-changed_at')
+
+    @action(detail=False, methods=["get"], url_path="by-customer")
+    def customers_tag_history(self, request, *args, **kwargs):
+        customer_id = request.query_params.get("customer_id")
+        if not customer_id:
+            return Response({"detail": "customer_id query parameter is required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        try:
+            customer_id_int = int(customer_id)
+        except (TypeError, ValueError):
+            return Response({"detail": "customer_id must be an integer."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        queryset = self.get_queryset().filter(customer_id=customer_id_int)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
