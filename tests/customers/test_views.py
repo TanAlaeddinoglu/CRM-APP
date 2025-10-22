@@ -322,3 +322,34 @@ def test_tag_history_by_customer_requires_customer_id(admin_client):
     response = admin_client.get(url)
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+@pytest.mark.django_db
+def test_admin_list_returns_empty_results_for_out_of_range_offset(admin_client, admin_user, settings):
+    settings.REST_FRAMEWORK = {
+        **getattr(settings, "REST_FRAMEWORK", {}),
+        "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+        "PAGE_SIZE": 2,
+    }
+
+    assignee = User.objects.create_user(
+        username="paginated-assignee",
+        email="paginated-assignee@example.com",
+        password="test-pass-123",
+    )
+    for index in range(3):
+        Customer.objects.create(
+            customer_name=f"Paged-{index}",
+            customer_surname="Example",
+            customer_email=f"paged{index}@example.com",
+            customer_phone=f"55500000{index}",
+            assigned_to=assignee,
+            created_by=admin_user,
+        )
+
+    url = reverse("customer-list-create")
+    response = admin_client.get(url, {"limit": 2, "offset": 10})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["count"] == 3
+    assert response.data["results"] == []
+

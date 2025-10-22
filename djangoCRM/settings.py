@@ -41,6 +41,7 @@ INSTALLED_APPS = [
 
     "accounts.apps.AccountsConfig",
     "customer.apps.CustomerConfig",
+    "rest_framework_simplejwt.token_blacklist",
 
     "rest_framework",
     "drf_spectacular",
@@ -86,6 +87,7 @@ REST_FRAMEWORK = {
              "accounts.authenticate.CustomAuthentication",
          ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated", ),
+    "PAGE_SIZE": 2,
 
 
 }

@@ -1,4 +1,4 @@
-from datetime import date, timezone
+from datetime import date
 
 from django.core.validators import RegexValidator
 from django.db import models, transaction
@@ -44,7 +44,7 @@ class Customer(models.Model):
         max_length=13,
         blank=True,
         validators=[RegexValidator(
-            regex=r"^[0-9+\-\s().]{7,}$",
+            regex=r"^[\+]?[0-9]{10,13}$",
             message="Provide a valid phone number."
         )],
     )

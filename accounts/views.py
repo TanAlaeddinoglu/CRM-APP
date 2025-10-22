@@ -60,7 +60,8 @@ class UserLoginView(APIView):
 
 class LogoutView(APIView):
     def post(self, request, format=None):
-        refresh_token = request.COOKIES.get('refresh')
+        refresh_cookie_name = settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"]
+        refresh_token = request.COOKIES.get(refresh_cookie_name)
 
         if refresh_token:
             try:

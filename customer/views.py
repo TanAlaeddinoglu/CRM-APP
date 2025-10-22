@@ -3,7 +3,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly, SAFE_METHODS
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHODS
 from rest_framework import status, viewsets, permissions, request
 
 from accounts.authenticate import CustomAuthentication
@@ -52,10 +52,10 @@ class AdminCustomerViewSet(viewsets.ModelViewSet):
                 queryset = queryset.filter(tag_id=tag_param)
 
         page = self.paginate_queryset(queryset)
-        serializer = self.get_serializer(page or queryset, many=True)
         if page is not None:
+            serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-
+        serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def retrieve(self, request, *args, **kwargs):
@@ -86,10 +86,10 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset()).filter(assigned_to=self.request.user,
-                                                                    status="active").order_by('id')
+                                                                    is_active=True).order_by('id')
         serializer = self.get_serializer(queryset, many=True)
-        if serializer.data is None:
-            return Response({"error": " Customer is not assigned to you"}, status=status.HTTP_400_BAD_REQUEST)
+        # if not queryset.exists():
+        #     return Response({"message": "No customers found."}, status=status.HTTP_200_OK)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -142,7 +142,7 @@ class TagViewSet(viewsets.ModelViewSet):
             return [IsAuthenticated()]
         return [IsAuthenticated(), IsAdminUser()]
 
-
+#TODO: Pagination ekle
 class CustomerTagHistoryViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerTagHistorySerializer
     authentication_classes = [CustomAuthentication]

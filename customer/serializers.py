@@ -1,4 +1,4 @@
-import datetime
+import django.utils.timezone as timezone
 from rest_framework import serializers
 from django.template.defaultfilters import slugify
 
@@ -36,15 +36,13 @@ class CustomerSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         phone_number = attrs.get("customer_phone")
-        is_active = attrs.get("status")
         if not phone_number:
             raise serializers.ValidationError({"customer_phone": ["Phone number is required."]})
 
-        trimmed = str(phone_number).strip()
+        trimmed = str(phone_number).strip("+")
 
-        if len(trimmed) != 11 or not trimmed.isdigit():
-            raise serializers.ValidationError({"customer_phone": ["Phone number must be exactly 11 digits."]})
-
+        if not (10 <= len(trimmed) <= 13) or not trimmed.isdigit():
+            raise serializers.ValidationError({"customer_phone": ["Phone number must be in these formats; 90123456789, 01234567899, 1234567890, +901234567890."]})
         queryset = Customer.objects.filter(customer_phone=trimmed)
         if self.instance is not None:
             queryset = queryset.exclude(pk=self.instance.pk)
@@ -61,7 +59,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         if user and user.is_authenticated:
             validated_data.setdefault("created_by", user)
             validated_data.setdefault("updated_by", user)
-        validated_data.setdefault("is_active", True)
+        #validated_data.setdefault("is_active", True)
 
         context_tag = self.context.get("tag")
         new_tag = validated_data.pop("tag", None)
@@ -83,7 +81,7 @@ class CustomerSerializer(serializers.ModelSerializer):
             validated_data["is_active"] = (status_value == "active")
             validated_data["archived_at"] = None
             if status_value == "archived":
-                validated_data["archived_at"] = datetime.datetime.now()
+                validated_data["archived_at"] = timezone.now()
 
         new_tag = validated_data.pop("tag", serializers.empty)
 
