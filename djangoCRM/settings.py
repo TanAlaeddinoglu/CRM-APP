@@ -41,11 +41,14 @@ INSTALLED_APPS = [
 
     "accounts.apps.AccountsConfig",
     "customer.apps.CustomerConfig",
+    "events.apps.EventsConfig",
+    "products.apps.ProductsConfig",
+    
     "rest_framework_simplejwt.token_blacklist",
-
-    "rest_framework",
     "drf_spectacular",
-    "corsheaders"
+    "rest_framework",
+    "django_filters",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
@@ -80,15 +83,17 @@ TEMPLATES = [
 WSGI_APPLICATION = "djangoCRM.wsgi.application"
 
 REST_FRAMEWORK = {
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
-    # Applies permission to all views
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
     "DEFAULT_AUTHENTICATION_CLASSES": (
-             "rest_framework_simplejwt.authentication.JWTAuthentication",
-             "accounts.authenticate.CustomAuthentication",
-         ),
-    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated", ),
-    "PAGE_SIZE": 2,
-
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "accounts.authenticate.CustomAuthentication",
+    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 
 }
 
@@ -98,6 +103,8 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -137,8 +144,8 @@ AUTH_PASSWORD_VALIDATORS = [
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = "en-us"
-
-TIME_ZONE = "UTC"
+TIME_ZONE = 'Europe/Istanbul'
+#TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -157,7 +164,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
-    
+
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
     "UPDATE_LAST_LOGIN": False,
@@ -170,13 +177,12 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
 
-
     "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
     'AUTH_COOKIE': 'access_token',  # Cookie name. Enables cookies if value is set.
     "AUTH_COOKIE_REFRESH_TOKEN": "refresh_token",
-    'AUTH_COOKIE_DOMAIN': None,     # A string like "example.com", or None for standard domain cookie.
-    'AUTH_COOKIE_SECURE': False,    # Whether the auth cookies should be secure (https:// only).
-    'AUTH_COOKIE_PATH': '/',        # The path of the auth cookie.
+    'AUTH_COOKIE_DOMAIN': None,  # A string like "example.com", or None for standard domain cookie.
+    'AUTH_COOKIE_SECURE': False,  # Whether the auth cookies should be secure (https:// only).
+    'AUTH_COOKIE_PATH': '/',  # The path of the auth cookie.
     'AUTH_COOKIE_SAMESITE': 'Lax',
 }
 CORS_ALLOW_ALL_ORIGINS = True

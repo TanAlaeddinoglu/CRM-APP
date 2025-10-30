@@ -1,106 +1,71 @@
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.exceptions import ValidationError
 
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHODS
-from rest_framework import status, viewsets, permissions, request
+from rest_framework import status, viewsets, permissions, request, filters
 
 from accounts.authenticate import CustomAuthentication
 from accounts.models import CustomUser
-from .serializers import CustomerSerializer, CustomerTagHistorySerializer, TagSerializer
-from .models import Customer, Tag, CustomerTagHistory
+from .filters import CustomerFilter
+from .serializers import CustomerSerializer, CustomerTagHistorySerializer, TagSerializer, NotesSerializer
+from .models import Customer, Tag, CustomerTagHistory, Notes
 from .services import is_admin_or_assigned_to_user
 
 
 class AdminCustomerViewSet(viewsets.ModelViewSet):
+    """
+    A viewset that provides search, filter, order features. Accesible for Admin/Staff
+    """
     queryset = Customer.objects.all().order_by('-created_at')
     authentication_classes = [CustomAuthentication]
     serializer_class = CustomerSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
-    lookup_field = 'pk'
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = CustomerFilter
 
-        search_term = request.query_params.get('search')
-        if search_term:
-            queryset = queryset.filter(
-                Q(customer_name__icontains=search_term) |
-                Q(customer_surname__icontains=search_term) |
-                Q(customer_email__icontains=search_term) |
-                Q(customer_phone__icontains=search_term)
-            )
+    search_fields = ["customer_name", "customer_surname", "customer_email", "customer_phone"]
 
-        status_filter = request.query_params.get('status')
-        if status_filter:
-            queryset = queryset.filter(status=status_filter)
-
-        source_filter = request.query_params.get('source')
-        if source_filter:
-            queryset = queryset.filter(source=source_filter)
-
-        assigned_to = request.query_params.get('assigned_to')
-        if assigned_to:
-            queryset = queryset.filter(assigned_to_id=assigned_to)
-
-        tag_param = request.query_params.get('tag')
-        if tag_param is not None:
-            if isinstance(tag_param, str) and tag_param.lower() == "null":
-                queryset = queryset.filter(tag__isnull=True)
-            elif tag_param != "":
-                queryset = queryset.filter(tag_id=tag_param)
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def retrieve(self, request, *args, **kwargs):
-        customer = self.get_object()
-        serializer_context = self.get_serializer_context()
-
-        customer_data = self.get_serializer(customer).data
-        history_qs = customer.tag_history.all().order_by("-changed_at")
-        history_data = CustomerTagHistorySerializer(history_qs, many=True, context=serializer_context).data
-
-        return Response(
-            {
-                "customer": customer_data,
-                "tag_history": history_data,
-            },
-            status=status.HTTP_200_OK,
-        )
-    #TODO: Delete func override et delete olanlari archived tablosuna gonder
-    #def destroy(self, request, *args, **kwargs):
+    ordering_fields = ["created_at", "updated_at", "customer_name"]
+    ordering = ["-created_at"]  # varsayılan
 
 
 class UserCustomerViewSet(viewsets.ModelViewSet):
+    """
+    A viewset that provides search, filter, order features. Accesible for Users
+    """
     queryset = Customer.objects.all().order_by('-created_at')
     authentication_classes = [CustomAuthentication]
     serializer_class = CustomerSerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = 'pk'
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset()).filter(assigned_to=self.request.user,
-                                                                    is_active=True).order_by('id')
-        serializer = self.get_serializer(queryset, many=True)
-        # if not queryset.exists():
-        #     return Response({"message": "No customers found."}, status=status.HTTP_200_OK)
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_class = CustomerFilter
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    search_fields = ["customer_name", "customer_surname", "customer_email", "customer_phone"]
 
-    def retrieve(self, request, *args, **kwargs):
-        customer = self.get_object()
-        user = request.user
-        is_admin_or_assigned_to_user(request, customer, user)
-        serializer = self.get_serializer(customer)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    ordering_fields = ["created_at", "updated_at", "customer_name"]
+    ordering = ["-created_at"]  # varsayılan
+
+    def get_queryset(self):
+        return (super()
+                .get_queryset()
+                .filter(assigned_to=self.request.user, is_active=True))
+
+    # def retrieve(self, request, *args, **kwargs):
+    #     customer = self.get_object()
+    #     user = request.user
+    #     is_admin_or_assigned_to_user(request, customer, user)
+    #     serializer = self.get_serializer(customer)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
 
     #TODO: PUT /customers/{id}/ 	—Not güncellemesi. Baska fieldlarda gerekebilir.
+    #TODO: permission.py olusturup buraya degisiklik yapilabilir
     def partial_update(self, request, *args, **kwargs):
         """
         Sadece tag fieldi kabul eder.
@@ -126,7 +91,7 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
             except (Tag.DoesNotExist, ValueError, TypeError):
                 return Response({"detail": "Tag not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        customer.set_current_tag(new_tag, by=user)
+        customer.set_current_tag(new_tag, by=user, assign_to=customer.assigned_to or user)
         serializer = self.get_serializer(customer)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -141,6 +106,7 @@ class TagViewSet(viewsets.ModelViewSet):
         if self.request.method in SAFE_METHODS:
             return [IsAuthenticated()]
         return [IsAuthenticated(), IsAdminUser()]
+
 
 #TODO: Pagination ekle
 class CustomerTagHistoryViewSet(viewsets.ModelViewSet):
@@ -162,6 +128,11 @@ class CustomerTagHistoryViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"], url_path="by-customer")
     def customers_tag_history(self, request, *args, **kwargs):
+        '''
+              ?customer_id= parametresi gerekli.
+              customer_id ye göre TAG tarihçesi döner.
+              Güncelden eskiye doğru sıralar.
+              '''
         customer_id = request.query_params.get("customer_id")
         if not customer_id:
             return Response({"detail": "customer_id query parameter is required."},
@@ -172,6 +143,72 @@ class CustomerTagHistoryViewSet(viewsets.ModelViewSet):
             return Response({"detail": "customer_id must be an integer."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        queryset = self.get_queryset().filter(customer_id=customer_id_int)
+        queryset = self.get_queryset().filter(customer_id=customer_id_int).order_by('-changed_at')
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class NotesViewSet(viewsets.ModelViewSet):
+    queryset = Notes.objects.all().order_by('customer', 'created_at')
+    serializer_class = NotesSerializer
+    authentication_classes = [CustomAuthentication]
+    lookup_field = 'pk'
+
+    def get_permissions(self):
+        if self.action in {"list", "create", "retrieve", "customers_note_history"}:
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminUser()]
+
+    def get_queryset(self):
+        base_qs = Notes.objects.select_related("customer", "created_by", "updated_by")
+        user = getattr(self.request, "user", None)
+        if not user or not user.is_authenticated:
+            return base_qs.none()
+        if user.is_staff or user.is_superuser:
+            return base_qs.order_by("customer", "-created_at")
+        return base_qs.filter(customer__assigned_to=user).order_by("-created_at")
+
+    # def create(self, request, *args, **kwargs):
+    #     customer = request.customer
+    #     user = request.user
+    #     is_admin_or_assigned_to_user(request, customer, user)
+    #     serializer = NotesSerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def perform_create(self, serializer):
+        customer = serializer.validated_data["customer"]
+        is_admin_or_assigned_to_user(self.request, customer, self.request.user)
+        serializer.save()
+
+    def retrieve(self, request, *args, **kwargs):
+        note = self.get_object()
+        customer = note.customer
+        is_admin_or_assigned_to_user(request, customer, request.user)
+        serializer = self.get_serializer(note)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["get"], url_path="by-customer")
+    def customers_note_history(self, request, *args, **kwargs):
+        '''
+        ?customer_id= parametresi gerekli.
+        customer_id ye göre NOT tarihçesi döner.
+        Güncelden eskiye doğru sıralar.
+        '''
+        customer_id = request.query_params.get("customer_id")
+        if not customer_id:
+            return Response({"detail": "customer_id query parameter is required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        try:
+            customer_id_int = int(customer_id)
+        except (TypeError, ValueError):
+            return Response({"detail": "customer_id must be an integer."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        customer = get_object_or_404(
+            Customer.objects.select_related("assigned_to"), pk=customer_id_int
+        )
+        is_admin_or_assigned_to_user(request, customer, request.user)
+        queryset = self.get_queryset().filter(customer_id=customer_id_int).order_by("-created_at", "-updated_at")
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

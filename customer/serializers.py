@@ -1,8 +1,9 @@
-import django.utils.timezone as timezone
+from django.utils import timezone
 from rest_framework import serializers
 from django.template.defaultfilters import slugify
 
-from customer.models import Customer, Tag, CustomerTagHistory
+from customer.models import Customer, Tag, CustomerTagHistory, Notes
+from common.utils import DEFAULT_TAG_ID
 
 
 # CUSTOMER SERIALIZER VALIDATE: VALIDATES PHONE NUMBER,
@@ -42,7 +43,8 @@ class CustomerSerializer(serializers.ModelSerializer):
         trimmed = str(phone_number).strip("+")
 
         if not (10 <= len(trimmed) <= 13) or not trimmed.isdigit():
-            raise serializers.ValidationError({"customer_phone": ["Phone number must be in these formats; 90123456789, 01234567899, 1234567890, +901234567890."]})
+            raise serializers.ValidationError({"customer_phone": [
+                "Phone number must be in these formats; 90123456789, 01234567899, 1234567890, +901234567890."]})
         queryset = Customer.objects.filter(customer_phone=trimmed)
         if self.instance is not None:
             queryset = queryset.exclude(pk=self.instance.pk)
@@ -68,7 +70,8 @@ class CustomerSerializer(serializers.ModelSerializer):
 
         tag_to_apply = context_tag if context_tag is not None else new_tag
         if tag_to_apply is not None:
-            customer.set_current_tag(tag_to_apply, by=user)
+            assignee = customer.assigned_to or user
+            customer.set_current_tag(tag_to_apply, by=user, assign_to=assignee)
 
         return customer
 
@@ -83,6 +86,7 @@ class CustomerSerializer(serializers.ModelSerializer):
             if status_value == "archived":
                 validated_data["archived_at"] = timezone.now()
 
+        old_assigned_to_id = instance.assigned_to_id
         new_tag = validated_data.pop("tag", serializers.empty)
 
         if user:
@@ -91,9 +95,24 @@ class CustomerSerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
 
         if new_tag is not serializers.empty:
-            instance.set_current_tag(new_tag, by=user)
+            instance.set_current_tag(new_tag, by=user, assign_to=instance.assigned_to or user)
+        else:
+            assigned_now = old_assigned_to_id is None and instance.assigned_to_id is not None
+            if assigned_now and instance.tag_id is None:
+                default_tag = self._get_default_tag()
+                if default_tag is not None:
+                    instance.set_current_tag(default_tag, by=user, assign_to=instance.assigned_to or user)
 
         return instance
+
+    @staticmethod
+    def _get_default_tag():
+        if not DEFAULT_TAG_ID:
+            return None
+        try:
+            return Tag.objects.get(pk=DEFAULT_TAG_ID)
+        except Tag.DoesNotExist:
+            return None
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -129,3 +148,32 @@ class CustomerTagHistorySerializer(serializers.ModelSerializer):
                             "changed_by",
                             ]
 
+
+class NotesSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notes
+        fields = "__all__"
+        read_only_fields = ["created_at",
+                            "updated_at",
+                            "created_by",
+                            "updated_by", ]
+
+    def create(self, validated_data):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
+        if user and user.is_authenticated:
+            validated_data.setdefault("created_by", user)
+        note = super().create(validated_data)
+
+        return note
+
+    def update(self, instance, validated_data):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
+        if user and user.is_authenticated:
+            validated_data["updated_by"] = user
+        instance = super().update(instance, validated_data)
+
+        return instance

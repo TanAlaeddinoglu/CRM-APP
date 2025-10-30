@@ -3,7 +3,7 @@ from .views import (
     AdminCustomerViewSet,
     UserCustomerViewSet,
     TagViewSet,
-    CustomerTagHistoryViewSet,
+    CustomerTagHistoryViewSet, NotesViewSet,
 )
 
 urlpatterns = [
@@ -31,8 +31,19 @@ urlpatterns = [
     path("tag-history/<int:pk>/", CustomerTagHistoryViewSet.as_view({"get": "retrieve",
                                                                      "put": "update",
                                                                      "patch": "partial_update",
-                                                                     "delete": "destroy"}), name="tag-history-detail-update-destroy"),
+                                                                     "delete": "destroy"}),
+         name="tag-history-detail-update-destroy"),
     path("tag-history/by-customer/", CustomerTagHistoryViewSet.as_view({"get": "customers_tag_history"}),
          name="tag-history-by-customer"),
+    path("notes/", NotesViewSet.as_view({"get": "list",
+                                         "post": "create"}), name="notes-list-create"),
+    path("notes/<int:pk>/", NotesViewSet.as_view({"get": "retrieve",
+                                                  "put": "update",
+                                                  "patch": "partial_update",
+                                                  "delete": "destroy"}),
+         name="notes-detail-update-destroy"),
+    path("notes/by-customer/", NotesViewSet.as_view({"get": "customers_note_history"}),
+         name="note-history-by-customer"),
+
 
 ]

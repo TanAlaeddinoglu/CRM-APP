@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.contrib.auth.views import LoginView
 from django.urls import path, include
 from django.views.generic import TemplateView
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from accounts.views import UserLoginView
 
 urlpatterns = [
@@ -27,8 +27,7 @@ urlpatterns = [
     path("", UserLoginView.as_view(), name="home"),
     path("accounts/", include("accounts.urls")),
     path("customers/", include("customer.urls")),
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("products/", include("products.urls")),
 
 
 ]

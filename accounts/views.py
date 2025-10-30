@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate
 from django.utils import timezone
 from django.middleware import csrf
+from drf_spectacular.utils import extend_schema
 
 from rest_framework import status, generics
 from rest_framework.response import Response
@@ -60,6 +61,7 @@ class UserLoginView(APIView):
 
 class LogoutView(APIView):
     def post(self, request, format=None):
+        enforce_csrf(request)
         refresh_cookie_name = settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"]
         refresh_token = request.COOKIES.get(refresh_cookie_name)
 
