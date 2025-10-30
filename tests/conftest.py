@@ -6,7 +6,6 @@ from django.conf import settings
 from django.middleware.csrf import get_token
 from django.test.client import RequestFactory
 from django.urls import reverse
-from rest_framework import status
 from rest_framework.test import APIClient
 
 User = get_user_model()

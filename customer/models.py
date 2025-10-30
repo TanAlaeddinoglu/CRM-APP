@@ -3,7 +3,6 @@ from datetime import date
 from django.core.validators import RegexValidator
 from django.db import models, transaction
 from django.utils.text import slugify
-from django.utils.translation import gettext_lazy as _
 
 from accounts.models import CustomUser
 from common.utils import STATUS_CHOICES, SOURCE_CHOICES, COLOUR_CHOICES
@@ -44,39 +43,46 @@ class Customer(models.Model):
     customer_phone = models.CharField(
         max_length=13,
         blank=True,
-        validators=[RegexValidator(
-            regex=r"^[\+]?[0-9]{10,13}$",
-            message="Provide a valid phone number."
-        )],
+        validators=[
+            RegexValidator(
+                regex=r"^[\+]?[0-9]{10,13}$", message="Provide a valid phone number."
+            )
+        ],
     )
 
     date_of_birth = models.DateField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     city = models.CharField(max_length=50, null=True, blank=True)
-    assigned_to = models.ForeignKey(CustomUser,
-                                    on_delete=models.RESTRICT,
-                                    related_name="assigned_customers",
-                                    null=True, blank=True,
-                                    )
-    tag = models.ForeignKey(Tag,
-                            on_delete=models.RESTRICT,
-                            related_name="customers",
-                            blank=True,
-                            null=True,
-                            )
+    assigned_to = models.ForeignKey(
+        CustomUser,
+        on_delete=models.RESTRICT,
+        related_name="assigned_customers",
+        null=True,
+        blank=True,
+    )
+    tag = models.ForeignKey(
+        Tag,
+        on_delete=models.RESTRICT,
+        related_name="customers",
+        blank=True,
+        null=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(CustomUser,
-                                   on_delete=models.SET_NULL,
-                                   related_name="created_customers",
-                                   null=True, blank=True,
-                                   )
-    updated_by = models.ForeignKey(CustomUser,
-                                   on_delete=models.SET_NULL,
-                                   related_name="updated_customers",
-                                   null=True,
-                                   blank=True,
-                                   )
+    created_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        related_name="created_customers",
+        null=True,
+        blank=True,
+    )
+    updated_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        related_name="updated_customers",
+        null=True,
+        blank=True,
+    )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="active")
     source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default="manual")
     archived_at = models.DateTimeField(blank=True, null=True)
@@ -99,7 +105,10 @@ class Customer(models.Model):
             return None
         today = date.today()
         years = today.year - self.date_of_birth.year
-        if (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day):
+        if (today.month, today.day) < (
+            self.date_of_birth.month,
+            self.date_of_birth.day,
+        ):
             years -= 1
         return years
 
@@ -122,7 +131,9 @@ class Customer(models.Model):
         """
         Customer.objects.select_for_update().get(pk=self.pk)
         old = self.tag
-        if (old is None and new_tag is None) or (old and new_tag and old.id == new_tag.id):
+        if (old is None and new_tag is None) or (
+            old and new_tag and old.id == new_tag.id
+        ):
             return False
 
         CustomerTagHistory.objects.create(
@@ -190,20 +201,25 @@ class CustomerTagHistory(models.Model):
 
 
 class Notes(models.Model):
-    customer = models.ForeignKey(Customer,
-                                 on_delete=models.CASCADE,
-                                 related_name="customer_notes", )
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE,
+        related_name="customer_notes",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(CustomUser,
-                                   on_delete=models.SET_NULL,
-                                   related_name="customer_notes_created_by",
-                                   null=True, blank=True,
-                                   )
+    created_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        related_name="customer_notes_created_by",
+        null=True,
+        blank=True,
+    )
     updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.ForeignKey(CustomUser,
-                                   on_delete=models.SET_NULL,
-                                   related_name="notes_updated_by",
-                                   null=True,
-                                   blank=True,
-                                   )
+    updated_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        related_name="notes_updated_by",
+        null=True,
+        blank=True,
+    )
     note = models.TextField(max_length=1000)

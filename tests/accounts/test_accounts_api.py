@@ -3,9 +3,6 @@ from django.urls import reverse
 from rest_framework import status
 
 
-
-
-
 @pytest.mark.django_db
 def test_user_login_successful(csrf_post, login_url, django_user_model):
     django_user_model.objects.create_user(
@@ -148,8 +145,12 @@ def test_login_with_invalid_credentials_fails(csrf_post, login_url, django_user_
 
 @pytest.mark.django_db
 def test_admin_can_delete_all_users(admin_client, user_list_url, django_user_model):
-    django_user_model.objects.create_user(username="user1", email="u1@example.com", password="pass12345")
-    django_user_model.objects.create_user(username="user2", email="u2@example.com", password="pass12345")
+    django_user_model.objects.create_user(
+        username="user1", email="u1@example.com", password="pass12345"
+    )
+    django_user_model.objects.create_user(
+        username="user2", email="u2@example.com", password="pass12345"
+    )
 
     response = admin_client.delete(user_list_url)
 

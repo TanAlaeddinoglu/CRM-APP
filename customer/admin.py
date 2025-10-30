@@ -13,9 +13,13 @@ class CustomCustomer(admin.ModelAdmin):
         "is_active",
         "created_by",
         "updated_by",
-
     )
-    search_fields = ("customer_name", "customer_surname", "customer_email", "customer_phone")
+    search_fields = (
+        "customer_name",
+        "customer_surname",
+        "customer_email",
+        "customer_phone",
+    )
 
     def save_model(self, request, obj, form, change):
         if change and "tag" in form.changed_data:

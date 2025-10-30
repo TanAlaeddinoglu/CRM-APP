@@ -7,16 +7,12 @@ from products.models import Product, CustomerProduct
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = '__all__'
-        read_only_fields = ["id",
-                            "created_at",
-                            "created_by",
-                            "slug"
-                            ]
+        fields = "__all__"
+        read_only_fields = ["id", "created_at", "created_by", "slug"]
 
     def create(self, validated_data):
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
 
         if user and user.is_authenticated:
             validated_data.setdefault("created_by", user)
@@ -25,8 +21,8 @@ class ProductSerializer(serializers.ModelSerializer):
         return product
 
     def update(self, instance, validated_data):
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
         if user and user.is_authenticated:
             validated_data.setdefault("updated_by", user)
         instance = super().update(instance, validated_data)
@@ -41,7 +37,9 @@ class ProductSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             queryset = queryset.exclude(pk=self.instance.pk)
         if queryset.exists():
-            raise serializers.ValidationError({"name": ["A product with a similar name already exists."]})
+            raise serializers.ValidationError(
+                {"name": ["A product with a similar name already exists."]}
+            )
         attrs["slug"] = generated_slug
         return attrs
 
@@ -49,7 +47,7 @@ class ProductSerializer(serializers.ModelSerializer):
 class CustomerProductsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerProduct
-        fields = '__all__'
+        fields = "__all__"
         read_only_fields = [
             "id",
             "created_at",
@@ -59,8 +57,8 @@ class CustomerProductsSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
 
         if user and user.is_authenticated:
             validated_data.setdefault("created_by", user)
@@ -69,14 +67,18 @@ class CustomerProductsSerializer(serializers.ModelSerializer):
         return customer_product
 
     def update(self, instance, validated_data):
-        request = self.context.get('request')
-        user = getattr(request, 'user', None)
-        
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+
         incoming_customer = validated_data.get("customer")
         if not user.is_staff or not user.is_superuser:
             if incoming_customer is not None and incoming_customer != instance.customer:
                 raise serializers.ValidationError(
-                    {"customer": ["Customer cannot be changed once the assignment is created."]}
+                    {
+                        "customer": [
+                            "Customer cannot be changed once the assignment is created."
+                        ]
+                    }
                 )
             validated_data.pop("customer", None)
 
@@ -90,11 +92,17 @@ class CustomerProductsSerializer(serializers.ModelSerializer):
         customer = attrs.get("customer") or getattr(self.instance, "customer", None)
 
         if product and customer:
-            queryset = CustomerProduct.objects.filter(product=product, customer=customer)
+            queryset = CustomerProduct.objects.filter(
+                product=product, customer=customer
+            )
             if self.instance is not None:
                 queryset = queryset.exclude(pk=self.instance.pk)
             if queryset.exists():
                 raise serializers.ValidationError(
-                    {"non_field_errors": ["This product is already assigned to the customer."]}
+                    {
+                        "non_field_errors": [
+                            "This product is already assigned to the customer."
+                        ]
+                    }
                 )
         return attrs

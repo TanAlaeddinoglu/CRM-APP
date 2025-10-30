@@ -127,7 +127,9 @@ def test_admin_list_denied_for_regular_user(regular_client):
 
 
 @pytest.mark.django_db
-def test_user_list_returns_only_active_assignments(regular_client, regular_user, admin_user):
+def test_user_list_returns_only_active_assignments(
+    regular_client, regular_user, admin_user
+):
     other_user = User.objects.create_user(
         username="someone-else",
         email="someone-else@example.com",
@@ -188,7 +190,9 @@ def test_user_retrieve_assigned_customer(regular_client, regular_user, admin_use
 
 
 @pytest.mark.django_db
-def test_user_retrieve_denied_for_unassigned_customer(regular_client, regular_user, admin_user):
+def test_user_retrieve_denied_for_unassigned_customer(
+    regular_client, regular_user, admin_user
+):
     other_user = User.objects.create_user(
         username="another-user",
         email="another-user@example.com",
@@ -228,7 +232,9 @@ def test_user_retrieve_allows_admin_access(admin_client, admin_user, regular_use
 
 
 @pytest.mark.django_db
-def test_user_partial_update_allows_tag_change_for_assigned_user(regular_client, regular_user, admin_user):
+def test_user_partial_update_allows_tag_change_for_assigned_user(
+    regular_client, regular_user, admin_user
+):
     customer = Customer.objects.create(
         customer_name="Jack",
         customer_surname="Taggable",
@@ -248,7 +254,9 @@ def test_user_partial_update_allows_tag_change_for_assigned_user(regular_client,
 
 
 @pytest.mark.django_db
-def test_user_partial_update_clearing_tag_unassigns_customer(regular_client, regular_user, admin_user):
+def test_user_partial_update_clearing_tag_unassigns_customer(
+    regular_client, regular_user, admin_user
+):
     tag = Tag.objects.create(tag_name="Follow Up")
     customer = Customer.objects.create(
         customer_name="Jill",
@@ -270,7 +278,9 @@ def test_user_partial_update_clearing_tag_unassigns_customer(regular_client, reg
 
 
 @pytest.mark.django_db
-def test_admin_update_clearing_tag_unassigns_customer(admin_client, admin_user, regular_user, customer):
+def test_admin_update_clearing_tag_unassigns_customer(
+    admin_client, admin_user, regular_user, customer
+):
     tag = Tag.objects.create(tag_name="Pipeline")
     customer = Customer.objects.create(
         customer_name="Morgan",
@@ -315,7 +325,11 @@ def test_admin_setting_tag_assigns_customer(admin_client, admin_user):
 def test_admin_assigning_without_tag_sets_default(admin_client, admin_user):
     Tag.objects.update_or_create(
         pk=DEFAULT_TAG_ID,
-        defaults={"tag_name": "Default Tag", "color": "#FF0000", "description": "Auto assign"},
+        defaults={
+            "tag_name": "Default Tag",
+            "color": "#FF0000",
+            "description": "Auto assign",
+        },
     )
     customer = Customer.objects.create(
         customer_name="Oliver",
@@ -336,7 +350,9 @@ def test_admin_assigning_without_tag_sets_default(admin_client, admin_user):
 
 
 @pytest.mark.django_db
-def test_user_partial_update_blocks_other_fields(regular_client, regular_user, admin_user):
+def test_user_partial_update_blocks_other_fields(
+    regular_client, regular_user, admin_user
+):
     customer = Customer.objects.create(
         customer_name="Kate",
         customer_surname="Protected",
@@ -355,7 +371,9 @@ def test_user_partial_update_blocks_other_fields(regular_client, regular_user, a
 
 
 @pytest.mark.django_db
-def test_user_partial_update_denied_for_unassigned_user(regular_client, regular_user, admin_user):
+def test_user_partial_update_denied_for_unassigned_user(
+    regular_client, regular_user, admin_user
+):
     other_user = User.objects.create_user(
         username="unassigned-user",
         email="unassigned@example.com",
@@ -380,7 +398,9 @@ def test_user_partial_update_denied_for_unassigned_user(regular_client, regular_
 
 
 @pytest.mark.django_db
-def test_tag_history_by_customer_returns_records_for_assigned_user(regular_client, regular_user, admin_user):
+def test_tag_history_by_customer_returns_records_for_assigned_user(
+    regular_client, regular_user, admin_user
+):
     customer = Customer.objects.create(
         customer_name="Morgan",
         customer_surname="History",
@@ -411,6 +431,8 @@ def test_tag_history_by_customer_requires_customer_id(admin_client):
     response = admin_client.get(url)
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
 #
 # @pytest.mark.django_db
 # def test_admin_list_returns_empty_results_for_out_of_range_offset(admin_client, admin_user, settings):

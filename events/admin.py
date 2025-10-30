@@ -13,6 +13,12 @@ class AppointmentAdmin(admin.ModelAdmin):
 
 @admin.register(AppointmentPayment)
 class AppointmentPaymentAdmin(admin.ModelAdmin):
-    list_display = ("appointment", "total_amount", "paid_amount", "remaining_amount", "payment_status")
+    list_display = (
+        "appointment",
+        "total_amount",
+        "paid_amount",
+        "remaining_amount",
+        "payment_status",
+    )
     list_filter = ("payment_status",)
     raw_id_fields = ("appointment", "created_by", "updated_by")

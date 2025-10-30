@@ -37,7 +37,11 @@ def test_change_creates_history_and_updates_current(customer, admin, tag_a, tag_
     customer.set_current_tag(tag_a, by=admin, notes="initial")
     customer.refresh_from_db()
     assert customer.tag == tag_a
-    h1 = CustomerTagHistory.objects.filter(customer=customer).order_by("changed_at").last()
+    h1 = (
+        CustomerTagHistory.objects.filter(customer=customer)
+        .order_by("changed_at")
+        .last()
+    )
     assert h1.from_tag is None
     assert h1.to_tag == tag_a
     assert h1.changed_by == admin
@@ -47,7 +51,9 @@ def test_change_creates_history_and_updates_current(customer, admin, tag_a, tag_
     customer.refresh_from_db()
     assert customer.tag == tag_b
 
-    histories = list(CustomerTagHistory.objects.filter(customer=customer).order_by("changed_at"))
+    histories = list(
+        CustomerTagHistory.objects.filter(customer=customer).order_by("changed_at")
+    )
     assert len(histories) == 2
 
     last = histories[-1]
@@ -70,7 +76,11 @@ def test_clear_tag_creates_history(customer, admin, tag_a):
     customer.refresh_from_db()
     assert customer.tag is None
 
-    last = CustomerTagHistory.objects.filter(customer=customer).order_by("changed_at").last()
+    last = (
+        CustomerTagHistory.objects.filter(customer=customer)
+        .order_by("changed_at")
+        .last()
+    )
     assert last.from_tag == tag_a
     assert last.to_tag is None
     assert last.changed_by == admin

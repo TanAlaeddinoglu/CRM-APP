@@ -32,24 +32,33 @@ class CustomerSerializer(serializers.ModelSerializer):
             "email_normalized",
             "created_by",
             "updated_by",
-            "is_active"
+            "is_active",
         ]
 
     def validate(self, attrs):
         phone_number = attrs.get("customer_phone")
         if not phone_number:
-            raise serializers.ValidationError({"customer_phone": ["Phone number is required."]})
+            raise serializers.ValidationError(
+                {"customer_phone": ["Phone number is required."]}
+            )
 
         trimmed = str(phone_number).strip("+")
 
         if not (10 <= len(trimmed) <= 13) or not trimmed.isdigit():
-            raise serializers.ValidationError({"customer_phone": [
-                "Phone number must be in these formats; 90123456789, 01234567899, 1234567890, +901234567890."]})
+            raise serializers.ValidationError(
+                {
+                    "customer_phone": [
+                        "Phone number must be in these formats; 90123456789, 01234567899, 1234567890, +901234567890."
+                    ]
+                }
+            )
         queryset = Customer.objects.filter(customer_phone=trimmed)
         if self.instance is not None:
             queryset = queryset.exclude(pk=self.instance.pk)
         if queryset.exists():
-            raise serializers.ValidationError({"customer_phone": ["Phone number already exists."]})
+            raise serializers.ValidationError(
+                {"customer_phone": ["Phone number already exists."]}
+            )
         attrs["customer_phone"] = trimmed
 
         return attrs
@@ -61,7 +70,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         if user and user.is_authenticated:
             validated_data.setdefault("created_by", user)
             validated_data.setdefault("updated_by", user)
-        #validated_data.setdefault("is_active", True)
+        # validated_data.setdefault("is_active", True)
 
         context_tag = self.context.get("tag")
         new_tag = validated_data.pop("tag", None)
@@ -81,7 +90,7 @@ class CustomerSerializer(serializers.ModelSerializer):
 
         status_value = validated_data.get("status")
         if status_value is not None:
-            validated_data["is_active"] = (status_value == "active")
+            validated_data["is_active"] = status_value == "active"
             validated_data["archived_at"] = None
             if status_value == "archived":
                 validated_data["archived_at"] = timezone.now()
@@ -95,13 +104,19 @@ class CustomerSerializer(serializers.ModelSerializer):
         instance = super().update(instance, validated_data)
 
         if new_tag is not serializers.empty:
-            instance.set_current_tag(new_tag, by=user, assign_to=instance.assigned_to or user)
+            instance.set_current_tag(
+                new_tag, by=user, assign_to=instance.assigned_to or user
+            )
         else:
-            assigned_now = old_assigned_to_id is None and instance.assigned_to_id is not None
+            assigned_now = (
+                old_assigned_to_id is None and instance.assigned_to_id is not None
+            )
             if assigned_now and instance.tag_id is None:
                 default_tag = self._get_default_tag()
                 if default_tag is not None:
-                    instance.set_current_tag(default_tag, by=user, assign_to=instance.assigned_to or user)
+                    instance.set_current_tag(
+                        default_tag, by=user, assign_to=instance.assigned_to or user
+                    )
 
         return instance
 
@@ -144,19 +159,22 @@ class CustomerTagHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerTagHistory
         fields = "__all__"
-        read_only_fields = ["changed_at",
-                            "changed_by",
-                            ]
+        read_only_fields = [
+            "changed_at",
+            "changed_by",
+        ]
 
 
 class NotesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notes
         fields = "__all__"
-        read_only_fields = ["created_at",
-                            "updated_at",
-                            "created_by",
-                            "updated_by", ]
+        read_only_fields = [
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
+        ]
 
     def create(self, validated_data):
         request = self.context.get("request")

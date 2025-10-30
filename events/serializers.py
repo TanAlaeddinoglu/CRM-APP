@@ -5,7 +5,7 @@ from .models import Appointment, AppointmentPayment
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    created_by = serializers.ReadOnlyField(source='created_by.username')
+    created_by = serializers.ReadOnlyField(source="created_by.username")
 
     class Meta:
         model = Appointment
@@ -64,7 +64,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
                     )
                 if aware_scheduled <= now and aware_scheduled != current:
                     raise serializers.ValidationError(
-                        {"scheduled_for": ["Appointments must be scheduled in the future."]}
+                        {
+                            "scheduled_for": [
+                                "Appointments must be scheduled in the future."
+                            ]
+                        }
                     )
             elif aware_scheduled <= now:
                 raise serializers.ValidationError(
@@ -84,7 +88,11 @@ class AppointmentSerializer(serializers.ModelSerializer):
                 qs = qs.exclude(pk=self.instance.pk)
             if qs.exists():
                 raise serializers.ValidationError(
-                    {"scheduled_for": ["This customer already has an appointment at this time."]}
+                    {
+                        "scheduled_for": [
+                            "This customer already has an appointment at this time."
+                        ]
+                    }
                 )
 
         return attrs
@@ -128,7 +136,9 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
         """
         total = attrs.get("total_amount")
         paid = attrs.get("paid_amount")
-        appointment = attrs.get("appointment") or getattr(self.instance, "appointment", None)
+        appointment = attrs.get("appointment") or getattr(
+            self.instance, "appointment", None
+        )
 
         if self.instance is not None:
             if total is None:
@@ -142,9 +152,13 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
             errors["paid_amount"] = ["Paid amount cannot exceed total amount."]
 
         if total is not None and total < 0:
-            errors["total_amount"] = ["Total amount must be greater than or equal to zero."]
+            errors["total_amount"] = [
+                "Total amount must be greater than or equal to zero."
+            ]
         if paid is not None and paid < 0:
-            errors.setdefault("paid_amount", []).append("Paid amount must be greater than or equal to zero.")
+            errors.setdefault("paid_amount", []).append(
+                "Paid amount must be greater than or equal to zero."
+            )
 
         if appointment is None:
             errors["appointment"] = ["Appointment is required."]

@@ -11,25 +11,24 @@ from products.models import Product
 
 
 class Appointment(models.Model):
-    name = models.CharField(max_length=100,
-                            null=False, blank=False)
+    name = models.CharField(max_length=100, null=False, blank=False)
     scheduled_for = models.DateTimeField(null=False, blank=False)
     appointment_type = models.CharField(
-        max_length=50,
-        choices=APPOINTMENT_TYPES,
-        null=False, blank=False
+        max_length=50, choices=APPOINTMENT_TYPES, null=False, blank=False
     )
     customer = models.ForeignKey(
         Customer,
         on_delete=models.CASCADE,
         related_name="appointments",
-        null=False, blank=False
+        null=False,
+        blank=False,
     )
     product = models.ForeignKey(
         Product,
         on_delete=models.PROTECT,
         related_name="appointments",
-        null=False, blank=False
+        null=False,
+        blank=False,
     )
     notes = models.TextField(blank=True)
     status = models.CharField(
@@ -75,7 +74,8 @@ class AppointmentPayment(models.Model):
         max_digits=12,
         decimal_places=2,
         validators=[MinValueValidator(Decimal("0.00"))],
-        null=False, blank=False,
+        null=False,
+        blank=False,
     )
     payment_date = models.DateTimeField(null=False, blank=False)
     paid_amount = models.DecimalField(
@@ -123,11 +123,13 @@ class AppointmentPayment(models.Model):
     def clean(self):
         super().clean()
         if self.paid_amount > self.total_amount:
-            raise ValidationError({"paid_amount": "Paid amount cannot exceed total amount."})
+            raise ValidationError(
+                {"paid_amount": "Paid amount cannot exceed total amount."}
+            )
 
     def save(self, *args, **kwargs):
         self.remaining_amount = (self.total_amount or Decimal("0.00")) - (
-                self.paid_amount or Decimal("0.00")
+            self.paid_amount or Decimal("0.00")
         )
         if self.remaining_amount < Decimal("0.00"):
             self.remaining_amount = Decimal("0.00")

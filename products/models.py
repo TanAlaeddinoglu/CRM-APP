@@ -36,7 +36,7 @@ class Product(models.Model):
             models.Index(fields=("name",)),
         ]
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.name
 
 

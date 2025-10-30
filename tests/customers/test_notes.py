@@ -66,7 +66,9 @@ def test_notes_serializer_populates_created_by(customer_assigned, regular_user):
 
 
 @pytest.mark.django_db
-def test_notes_serializer_sets_updated_by_on_update(customer_assigned, admin_user, regular_user):
+def test_notes_serializer_sets_updated_by_on_update(
+    customer_assigned, admin_user, regular_user
+):
     note = Notes.objects.create(
         customer=customer_assigned,
         created_by=regular_user,
@@ -92,7 +94,9 @@ def test_notes_serializer_sets_updated_by_on_update(customer_assigned, admin_use
 
 
 @pytest.mark.django_db
-def test_admin_can_list_all_notes(admin_client, admin_user, customer_assigned, regular_user):
+def test_admin_can_list_all_notes(
+    admin_client, admin_user, customer_assigned, regular_user
+):
     other = Customer.objects.create(
         customer_name="Gamma",
         customer_surname="Client",
@@ -101,7 +105,9 @@ def test_admin_can_list_all_notes(admin_client, admin_user, customer_assigned, r
         assigned_to=admin_user,
         created_by=admin_user,
     )
-    Notes.objects.create(customer=customer_assigned, created_by=regular_user, note="Note 1")
+    Notes.objects.create(
+        customer=customer_assigned, created_by=regular_user, note="Note 1"
+    )
     Notes.objects.create(customer=other, created_by=admin_user, note="Note 2")
 
     url = reverse("notes-list-create")
@@ -119,7 +125,9 @@ def test_regular_user_cannot_list_notes(regular_client):
 
 
 @pytest.mark.django_db
-def test_regular_user_can_create_note_for_assigned_customer(regular_client, customer_assigned, regular_user):
+def test_regular_user_can_create_note_for_assigned_customer(
+    regular_client, customer_assigned, regular_user
+):
     url = reverse("notes-list-create")
     payload = {
         "customer": customer_assigned.id,
@@ -134,7 +142,9 @@ def test_regular_user_can_create_note_for_assigned_customer(regular_client, cust
 
 
 @pytest.mark.django_db
-def test_regular_user_cannot_create_note_for_unassigned_customer(regular_client, other_customer):
+def test_regular_user_cannot_create_note_for_unassigned_customer(
+    regular_client, other_customer
+):
     url = reverse("notes-list-create")
     payload = {
         "customer": other_customer.id,
@@ -147,7 +157,9 @@ def test_regular_user_cannot_create_note_for_unassigned_customer(regular_client,
 
 
 @pytest.mark.django_db
-def test_admin_can_update_note(admin_client, admin_user, customer_assigned, regular_user):
+def test_admin_can_update_note(
+    admin_client, admin_user, customer_assigned, regular_user
+):
     note = Notes.objects.create(
         customer=customer_assigned,
         created_by=regular_user,

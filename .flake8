@@ -1,0 +1,12 @@
+[flake8]
+exclude =
+    .git,
+    .venv,
+    __pycache__,
+    migrations
+filename = *.py
+accept-encodings = utf-8
+max-complexity = 12
+max-line-length = 120
+per-file-ignores =
+    djangoCRM/settings.py: F401

@@ -16,10 +16,7 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.contrib.auth.views import LoginView
 from django.urls import path, include
-from django.views.generic import TemplateView
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 from accounts.views import UserLoginView
 
 urlpatterns = [
@@ -28,6 +25,4 @@ urlpatterns = [
     path("accounts/", include("accounts.urls")),
     path("customers/", include("customer.urls")),
     path("products/", include("products.urls")),
-
-
 ]
