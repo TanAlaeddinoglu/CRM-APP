@@ -10,9 +10,6 @@ from products.models import Product, CustomerProduct
 from products.serializers import ProductSerializer, CustomerProductsSerializer
 
 
-# Create your views here.
-
-
 class ProductsViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
@@ -45,6 +42,7 @@ class CustomerProductsViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
+    # TODO: product filter ekle
     search_fields = [
         "product__name",
         "customer__customer_name",
