@@ -32,4 +32,3 @@ APPOINTMENT_STATUS = [
 ]
 PAYMENT_STATUS = [("kismi", "Kısmi"), ("tamamlandi", "Tamamlandı"), ("iptal", "Iptal")]
 DEFAULT_TAG_ID = 2
-PAYMENT = 5
