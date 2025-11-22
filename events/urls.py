@@ -1,6 +1,6 @@
 from django.urls import path
 
-from events.views import AppointmentViewSet
+from events.views import AppointmentViewSet, AppointmentPaymentsViewSet
 
 urlpatterns = [
     path(
@@ -19,5 +19,20 @@ urlpatterns = [
             }
         ),
         name="appointment-details",
+    ),
+    path(
+        "appointment-payments/",
+        AppointmentPaymentsViewSet.as_view({"get": "list", "post": "create"}),
+        name="appointment-payments",
+    ),
+    path(
+        "appointment-payments/<int:pk>/",
+        AppointmentPaymentsViewSet.as_view(
+            {
+                "get": "retrieve",
+                "delete": "destroy",
+            }
+        ),
+        name="appointment-payment-details",
     ),
 ]

@@ -71,7 +71,7 @@ class CustomerProductsSerializer(serializers.ModelSerializer):
         user = getattr(request, "user", None)
 
         incoming_customer = validated_data.get("customer")
-        if not user.is_staff or not user.is_superuser:
+        if not (user and user.is_staff and user.is_superuser):
             if incoming_customer is not None and incoming_customer != instance.customer:
                 raise serializers.ValidationError(
                     {
@@ -99,10 +99,6 @@ class CustomerProductsSerializer(serializers.ModelSerializer):
                 queryset = queryset.exclude(pk=self.instance.pk)
             if queryset.exists():
                 raise serializers.ValidationError(
-                    {
-                        "non_field_errors": [
-                            "This product is already assigned to the customer."
-                        ]
-                    }
+                    {"product": ["This product is already assigned to the customer."]}
                 )
         return attrs

@@ -19,7 +19,8 @@ from common.utils import DEFAULT_TAG_ID
 class CustomerSerializer(serializers.ModelSerializer):
     """Serialize customer records including creator metadata."""
 
-    created_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    created_by = serializers.ReadOnlyField(source="created_by.username")
+    updated_by = serializers.ReadOnlyField(source="updated_by.username")
 
     class Meta:
         model = Customer
@@ -48,7 +49,8 @@ class CustomerSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {
                     "customer_phone": [
-                        "Phone number must be in these formats; 90123456789, 01234567899, 1234567890, +901234567890."
+                        "Phone number must be one of these formats: "
+                        "90123456789, 01234567899, 1234567890, +901234567890."
                     ]
                 }
             )

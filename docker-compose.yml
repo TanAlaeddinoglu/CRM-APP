@@ -11,8 +11,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-volumes:
-  postgres_data:
 #  web:
 #    build: .
 #    container_name: crm_web
@@ -25,3 +23,5 @@ volumes:
 #      - db
 #    env_file:
 #      - ./db.env
+volumes:
+  postgres_data:

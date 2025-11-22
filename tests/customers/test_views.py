@@ -277,6 +277,7 @@ def test_user_partial_update_clearing_tag_unassigns_customer(
     assert customer.assigned_to is None
 
 
+# TODO duzelt
 @pytest.mark.django_db
 def test_admin_update_clearing_tag_unassigns_customer(
     admin_client, admin_user, regular_user, customer
@@ -321,6 +322,7 @@ def test_admin_setting_tag_assigns_customer(admin_client, admin_user):
     assert customer.assigned_to_id == admin_user.id
 
 
+# TODO
 @pytest.mark.django_db
 def test_admin_assigning_without_tag_sets_default(admin_client, admin_user):
     Tag.objects.update_or_create(

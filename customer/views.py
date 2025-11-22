@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHODS
+from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework import status, viewsets, filters
 
 from accounts.authenticate import CustomAuthentication
@@ -74,6 +75,8 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]  # varsayılan
 
     def get_queryset(self):
+        if self.request.user.is_staff or self.request.user.is_superuser:
+            return Customer.objects.all().order_by("-created_at")
         return (
             super().get_queryset().filter(assigned_to=self.request.user, is_active=True)
         )
@@ -99,13 +102,10 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
 
         incoming_fields = set(request.data.keys())
         if not incoming_fields:
-            return Response(
-                {"detail": "No data provided."}, status=status.HTTP_400_BAD_REQUEST
-            )
+            raise ValidationError({"non_field_errors": ["No data provided."]})
         if incoming_fields != {"tag"}:
-            return Response(
-                {"detail": "Only the tag field can be updated."},
-                status=status.HTTP_400_BAD_REQUEST,
+            raise ValidationError(
+                {"non_field_errors": ["Only the tag field can be updated."]}
             )
 
         tag_value = request.data.get("tag")
@@ -115,9 +115,7 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
             try:
                 new_tag = Tag.objects.get(pk=tag_value)
             except (Tag.DoesNotExist, ValueError, TypeError):
-                return Response(
-                    {"detail": "Tag not found."}, status=status.HTTP_404_NOT_FOUND
-                )
+                raise NotFound("Tag not found.")
 
         customer.set_current_tag(
             new_tag, by=user, assign_to=customer.assigned_to or user
@@ -167,17 +165,13 @@ class CustomerTagHistoryViewSet(viewsets.ModelViewSet):
         """
         customer_id = request.query_params.get("customer_id")
         if not customer_id:
-            return Response(
-                {"detail": "customer_id query parameter is required."},
-                status=status.HTTP_400_BAD_REQUEST,
+            raise ValidationError(
+                {"customer_id": ["This query parameter is required."]}
             )
         try:
             customer_id_int = int(customer_id)
         except (TypeError, ValueError):
-            return Response(
-                {"detail": "customer_id must be an integer."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError({"customer_id": ["Must be an integer."]})
 
         queryset = (
             self.get_queryset()
@@ -238,17 +232,13 @@ class NotesViewSet(viewsets.ModelViewSet):
         """
         customer_id = request.query_params.get("customer_id")
         if not customer_id:
-            return Response(
-                {"detail": "customer_id query parameter is required."},
-                status=status.HTTP_400_BAD_REQUEST,
+            raise ValidationError(
+                {"customer_id": ["This query parameter is required."]}
             )
         try:
             customer_id_int = int(customer_id)
         except (TypeError, ValueError):
-            return Response(
-                {"detail": "customer_id must be an integer."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError({"customer_id": ["Must be an integer."]})
         customer = get_object_or_404(
             Customer.objects.select_related("assigned_to"), pk=customer_id_int
         )

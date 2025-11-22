@@ -5,6 +5,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.exceptions import (
     TokenError,
     InvalidToken,
@@ -31,33 +32,32 @@ class UserLoginView(APIView):
     def post(self, request, format=None):
         enforce_csrf(request)
         serializer = UserLoginSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=True):
-            user = serializer.validated_data
-            if user:
-                user.last_login = timezone.now()
-                user.save(update_fields=["last_login"])
-                data = get_tokens_for_user(user)
-                response = Response({"Success": "Login successfully", "data": data})
-                response.set_cookie(
-                    key=settings.SIMPLE_JWT["AUTH_COOKIE"],
-                    value=data["access"],
-                    expires=settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"],
-                    secure=settings.SIMPLE_JWT["AUTH_COOKIE_SECURE"],
-                    httponly=settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
-                    samesite=settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
-                )
-                response.set_cookie(
-                    key=settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"],
-                    value=data["refresh"],
-                    expires=settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"],
-                    secure=settings.SIMPLE_JWT["AUTH_COOKIE_SECURE"],
-                    httponly=settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
-                    samesite=settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
-                )
-                return response
-        return Response(
-            {"error : Wrong Credentials! "}, status=status.HTTP_403_FORBIDDEN
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data
+        if not user:
+            raise AuthenticationFailed("Incorrect credentials.")
+
+        user.last_login = timezone.now()
+        user.save(update_fields=["last_login"])
+        data = get_tokens_for_user(user)
+        response = Response({"Success": "Login successfully", "data": data})
+        response.set_cookie(
+            key=settings.SIMPLE_JWT["AUTH_COOKIE"],
+            value=data["access"],
+            expires=settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"],
+            secure=settings.SIMPLE_JWT["AUTH_COOKIE_SECURE"],
+            httponly=settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
+            samesite=settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
         )
+        response.set_cookie(
+            key=settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"],
+            value=data["refresh"],
+            expires=settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"],
+            secure=settings.SIMPLE_JWT["AUTH_COOKIE_SECURE"],
+            httponly=settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
+            samesite=settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
+        )
+        return response
 
 
 class LogoutView(APIView):
@@ -70,11 +70,8 @@ class LogoutView(APIView):
             try:
                 refresh = RefreshToken(refresh_token)
                 refresh.blacklist()
-            except TokenError:
-                return Response(
-                    {"error": "Error in Invalidating Token! "},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            except TokenError as exc:
+                raise AuthenticationFailed("Invalid refresh token.") from exc
 
         response = Response(
             {"message": "Succesfully logged out!"}, status=status.HTTP_200_OK
@@ -97,15 +94,9 @@ class UserViewSetListCreate(generics.ListCreateAPIView):
     def post(self, request, *args, **kwargs):
         password = request.data.get("password")
         if password is None or password == "":
-            return Response(
-                {"password": ["This field is required."]},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError({"password": ["This field is required."]})
 
         return super().post(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
-        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 class UserViewSetRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
@@ -126,10 +117,7 @@ class CookieTokenRefreshView(TokenRefreshView):
         refresh_token = request.COOKIES.get("refresh_token")
 
         if not refresh_token:
-            return Response(
-                {"error": "Refresh token not provided"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            raise AuthenticationFailed("Refresh token not provided.")
 
         try:
             refresh = RefreshToken(refresh_token)
@@ -149,15 +137,11 @@ class CookieTokenRefreshView(TokenRefreshView):
             )
             return response
 
-        except InvalidToken:
-            return Response(
-                {"error": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED
-            )
+        except InvalidToken as exc:
+            raise AuthenticationFailed("Invalid token.") from exc
 
-        except TokenError:
-            return Response(
-                {"error": "Invalid token"}, status=status.HTTP_400_BAD_REQUEST
-            )
+        except TokenError as exc:
+            raise AuthenticationFailed("Invalid token.") from exc
 
 
 class ProfileView(APIView):

@@ -61,7 +61,7 @@ class Appointment(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.name} @ {self.scheduled_for:%Y-%m-%d %H:%M}"
+        return f"{self.name} @ {self.scheduled_for:%d-%m-%Y %H:%M}"
 
 
 class AppointmentPayment(models.Model):
@@ -121,16 +121,15 @@ class AppointmentPayment(models.Model):
         return f"{self.appointment} · {self.payment_status}"
 
     def clean(self):
-        super().clean()
         if self.paid_amount > self.total_amount:
             raise ValidationError(
                 {"paid_amount": "Paid amount cannot exceed total amount."}
             )
+        # if self.remaining_amount < Decimal("0.00"):
+        #     raise Exception({"remaining_amount": "Remaining amount cannot be negative value."})
+        # super().clean()
 
-    def save(self, *args, **kwargs):
-        self.remaining_amount = (self.total_amount or Decimal("0.00")) - (
-            self.paid_amount or Decimal("0.00")
-        )
-        if self.remaining_amount < Decimal("0.00"):
-            self.remaining_amount = Decimal("0.00")
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if self.remaining_amount < Decimal("0.00"):
+    #         raise ValidationError({"remaining_amount": "Remaining amount cannot be negative value."})
+    #     super().save(*args, **kwargs)

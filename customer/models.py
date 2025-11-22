@@ -20,7 +20,7 @@ class Tag(models.Model):
     description = models.TextField(max_length=100)
 
     def __str__(self):
-        return self.tag_name
+        return f"{self.tag_name} - {self.description}"
 
     def save(self, *args, **kwargs):
         if not self.slug and self.tag_name:
@@ -223,3 +223,6 @@ class Notes(models.Model):
         blank=True,
     )
     note = models.TextField(max_length=1000)
+
+    def __str__(self):
+        return f"{self.customer} : {self.note}"

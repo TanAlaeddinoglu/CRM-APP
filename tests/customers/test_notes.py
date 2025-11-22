@@ -118,10 +118,10 @@ def test_admin_can_list_all_notes(
 
 
 @pytest.mark.django_db
-def test_regular_user_cannot_list_notes(regular_client):
+def test_regular_user_can_list_notes(regular_client, customer_assigned):
     url = reverse("notes-list-create")
-    response = regular_client.get(url)
-    assert response.status_code == status.HTTP_403_FORBIDDEN
+    response = regular_client.get(url, {"customer_id": customer_assigned.id})
+    assert response.status_code == status.HTTP_200_OK
 
 
 @pytest.mark.django_db

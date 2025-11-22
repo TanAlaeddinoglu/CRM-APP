@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -6,6 +8,7 @@ from .models import Appointment, AppointmentPayment
 
 class AppointmentSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source="created_by.username")
+    updated_by = serializers.ReadOnlyField(source="updated_by.username")
 
     class Meta:
         model = Appointment
@@ -70,6 +73,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
                             ]
                         }
                     )
+
             elif aware_scheduled <= now:
                 raise serializers.ValidationError(
                     {"scheduled_for": ["Appointments must be scheduled in the future."]}
@@ -94,11 +98,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
                         ]
                     }
                 )
-
         return attrs
 
 
 class AppointmentPaymentSerializer(serializers.ModelSerializer):
+    created_by = serializers.ReadOnlyField(source="created_by.username")
+    updated_by = serializers.ReadOnlyField(source="updated_by.username")
+
     class Meta:
         model = AppointmentPayment
         fields = "__all__"
@@ -114,8 +120,35 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context.get("request")
         user = getattr(request, "user", None)
+        appointment = validated_data.get("appointment")
+        paid_amount = validated_data.get("paid_amount", 0)
+        existing_payment = (
+            AppointmentPayment.objects.filter(appointment=appointment)
+            .order_by("-created_at")
+            .first()
+        )
         if user and user.is_authenticated:
             validated_data.setdefault("created_by", user)
+            if existing_payment:
+                total_amount = existing_payment.total_amount
+                remaining_amount = existing_payment.remaining_amount
+                validated_data["total_amount"] = total_amount
+                validated_data["remaining_amount"] = remaining_amount - paid_amount
+                if validated_data["remaining_amount"] < Decimal("0.00"):
+                    raise serializers.ValidationError(
+                        {
+                            "remaining_amount": [
+                                "Remaining amount cannot be less than 0.00."
+                            ]
+                        }
+                    )
+                if validated_data["remaining_amount"] == Decimal("0.00"):
+                    validated_data["payment_status"] = "tamamlandi"
+            else:
+                # ILK ODEME
+                total_amount = validated_data.get("total_amount", 0)
+                validated_data["remaining_amount"] = total_amount - paid_amount
+
         payment = super().create(validated_data)
 
         return payment
@@ -123,6 +156,7 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         request = self.context.get("request")
         user = getattr(request, "user", None)
+        validated_data.pop("total_amount", None)  # prevent overwrite
         if user and user.is_authenticated:
             validated_data.setdefault("updated_by", user)
         instance = super().update(instance, validated_data)
@@ -159,7 +193,6 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
             errors.setdefault("paid_amount", []).append(
                 "Paid amount must be greater than or equal to zero."
             )
-
         if appointment is None:
             errors["appointment"] = ["Appointment is required."]
 

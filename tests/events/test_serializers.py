@@ -94,6 +94,7 @@ def test_payment_serializer_flags_overpayment(admin_user):
         "appointment": appointment.pk,
         "total_amount": "100.00",
         "paid_amount": "150.00",
+        "payment_date": timezone.now(),
         "payment_status": PAYMENT_STATUS[0][0],
     }
 
