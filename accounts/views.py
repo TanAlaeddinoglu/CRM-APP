@@ -1,4 +1,6 @@
 from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -11,6 +13,8 @@ from rest_framework_simplejwt.exceptions import (
     InvalidToken,
 )
 
+from django.http import JsonResponse
+from django.middleware.csrf import get_token
 from rest_framework_simplejwt.views import TokenRefreshView
 from djangoCRM import settings
 
@@ -28,6 +32,7 @@ def get_tokens_for_user(user):
     }
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class UserLoginView(APIView):
     def post(self, request, format=None):
         enforce_csrf(request)
@@ -60,9 +65,10 @@ class UserLoginView(APIView):
         return response
 
 
+@method_decorator(csrf_exempt, name="dispatch")
 class LogoutView(APIView):
     def post(self, request, format=None):
-        enforce_csrf(request)
+        # enforce_csrf(request)
         refresh_cookie_name = settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"]
         refresh_token = request.COOKIES.get(refresh_cookie_name)
 
@@ -152,3 +158,7 @@ class ProfileView(APIView):
     def get(self, request, format=None):
         serializer = self.serializer_class(request.user)
         return Response(serializer.data)
+
+
+def csrf_token_view(request):
+    return JsonResponse({"csrfToken": get_token(request)})
