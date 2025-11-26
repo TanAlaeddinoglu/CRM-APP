@@ -1,20 +1,16 @@
-// src/layout/MainLayout.jsx
-import Sidebar from "./Sidebar";
-import Header from "./Header";
-import Breadcrumbs from "./Breadcrumbs";
+import Sidebar from "../layout/Sidebar";
+import Header from "../layout/Header.jsx";
 
 export default function MainLayout({ children }) {
   return (
-    <div className="app-layout">
+    <div className="layout-wrapper">
       <Sidebar />
 
-      <div className="app-main">
+      <div className="content-wrapper">
         <Header />
-        <Breadcrumbs />
-
-        <main className="app-content">
+        <div className="page-content">
           {children}
-        </main>
+        </div>
       </div>
     </div>
   );
