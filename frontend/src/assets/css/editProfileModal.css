@@ -1,0 +1,146 @@
+/* Overlay (dark background) */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+
+  backdrop-filter: blur(2px);
+}
+
+/* Modal container */
+.modal-box {
+  width: 420px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 26px 28px;
+
+  border: 1px solid var(--color-border);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  animation: modalFadeIn 0.15s ease-out;
+}
+
+/* Title */
+.modal-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 20px;
+}
+
+/* Form body */
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-row label {
+  font-size: 13px;
+  color: var(--color-text-light);
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.modal-row input,
+.modal-row select {
+  border: 1px solid var(--color-border);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--color-text);
+  background: #fff;
+  transition: 0.2s;
+}
+
+.modal-row input:focus,
+.modal-row select:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  outline: none;
+}
+
+/* Checkbox */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--color-text);
+  font-weight: 500;
+
+  cursor: default;
+}
+
+.checkbox-row input[type="checkbox"] {
+  transform: scale(1.2);
+  cursor: default;
+}
+
+.checkbox-row span {
+  cursor: pointer;
+}
+
+/* Footer buttons */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  font-weight: 600;
+  transition: 0.15s;
+}
+
+.btn-primary:hover {
+  opacity: 0.88;
+}
+
+.btn-secondary {
+  background: #f3f4f6;
+  color: var(--color-text);
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+  transition: 0.15s;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+/* Animation */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

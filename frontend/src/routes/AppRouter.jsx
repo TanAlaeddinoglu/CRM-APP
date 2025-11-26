@@ -2,17 +2,26 @@
 import {Routes, Route} from "react-router-dom";
 import MainLayout from "../layout/MainLayout";
 import LoginPage from "../pages/LoginPage";
+
 import Dashboard from "../pages/Dashboard";
 import ProtectedRoute from "./ProtectedRoute.jsx";
+import ProfilePage from "../pages/ProfilePage.jsx";
 
 export default function AppRouter() {
     return (
         <Routes>
 
-            {/* Login */}
             <Route path="/login" element={<LoginPage/>}/>
-
-            {/* Dashboard */}
+            <Route
+                path="/profile"
+                element={
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <ProfilePage/>
+                        </MainLayout>
+                    </ProtectedRoute>
+                }
+            />
             <Route
                 path="/"
                 element={

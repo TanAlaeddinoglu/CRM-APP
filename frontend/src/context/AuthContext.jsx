@@ -13,7 +13,6 @@ export function AuthProvider({ children }) {
       return;
     }
 
-    // Diğer tüm sayfalarda önce csrf al, sonra me() isteği yap
         me()
       .then((res) => setUser(res.data))
       .catch(() => setUser(null))

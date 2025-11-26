@@ -1,14 +1,4 @@
-/* === GLOBAL COLORS === */
-:root {
-  --color-primary: #2563EB;
-  --color-primary-dark: #111827;
-  --color-bg: #F3F4F6;
-  --color-text: #111827;
-  --color-text-light: #6B7280;
-  --color-danger: #DC2626;
-  --color-card-bg: #FFFFFF;
-  --color-border: #D1D5DB;
-}
+
 
 /* === PAGE BACKGROUND === */
 .login-container {

@@ -1,13 +1,59 @@
-// src/layout/Sidebar.jsx
+import { useState } from "react";
+import "../assets/css/sidebar.css";
+import { Link, useLocation } from "react-router-dom";
+
+import {
+  Users,
+  Calendar,
+  CreditCard,
+  Package,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
+
 export default function Sidebar() {
+  const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+
+  const menu = [
+    { icon: <Users size={20} />, label: "Customers", path: "/customers" },
+    { icon: <Calendar size={20} />, label: "Events", path: "/events" },
+    { icon: <CreditCard size={20} />, label: "Payments", path: "/payments" },
+    { icon: <Package size={20} />, label: "Products", path: "/products" },
+    { icon: <BarChart3 size={20} />, label: "Reports", path: "/reports" },
+  ];
+
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">CRM</div>
+    <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+      {/* TOP */}
+      <div className="sidebar-top">
+        {!collapsed && <div className="sidebar-logo">CRM</div>}
+
+        <button
+          className="collapse-btn"
+          onClick={() => setCollapsed((prev) => !prev)}
+        >
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
+      </div>
+
+      {/* NAVIGATION */}
       <nav className="sidebar-nav">
-        <a href="/dashboard">Dashboard</a>
-        <a href="/customers">Customers</a>
-        <a href="/reports">Reports</a>
+        {menu.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={
+              "nav-item " +
+              (location.pathname.startsWith(item.path) ? "active" : "")
+            }
+          >
+            {item.icon}
+            {!collapsed && <span>{item.label}</span>}
+          </Link>
+        ))}
       </nav>
-    </aside>
+    </div>
   );
 }

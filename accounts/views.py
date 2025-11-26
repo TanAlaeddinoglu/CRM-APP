@@ -106,13 +106,27 @@ class UserViewSetListCreate(generics.ListCreateAPIView):
 
 
 class UserViewSetRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
-    """Delete, update and retrieve CustomUser objects via the API by Id."""
-
     queryset = CustomUser.objects.all().order_by("id")
-    authentication_classes = [CustomAuthentication, JWTAuthentication]
-    permission_classes = [IsAdminUser, IsAuthenticated]
     serializer_class = CustomUserSerializer
+
+    authentication_classes = [CustomAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
     lookup_field = "pk"
+
+    def get_permissions(self):
+        perms = super().get_permissions()
+        print("PERMISSIONS:", perms)
+        return perms
+
+    def check_permissions(self, request):
+        print(
+            "CHECK PERMISSIONS:",
+            request.user,
+            request.user.is_authenticated,
+            request.user.is_staff,
+        )
+        return super().check_permissions(request)
 
 
 class CookieTokenRefreshView(TokenRefreshView):

@@ -1,0 +1,100 @@
+/* ------------------------------------------
+   SIDEBAR
+------------------------------------------- */
+.sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: var(--color-primary);
+  border-right: 1px solid #1e293b;
+  height: 100vh;
+  padding: 16px;
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s ease;
+}
+
+/* COLLAPSED */
+.sidebar.collapsed {
+  width: 72px;
+  min-width: 72px;
+  padding: 16px 8px;
+}
+
+/* ------------------------------------------
+   TOP
+------------------------------------------- */
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.sidebar-logo {
+  color: #e2e8f0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.collapse-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #cbd5e1;
+}
+
+.collapse-btn:hover {
+  color: white;
+}
+
+/* ------------------------------------------
+   NAVIGATION
+------------------------------------------- */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  color: #cbd5e1;
+  padding: 10px 12px;
+  text-decoration: none;
+
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-size: 15px;
+}
+
+.nav-item:hover {
+  background: #1e3a8a; /* Hover: lacivert tonu */
+  color: white;
+}
+
+.nav-item.active {
+  background: #1e293b; /* Active: slate-800 */
+  color: white;
+}
+
+.nav-item.active svg {
+  color: white;
+}
+
+/* icon renk */
+.nav-item svg {
+  color: #cbd5e1;
+}
+
+/* collapsed */
+.sidebar.collapsed .nav-item span {
+  display: none;
+}
+
+.
