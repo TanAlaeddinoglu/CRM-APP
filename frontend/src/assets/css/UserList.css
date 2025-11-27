@@ -80,3 +80,26 @@
 .edit-btn:hover {
   opacity: 0.85;
 }
+.user-filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.user-search-input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  width: 240px;
+}
+
+.user-filter-select {
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.user-table th {
+  cursor: pointer;
+}

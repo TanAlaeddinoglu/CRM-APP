@@ -1,0 +1,112 @@
+.product-list-container {
+  margin-top: 16px;
+  padding: 16px 18px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+}
+
+/* Header area */
+.product-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.product-list-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.product-list-subtitle {
+  font-size: 13px;
+  color: var(--color-text-light);
+  margin-top: 4px;
+}
+
+/* Actions (search + button) */
+.product-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.product-search-input {
+  width: 220px;
+  padding: 8px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  font-size: 14px;
+}
+
+.product-search-input:focus {
+  border-color: var(--color-primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+/* Scrollable table wrapper */
+.product-table-wrapper {
+  max-height: 420px;
+  overflow-y: auto;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+/* Table */
+.product-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.product-table thead {
+  background: var(--color-bg);
+}
+
+.product-table th {
+  text-align: left;
+  padding: 10px 12px;
+  font-size: 13px;
+  color: var(--color-text-light);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.product-table td {
+  padding: 10px 12px;
+  font-size: 14px;
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.product-description-cell {
+  max-width: 300px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Edit button */
+.product-edit-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.product-edit-btn:hover {
+  opacity: 0.88;
+}
+
+/* States */
+.product-loading,
+.product-empty {
+  padding: 16px;
+  font-size: 14px;
+  color: var(--color-text-light);
+}

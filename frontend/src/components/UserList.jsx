@@ -1,13 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import "../assets/css/UserList.css";
 import {getUsers, updateUser} from "../services/user";
 import EditProfileModal from "./EditProfileModal";
 import { useAuth } from "../context/AuthContext";
 
 export default function UserList() {
-  const { user } = useAuth(); // role kontrolü
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+
   const [users, setUsers] = useState([]);
   const [editUser, setEditUser] = useState(null);
+
+  // filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+
+  // sorting
+  const [sortField, setSortField] = useState(null);
+  const [sortOrder, setSortOrder] = useState("asc"); // toggles asc/desc
 
   const loadUsers = async () => {
     try {
@@ -19,44 +30,122 @@ export default function UserList() {
   };
 
   useEffect(() => {
-    if (user?.role === "ADMIN") {
-      loadUsers();
+    if (isAdmin) loadUsers();
+  }, [isAdmin]);
+
+  if (!isAdmin) return null;
+
+  // 🔍 SEARCH + FILTER
+  const filteredUsers = useMemo(() => {
+    return users
+      .filter((u) => {
+        const target =
+          `${u.username} ${u.first_name} ${u.last_name} ${u.email}`.toLowerCase();
+        if (!target.includes(searchTerm.toLowerCase())) return false;
+
+        if (roleFilter !== "ALL" && u.role !== roleFilter) return false;
+
+        if (statusFilter === "ACTIVE" && !u.is_active) return false;
+        if (statusFilter === "INACTIVE" && u.is_active) return false;
+
+        return true;
+      })
+      .sort((a, b) => {
+        if (!sortField) return 0;
+
+        let valA = a[sortField];
+        let valB = b[sortField];
+
+        // Boolean sort
+        if (sortField === "is_active") {
+          valA = valA ? 1 : 0;
+          valB = valB ? 1 : 0;
+        }
+
+        // String lowercase sort
+        if (typeof valA === "string") valA = valA.toLowerCase();
+        if (typeof valB === "string") valB = valB.toLowerCase();
+
+        if (valA < valB) return sortOrder === "asc" ? -1 : 1;
+        if (valA > valB) return sortOrder === "asc" ? 1 : -1;
+        return 0;
+      });
+  }, [users, searchTerm, roleFilter, statusFilter, sortField, sortOrder]);
+
+  // 🔽 sort handler
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortOrder("asc");
     }
-  }, [user?.role]);
+  };
 
-const handleSave = async (updatedData) => {
-  try {
-    await updateUser(editUser.id, updatedData);
-    await loadUsers();
-    setEditUser(null);
-  } catch (err) {
-    console.error("User update error:", err);
-  }
-};
-
-  if (user?.role !== "ADMIN") return null; // RBAC kontrolü
+  // save user
+  const handleSave = async (data) => {
+    try {
+      await updateUser(editUser.id, data);  // PATCH isteği at
+      await loadUsers();                    // Listeyi yenile
+      setEditUser(null);                    // Modal kapanır
+    } catch (err) {
+      console.error("Update user error:", err);
+      alert("Failed to update user.");
+    }
+  };
 
   return (
     <div className="user-list-container">
-      <h2 className="list-title">Users</h2>
 
+      {/* FILTER AREA */}
+      <div className="user-filters">
+        <input
+          type="text"
+          placeholder="Search users..."
+          className="user-search-input"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+
+        <select
+          className="user-filter-select"
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value)}
+        >
+          <option value="ALL">All Roles</option>
+          <option value="ADMIN">Admin</option>
+          <option value="USER">User</option>
+        </select>
+
+        <select
+          className="user-filter-select"
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+        >
+          <option value="ALL">All Status</option>
+          <option value="ACTIVE">Active</option>
+          <option value="INACTIVE">Inactive</option>
+        </select>
+      </div>
+
+      {/* USER TABLE */}
       <div className="user-table-wrapper">
         <table className="user-table">
           <thead>
-          <tr>
-            <th>ID</th>
-            <th>Username</th>
-            <th>Name</th>
-            <th>Surname</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Edit</th>
-          </tr>
+            <tr>
+              <th onClick={() => handleSort("id")}>ID</th>
+              <th onClick={() => handleSort("username")}>Username</th>
+              <th onClick={() => handleSort("first_name")}>Name</th>
+              <th onClick={() => handleSort("last_name")}>Surname</th>
+              <th onClick={() => handleSort("email")}>Email</th>
+              <th onClick={() => handleSort("role")}>Role</th>
+              <th onClick={() => handleSort("is_active")}>Status</th>
+              <th>Edit</th>
+            </tr>
           </thead>
 
           <tbody>
-            {users.map((u) => (
+            {filteredUsers.map((u) => (
               <tr key={u.id}>
                 <td>{u.id}</td>
                 <td>{u.username}</td>
@@ -70,10 +159,7 @@ const handleSave = async (updatedData) => {
                   </span>
                 </td>
                 <td>
-                  <button
-                    className="edit-btn"
-                    onClick={() => setEditUser(u)}
-                  >
+                  <button className="edit-btn" onClick={() => setEditUser(u)}>
                     ✏ Edit
                   </button>
                 </td>
