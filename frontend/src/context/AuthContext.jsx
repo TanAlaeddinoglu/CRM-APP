@@ -9,7 +9,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (window.location.pathname === "/login") {
-      getCSRF().finally(() => setLoading(false));  // sadece csrf al
+      getCSRF().finally(() => setLoading(false));
       return;
     }
 

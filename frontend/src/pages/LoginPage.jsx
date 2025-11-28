@@ -3,6 +3,7 @@ import { login, me, getCSRF } from "../services/auth";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import "../assets/css/login.css";
+import {toast} from "react-hot-toast";
 
 export default function LoginPage() {
   const { setUser } = useAuth();
@@ -28,7 +29,8 @@ export default function LoginPage() {
 
       navigate("/");
     } catch (err) {
-      setError("Incorrect username or password.");
+      //setError("Incorrect username or password.");
+      toast.error("Incorrect username or password.");
     }
   };
 

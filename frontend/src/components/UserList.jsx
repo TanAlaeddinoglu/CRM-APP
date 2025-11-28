@@ -3,6 +3,7 @@ import "../assets/css/UserList.css";
 import {getUsers, updateUser} from "../services/user";
 import EditProfileModal from "./EditProfileModal";
 import { useAuth } from "../context/AuthContext";
+import {toast} from "react-hot-toast";
 
 export default function UserList() {
   const { user } = useAuth();
@@ -90,7 +91,7 @@ export default function UserList() {
       setEditUser(null);                    // Modal kapanır
     } catch (err) {
       console.error("Update user error:", err);
-      alert("Failed to update user.");
+      toast.loading("Failed to update user.");
     }
   };
 

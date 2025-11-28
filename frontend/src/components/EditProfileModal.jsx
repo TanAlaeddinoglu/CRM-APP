@@ -1,37 +1,66 @@
-import {useState} from "react";
+import { useState } from "react";
 import "../assets/css/editProfileModal.css";
+import { toast } from "react-hot-toast";
 
-export default function EditProfileModal({user, onClose, onSave}) {
-    const [form, setForm] = useState({
-        username: user.username || "",
-        email: user.email || "",
-        first_name: user.first_name || "",
-        last_name: user.last_name || "",
-        is_active: user.is_active ?? true,
-        role: user.role || "",
-        password: "",
+export default function EditProfileModal({ user, onClose, onSave }) {
+  const [form, setForm] = useState({
+    username: user.username || "",
+    email: user.email || "",
+    first_name: user.first_name || "",
+    last_name: user.last_name || "",
+    is_active: user.is_active ?? true,
+    role: user.role || "",
+    password: "",
+  });
 
-    });
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
 
-    const handleChange = (e) => {
-        const {name, value, type, checked} = e.target;
+    setForm((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
 
-        setForm({
-            ...form,
-            [name]: type === "checkbox" ? checked : value,
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Basit validation
+    if (!form.username.trim()) {
+      toast.error("Username cannot be empty.");
+      return;
+    }
+    if (!form.email.trim()) {
+      toast.error("Email cannot be empty.");
+      return;
+    }
+
+    const dataToSend = { ...form };
+
+    // Password boşsa gönderme
+    if (!dataToSend.password) {
+      delete dataToSend.password;
+    }
+
+    try {
+      await onSave(dataToSend);        // parent function
+      toast.success("User updated successfully!");
+
+      onClose();                       // modal kapat
+    } catch (err) {
+      console.error(err);
+
+      if (err.response?.data) {
+        // Backend validation error'larını toast olarak göster
+        const errors = err.response.data;
+        Object.keys(errors).forEach((field) => {
+          toast.error(`${field}: ${errors[field]}`);
         });
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const dataToSend = {...form};
-        if (!dataToSend.password) {
-            delete dataToSend.password;
-        }
-
-        onSave(dataToSend);
-    };
-
+      } else {
+        toast.error("Failed to update user.");
+      }
+    }
+  };
     return (
         <div className="modal-overlay">
             <div className="modal-box">

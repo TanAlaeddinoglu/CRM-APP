@@ -1,6 +1,7 @@
 // src/components/AddProductModal.jsx
 import { useState } from "react";
 import "../assets/css/ProductList.css";
+import { toast } from "react-hot-toast";
 
 export default function AddProductModal({ onClose, onSave }) {
   const [form, setForm] = useState({
@@ -16,13 +17,21 @@ export default function AddProductModal({ onClose, onSave }) {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!form.name.trim()) {
-      alert("Name is required.");
+      toast.error("Product name is required.");
       return;
     }
-    onSave(form);
+
+    try {
+      await onSave(form);
+      toast.success("Product created!");
+    } catch (err) {
+      toast.error("Failed to create product.");
+      console.error(err);
+    }
   };
 
   return (
