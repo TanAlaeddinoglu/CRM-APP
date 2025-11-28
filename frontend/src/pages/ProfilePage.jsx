@@ -23,10 +23,10 @@ export default function ProfilePage() {
 
       setUser(res.data);
       setShowEditModal(false);
-      alert("Profile updated successfully!");
+      //alert("Profile updated successfully!");
     } catch (err) {
       console.error(err);
-      alert("Something went wrong while updating profile.");
+      //alert("Something went wrong while updating profile.");
     }
   };
 
@@ -35,10 +35,10 @@ export default function ProfilePage() {
     try {
       await createUser(data);
       setShowAddModal(false);
-      alert("User created successfully!");
+      //alert("User created successfully!");
     } catch (err) {
       console.error(err);
-      alert("Failed to create user.");
+      //alert("Failed to create user.");
     }
   };
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "../assets/css/editProfileModal.css";
+import { toast } from "react-hot-toast";
 
 export default function AddUserModal({ onClose, onSave }) {
   const [form, setForm] = useState({
@@ -15,17 +16,49 @@ export default function AddUserModal({ onClose, onSave }) {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    setForm({
-      ...form,
+    setForm((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
-    });
+    }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave(form); // backend createUser()
-  };
 
+    // 🔥 FRONTEND VALIDATION
+    if (!form.username.trim()) {
+      toast.error("Username is required.");
+      return;
+    }
+    if (!form.email.trim()) {
+      toast.error("Email is required.");
+      return;
+    }
+    if (!form.password.trim()) {
+      toast.error("Password is required.");
+      return;
+    }
+
+    try {
+      await onSave(form);
+      toast.success("User created successfully!");
+
+      onClose();
+    } catch (err) {
+      console.error(err);
+
+      const res = err.response?.data;
+
+      if (res) {
+        // 🔥 Backend validation messages
+        Object.keys(res).forEach((field) => {
+          toast.error(`${field}: ${res[field]}`);
+        });
+      } else {
+        toast.error("Failed to create user.");
+      }
+    }
+  };
   return (
     <div className="modal-overlay">
       <div className="modal-box">
