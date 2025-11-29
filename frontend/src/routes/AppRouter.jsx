@@ -7,6 +7,7 @@ import Dashboard from "../pages/Dashboard";
 import ProtectedRoute from "./ProtectedRoute.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import ProductsPage from "../pages/ProductsPage.jsx";
+import AppointmentsPage from "../pages/AppointmentsPage.jsx";
 
 export default function AppRouter() {
     return (
@@ -39,6 +40,16 @@ export default function AppRouter() {
                     <ProtectedRoute>
                         <MainLayout>
                             <ProductsPage/>
+                        </MainLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/events"
+                element={
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <AppointmentsPage/>
                         </MainLayout>
                     </ProtectedRoute>
                 }
