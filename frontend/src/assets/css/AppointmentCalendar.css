@@ -1,0 +1,55 @@
+/* src/assets/css/AppointmentCalendar.css */
+
+/* Wrapper */
+.calendar-wrapper {
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Controls */
+.calendar-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.calendar-controls button {
+  background: var(--color-primary);
+  padding: 8px 14px;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.calendar-controls button:hover {
+  opacity: 0.9;
+}
+
+.calendar-controls h2 {
+  flex: 1;
+  text-align: right;
+  font-size: 20px;
+  color: var(--color-text);
+}
+
+/* FullCalendar overrides */
+.fc .fc-toolbar-title {
+  font-size: 20px !important;
+  font-weight: 600;
+}
+
+.fc .fc-daygrid-day-number {
+  font-size: 14px;
+}
+
+.fc .fc-event {
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
