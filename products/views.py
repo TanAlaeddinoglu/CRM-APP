@@ -5,7 +5,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
 from accounts.authenticate import CustomAuthentication
-from products.filters import ProductFilter
+from products.filters import ProductFilter, CustomerProductFilter
 from products.models import Product, CustomerProduct
 from products.serializers import ProductSerializer, CustomerProductsSerializer
 
@@ -42,9 +42,10 @@ class CustomerProductsViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
-    # TODO: product filter ekle
+    filterset_class = CustomerProductFilter
     search_fields = [
         "product__name",
+        "product__slug",
         "customer__customer_name",
         "customer__customer_surname",
     ]

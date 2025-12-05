@@ -2,6 +2,7 @@ STATUS_CHOICES = [
     ("active", "active"),
     ("archived", "archived"),
     ("quarantine", "quarantine"),
+    ("pool", "pool"),
 ]
 SOURCE_CHOICES = [
     ("meta", "meta"),

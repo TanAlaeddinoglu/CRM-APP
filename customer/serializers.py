@@ -4,6 +4,7 @@ from django.template.defaultfilters import slugify
 
 from customer.models import Customer, Tag, CustomerTagHistory, Notes
 from common.utils import DEFAULT_TAG_ID
+from customer.services import move_to_customer_pool
 
 
 # CUSTOMER SERIALIZER VALIDATE: VALIDATES PHONE NUMBER,
@@ -103,6 +104,17 @@ class CustomerSerializer(serializers.ModelSerializer):
         if user:
             validated_data["updated_by"] = user
 
+        # Prevent assigning a user without providing a tag.
+        if (
+            "assigned_to" in validated_data
+            and validated_data.get("assigned_to") is not None
+            and (
+                (new_tag is serializers.empty and instance.tag_id is None)
+                or new_tag is None
+            )
+        ):
+            raise serializers.ValidationError({"tag": ["you need to set the tag"]})
+
         instance = super().update(instance, validated_data)
 
         if new_tag is not serializers.empty:
@@ -119,6 +131,19 @@ class CustomerSerializer(serializers.ModelSerializer):
                     instance.set_current_tag(
                         default_tag, by=user, assign_to=instance.assigned_to or user
                     )
+
+        # If both tag and assignee are set, ensure status is active.
+        if instance.assigned_to_id is not None and instance.tag_id is not None:
+            update_fields = ["status", "updated_at"]
+            instance.status = "active"
+            if user is not None:
+                instance.updated_by = user
+                update_fields.append("updated_by")
+            instance.save(update_fields=update_fields)
+
+        # Enforce: if tag or assignee is null after update, clear both and move to pool
+        if instance.assigned_to_id is None or instance.tag_id is None:
+            move_to_customer_pool(instance, by=user)
 
         return instance
 
