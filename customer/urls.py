@@ -30,6 +30,7 @@ urlpatterns = [
         UserCustomerViewSet.as_view(
             {
                 "get": "list",
+                "post": "create",
             }
         ),
         name="customer-assigned-to-user",
@@ -78,11 +79,11 @@ urlpatterns = [
         ),
         name="tag-history-detail-update-destroy",
     ),
-    path(
-        "tag-history/by-customer/",
-        CustomerTagHistoryViewSet.as_view({"get": "customers_tag_history"}),
-        name="tag-history-by-customer",
-    ),
+    # path(
+    #     "tag-history/by-customer/",
+    #     CustomerTagHistoryViewSet.as_view({"get": "customers_tag_history"}),
+    #     name="tag-history-by-customer",
+    # ),
     path(
         "notes/",
         NotesViewSet.as_view({"get": "list", "post": "create"}),
@@ -100,9 +101,9 @@ urlpatterns = [
         ),
         name="notes-detail-update-destroy",
     ),
-    path(
-        "notes/by-customer/",
-        NotesViewSet.as_view({"get": "customers_note_history"}),
-        name="note-history-by-customer",
-    ),
+    # path(
+    #     "notes/by-customer/",
+    #     NotesViewSet.as_view({"get": "customers_note_history"}),
+    #     name="note-history-by-customer",
+    # ),
 ]

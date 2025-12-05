@@ -160,6 +160,36 @@ class Customer(models.Model):
 
         return True
 
+    def set_pool(
+        self,
+        *,
+        new_tag: Tag | None = None,
+        by: CustomUser | None = None,
+        assign_to: CustomUser | None = None,
+    ):
+        """
+        Move to pool (clear tag/assignee) unless both tag and assignee are provided,
+        in which case assign with the given tag.
+        """
+        Customer.objects.select_for_update().get(pk=self.pk)
+        old = self.tag
+
+        if assign_to is None or new_tag is None:
+            moved = move_to_customer_pool(self, by=by)
+        else:
+            moved = move_to_customer(self, user=assign_to, by=by, tag_id=new_tag.id)
+
+        if moved:
+            CustomerTagHistory.objects.create(
+                customer=self,
+                from_tag=old,
+                to_tag=new_tag,
+                changed_by=by,
+                notes=None,
+            )
+
+        return moved
+
 
 class CustomerTagHistory(models.Model):
     customer = models.ForeignKey(

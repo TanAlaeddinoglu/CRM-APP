@@ -5,10 +5,15 @@ from products.models import Product, CustomerProduct
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    created_by = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
         fields = "__all__"
         read_only_fields = ["id", "created_at", "created_by", "slug"]
+
+    def get_created_by(self, obj):
+        return obj.created_by.username
 
     def create(self, validated_data):
         request = self.context.get("request")
