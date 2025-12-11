@@ -3,12 +3,22 @@ from decimal import Decimal
 from django.utils import timezone
 from rest_framework import serializers
 
+from customer.models import Customer
+from products.models import Product
 from .models import Appointment, AppointmentPayment
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source="created_by.username")
     updated_by = serializers.ReadOnlyField(source="updated_by.username")
+    customer = serializers.SerializerMethodField(read_only=True)
+    product = serializers.SerializerMethodField(read_only=True)
+    customer_id = serializers.PrimaryKeyRelatedField(
+        source="customer", queryset=Customer.objects.all(), write_only=True
+    )
+    product_id = serializers.PrimaryKeyRelatedField(
+        source="product", queryset=Product.objects.all(), write_only=True
+    )
 
     class Meta:
         model = Appointment
@@ -20,6 +30,12 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "created_by",
             "updated_by",
         ]
+
+    def get_customer(self, obj):
+        return obj.customer.full_name() if obj.customer else None
+
+    def get_product(self, obj):
+        return obj.product.name if obj.product else None
 
     def create(self, validated_data):
         request = self.context.get("request")

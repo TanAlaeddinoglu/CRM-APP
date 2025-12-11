@@ -1,0 +1,294 @@
+/* =========================================
+   EVENTS CONTAINER
+========================================= */
+
+.events-container {
+  background: #fff;
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  margin-bottom: 20px;
+}
+
+/* Header */
+.events-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.events-title {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.events-add-btn {
+  padding: 8px 14px;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Event List */
+.events-list {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+
+/* =========================================
+   EVENT ROW (Single-line compact view)
+========================================= */
+
+.event-row {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.event-row:hover {
+  background: #f3f4f6;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* Row içindeki layout – taşmayı engeller */
+.event-row-main {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: 6px;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Overflow kırpılan alanlar */
+.event-row-name,
+.event-row-product,
+.event-row-meta {
+  max-width: 150px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event-row-divider {
+  color: #9ca3af;
+}
+
+/* Status renkleri */
+.status-beklemede { color: #92400e; }
+.status-satis { color: #166534; }
+.status-olumsuz { color: #991b1b; }
+
+/* Typography */
+.event-row-date {
+  font-weight: 500;
+  color: #111827;
+}
+
+.event-row-type {
+  font-weight: 500;
+  color: #374151;
+  text-transform: capitalize;
+}
+
+.event-row-status {
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.event-row-name {
+  color: #111827;
+  font-weight: 500;
+}
+
+.event-row-product {
+  color: #4b5563;
+}
+
+.event-row-meta {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+
+/* =========================================
+   MODAL BACKDROP
+========================================= */
+
+.modal-background {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+/* =========================================
+   MODAL BOX
+========================================= */
+
+.modal-box-sm {
+  width: 380px;
+}
+
+.modal-box {
+  background: white;
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.modal-title {
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+
+/* =========================================
+   MODAL FORM ELEMENTS
+========================================= */
+
+.modal-field {
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-field label {
+  font-size: 12px;
+  color: #4b5563;
+  margin-bottom: 3px;
+}
+
+/* Input + Textarea ortak stil */
+.modal-input,
+.modal-textarea {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+.modal-row {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-meta {
+  font-size: 11px;
+  color: #6b7280;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+
+/* =========================================
+   MODAL ACTION BUTTONS
+========================================= */
+
+.modal-actions {
+  margin-top: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-actions-right {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-delete {
+  padding: 5px 12px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.modal-cancel {
+  padding: 5px 10px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+}
+
+.modal-save {
+  padding: 5px 12px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+}
+
+/* --- Delete Confirm Popup --- */
+
+.confirm-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.confirm-box {
+  background: #fff;
+  padding: 18px 22px;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+  width: 320px;
+  text-align: center;
+}
+
+.confirm-text {
+  font-size: 15px;
+  color: #374151;
+  margin-bottom: 18px;
+}
+
+.confirm-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+.confirm-cancel {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: #e5e7eb;
+  border: none;
+  cursor: pointer;
+}
+
+.confirm-ok {
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: #ef4444;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+}
+
+.confirm-ok:hover {
+  background: #dc2626;
+}

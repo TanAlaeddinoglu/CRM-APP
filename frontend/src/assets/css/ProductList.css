@@ -110,3 +110,57 @@
   font-size: 14px;
   color: var(--color-text-light);
 }
+/* ----- Confirm Delete Popup ----- */
+
+.confirm-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+}
+
+.confirm-box {
+  background: #ffffff;
+  padding: 20px 24px;
+  width: 340px;
+  border-radius: 12px;
+  box-shadow: 0px 8px 24px rgba(0,0,0,0.18);
+  text-align: center;
+}
+
+.confirm-text {
+  font-size: 14.5px;
+  color: #374151;
+  margin-bottom: 18px;
+  line-height: 1.45;
+  font-weight: 500;
+}
+
+.confirm-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+.confirm-cancel {
+  padding: 6px 14px;
+  background: #e5e7eb;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.confirm-ok {
+  padding: 6px 14px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.confirm-ok:hover {
+  background: #dc2626;
+}

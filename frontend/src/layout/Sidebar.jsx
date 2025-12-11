@@ -12,6 +12,7 @@ import {
     BarChart3,
     ChevronLeft,
     ChevronRight,
+    Tag
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -23,6 +24,7 @@ export default function Sidebar() {
         {icon: <Calendar size={20}/>, label: "Events", path: "/events"},
         {icon: <CreditCard size={20}/>, label: "Payments", path: "/payments"},
         {icon: <Package size={20}/>, label: "Products", path: "/products"},
+        {icon: <Tag size={20}/>, label: "Tags", path: "/tags"},
         {icon: <BarChart3 size={20}/>, label: "Reports", path: "/reports"},
     ];
 

@@ -5,6 +5,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from accounts.authenticate import CustomAuthentication
+from events.filters import AppointmentFilter
 from events.models import Appointment, AppointmentPayment
 from events.serializers import AppointmentSerializer, AppointmentPaymentSerializer
 
@@ -19,6 +20,7 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
+    filterset_class = AppointmentFilter
     search_fields = ["name"]
     ordering_fields = ["name"]
     ordering = ("name",)

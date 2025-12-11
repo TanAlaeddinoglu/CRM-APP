@@ -22,6 +22,8 @@ class CustomerSerializer(serializers.ModelSerializer):
 
     created_by = serializers.ReadOnlyField(source="created_by.username")
     updated_by = serializers.ReadOnlyField(source="updated_by.username")
+    assigned_to = serializers.SerializerMethodField()
+    tag = serializers.SerializerMethodField()
 
     class Meta:
         model = Customer
@@ -36,6 +38,12 @@ class CustomerSerializer(serializers.ModelSerializer):
             "updated_by",
             "is_active",
         ]
+
+    def get_assigned_to(self, obj):
+        return obj.assigned_to.username
+
+    def get_tag(self, obj):
+        return obj.tag.tag_name
 
     def validate(self, attrs):
         phone_number = attrs.get("customer_phone")
@@ -183,6 +191,11 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class CustomerTagHistorySerializer(serializers.ModelSerializer):
+    changed_by = serializers.ReadOnlyField(source="changed_by.username")
+    from_tag = serializers.SerializerMethodField(method_name="get_from_tag")
+    to_tag = serializers.SerializerMethodField()
+    customer = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomerTagHistory
         fields = "__all__"
@@ -191,8 +204,25 @@ class CustomerTagHistorySerializer(serializers.ModelSerializer):
             "changed_by",
         ]
 
+    def get_from_tag(self, obj):
+        return obj.from_tag.tag_name if obj.from_tag else None
+
+    def get_to_tag(self, obj):
+        return obj.to_tag.tag_name if obj.to_tag else None
+
+    def get_customer(self, obj):
+        return obj.customer.full_name() if obj.customer else None
+
 
 class NotesSerializer(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField(read_only=True)  # output
+    customer_id = serializers.PrimaryKeyRelatedField(
+        source="customer", queryset=Customer.objects.all(), write_only=True
+    )
+
+    created_by = serializers.ReadOnlyField(source="created_by.username")
+    updated_by = serializers.ReadOnlyField(source="updated_by.username")
+
     class Meta:
         model = Notes
         fields = "__all__"
@@ -203,15 +233,17 @@ class NotesSerializer(serializers.ModelSerializer):
             "updated_by",
         ]
 
+    def get_customer(self, obj):
+        return obj.customer.full_name() if obj.customer else None
+
     def create(self, validated_data):
         request = self.context.get("request")
         user = getattr(request, "user", None)
 
         if user and user.is_authenticated:
             validated_data.setdefault("created_by", user)
-        note = super().create(validated_data)
 
-        return note
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         request = self.context.get("request")
@@ -219,6 +251,5 @@ class NotesSerializer(serializers.ModelSerializer):
 
         if user and user.is_authenticated:
             validated_data["updated_by"] = user
-        instance = super().update(instance, validated_data)
 
-        return instance
+        return super().update(instance, validated_data)

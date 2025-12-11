@@ -1,9 +1,10 @@
-// src/services/appointment.js
 import { api } from "./api";
 
-// --- Get all appointments (admin: all, user: filtered by backend) ---
+// --- Get all appointments (admin or filtered by backend) ---
 export function getAppointments(params = {}) {
-  return api.get("/events/appointments/", { params });
+  return api.get("/events/appointments/", {
+    params: params,
+  });
 }
 
 // --- Get a single appointment ---
