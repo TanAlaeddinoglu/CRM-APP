@@ -1,0 +1,184 @@
+.notes-container {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 18px 22px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  max-height: 420px;
+}
+
+.notes-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--color-primary);
+}
+
+/* Scrollable list */
+.notes-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-bottom: 12px;
+}
+
+/* Note card */
+.note-card {
+  background: #f9fafb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.note-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.note-meta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.note-edit-btn {
+  background: transparent;
+  border: none;
+  font-size: 11px;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.note-edit-btn:hover {
+  background-color: rgba(37, 99, 235, 0.06);
+}
+
+.note-body {
+  font-size: 14px;
+  color: #111827;
+  white-space: pre-wrap;
+}
+
+/* Empty state */
+.notes-empty {
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* Input area */
+.note-input-area {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.note-textarea {
+  width: 100%;
+  resize: none;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  padding: 8px 10px;
+  font-size: 14px;
+  outline: none;
+}
+
+.note-textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.2);
+}
+
+/* Actions */
+.note-input-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.note-send-btn,
+.note-cancel-btn {
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  border: none;
+  cursor: pointer;
+}
+
+.note-send-btn {
+  background: var(--color-primary);
+  color: #ffffff;
+}
+
+.note-send-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.note-cancel-btn {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* Skeleton loader */
+.skeleton-note {
+  animation: note-pulse 1.4s infinite ease-in-out;
+}
+
+.skeleton-line {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+
+.skeleton-line.header {
+  width: 60%;
+}
+
+.skeleton-line.body {
+  width: 90%;
+}
+
+.skeleton-line.body.short {
+  width: 70%;
+}
+
+@keyframes note-pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+.note-status-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.status-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.status-btn:hover {
+  background: #e5e7eb;
+}
+
+.status-btn.active {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}

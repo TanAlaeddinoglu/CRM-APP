@@ -8,6 +8,8 @@ import ProtectedRoute from "./ProtectedRoute.jsx";
 import ProfilePage from "../pages/ProfilePage.jsx";
 import ProductsPage from "../pages/ProductsPage.jsx";
 import AppointmentsPage from "../pages/AppointmentsPage.jsx";
+import CustomerDetailPage from "../pages/CustomerDetailPage.jsx";
+import TagPage from "../pages/TagPage.jsx";
 
 export default function AppRouter() {
     return (
@@ -50,6 +52,26 @@ export default function AppRouter() {
                     <ProtectedRoute>
                         <MainLayout>
                             <AppointmentsPage/>
+                        </MainLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/customers/:id"
+                element={
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <CustomerDetailPage/>
+                        </MainLayout>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/tags"
+                element={
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <TagPage/>
                         </MainLayout>
                     </ProtectedRoute>
                 }
