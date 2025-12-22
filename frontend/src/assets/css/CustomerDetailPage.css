@@ -1,216 +1,267 @@
-/* MAIN PAGE LAYOUT */
+/* ========== PAGE LAYOUT ========== */
 .customer-detail-container {
   display: flex;
-  gap: 28px;
+  gap: 24px;
   padding: 24px;
-
 }
 
-/* LEFT PANEL */
+/* ========== PANELS ========== */
 .customer-left {
-  width: 35%;
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-
-
+  width: 34%;
 }
 
-.customer-left-card {
-  background: white;
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  padding: 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-}
-
-/* SECTION SEPARATOR */
-.separator {
-  width: 100%;
-  height: 1px;
-  background: #e5e7eb;
-  margin: 4px 0;
-}
-
-/* RIGHT PANEL */
 .customer-right {
   flex: 1;
 }
 
+.customer-left-card,
 .customer-right-card {
-  background: white;
+  background: #ffffff;
   border: 1px solid var(--color-border);
   border-radius: 14px;
-  padding: 22px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 24px;
 }
 
-/* TAG PILL */
-.tag-pill {
-  display: inline-block;
-  background: var(--color-primary);
-  color: white;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-weight: 600;
-  margin-top: 6px;
+/* ========== SEPARATOR ========== */
+.separator {
+  height: 1px;
+  background: #e5e7eb;
 }
 
-/* INFO CARD STYLE (INSIDE LEFT) */
-.customer-info-card h2 {
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 12px;
-}
-
-.info-grid,
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 8px 0;
-}
-
-.info-row label {
-  font-weight: 600;
-  color: #555;
-}
-
-/* TAG HISTORY LIST */
-.tag-history-item {
-  padding: 10px 0;
-  border-bottom: 1px solid #f1f1f1;
-}
-
-.tag-history-item:last-child {
-  border-bottom: none;
-}
-/* ===== CUSTOMER INFO CARD ===== */
-.customer-info-card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
+/* ========== CUSTOMER INFO ========== */
+.customer-info-section {
   border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 18px;
+  background: var(--color-card-bg);
 }
 
+/* Header */
 .customer-info-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 16px;
-  margin-bottom: 18px;
 }
-
-.customer-avatar {
-  width: 52px;
-  height: 52px;
-  background: var(--color-primary);
-  color: white;
-  border-radius: 50%;
+.customer-header-left {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 20px;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
 }
 
-.customer-name {
-  font-size: 20px;
-  font-weight: 700;
+/* Title */
+.customer-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-primary);
   margin: 0;
 }
 
-.customer-subtitle {
-  font-size: 14px;
-  color: #6b7280;
-  margin-top: 2px;
-}
-
-/* ===== INFO LIST ===== */
-.customer-info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  margin-top: 8px;
-}
-
-.info-row {
-  display: flex;
-  justify-content: space-between;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #f3f4f6;
-}
-
-.info-row label {
-  font-weight: 600;
-  color: #374151;
-}
-
-.info-row span {
-  color: #4b5563;
-}
-/* ============= LEFT PANEL ============= */
-.customer-info-section {
-  background: var(--color-card-bg);               /* HubSpot gibi koyu arka plan */
-  padding: 24px;
-  border-radius: 12px;
-  color: var(--color-primary);
-  border: 1px solid var(--color-border);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
-/* ---- Title ---- */
-.customer-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 6px;
-  color: var(--color-primary);
-  display: flex;
-}
-
-/* ---- Small Tag ---- */
+/* Mini tag */
 .customer-tag-mini {
+  margin-top: 4px;
   display: inline-block;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border-radius: 6px;
   background: var(--color-primary);
-  color: #e2e8f0;
-  font-size: 12px;
+  color: #fff;
+  font-size: 11px;
   font-weight: 500;
-  margin-bottom: 20px;
 }
 
-/* ---- Information List ---- */
+/* ========== INFO LIST ========== */
 .info-list {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 18px;
+  margin-top: 16px;
 }
+
 
 .info-item {
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  min-width: 0; /* 🔥 çok önemli */
 }
+
 
 .info-item label {
   font-size: 12px;
-  color: var(--color-primary);
-  margin-bottom: 2px;
-  letter-spacing: 0.3px;
+  color: #6b7280;
+  font-weight: 500;
+  padding-top: 10px;
+
+
 }
 
 .info-item span {
   font-size: 14px;
-  font-weight: 500;
-  color: var(--color-primary);
+  color: #111827;
 }
 
-/* Line separator between sections */
-.section-separator {
-  margin: 18px 0;
-  height: 1px;
-  background: var(--color-primary);
+/* ========== INPUTS ========== */
+.edit-input,
+.info-item select {
+  width: 100%;
+  max-width: 100%;
+  height: 36px;
+
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+
+  font-size: 14px;
+  background: #fff;
+  box-sizing: border-box;
+}
+
+
+.edit-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+
+.inline-name-edit {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.inline-name-edit .edit-input {
+  flex: 1;
+  min-width: 0;
+}
+/* ========== ICON BUTTON ========== */
+.icon-btn {
+  background: transparent;
   border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+}
+
+.icon-btn:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* ========== DISEASES ========== */
+.customer-diseases {
+  margin-top: 20px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.section-header label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.disease-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.disease-badge {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+/* Edit list */
+.disease-edit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.checkbox-item input {
+  cursor: pointer;
+}
+
+/* ========== ACTION BAR ========== */
+.customer-edit-actions {
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 900px) {
+  .customer-detail-container {
+    flex-direction: column;
+  }
+
+  .customer-left {
+    width: 100%;
+  }
+
+  .info-list {
+    grid-template-columns: 1fr;
+  }
+
+  .inline-name-edit {
+    flex-direction: column;
+  }
+}
+
+.customer-tag-highlight {
+  margin-top: 6px;
+
+  display: inline-flex;
+  align-items: center;
+
+  width: fit-content;
+  max-width: 100%;
+
+  padding: 4px 10px;
+  border-radius: 999px;
+
+  background: var(--color-primary);
+  color: #ffffff;
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.2);
+}
+
+
+.status-helper-text {
+  font-size: 11px;
+  color: #6b7280;
+  margin-top: 4px;
+  line-height: 1.4;
 }

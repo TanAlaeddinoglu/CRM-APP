@@ -13,14 +13,15 @@ html, body, #root {
 }
 /* === GLOBAL COLORS === */
 :root {
-  --color-primary: #16223e;
+  --color-primary: #16223EFF;
   --color-primary-dark: #111827;
-  --color-bg: #F3F4F6;
+  --color-bg: #cdcdcd;
   --color-text: #111827;
   --color-text-light: #6B7280;
   --color-danger: #DC2626;
   --color-card-bg: #FFFFFF;
   --color-border: #D1D5DB;
+  --color-text-white: #FFFFFF;
 }
 
 /* --------------------------------------------------------

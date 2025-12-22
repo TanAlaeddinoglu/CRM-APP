@@ -66,6 +66,8 @@ static/
 .env
 .env.*
 *.env
+**/migrations/**
+
 
 # VS Code / PyCharm / IDEs
 .vscode/
