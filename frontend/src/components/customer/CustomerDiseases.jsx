@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { SquarePen } from "lucide-react";
+
 import "../../assets/css/CustomerDetailPage.css";
 
 import { getProducts } from "../../services/product";
@@ -10,28 +11,30 @@ import {
   deleteCustomerProduct,
 } from "../../services/customerProducts";
 
+import ConfirmModal from "../common/ConfirmModal";
+
 export default function CustomerDiseases({
   customerId,
   customerProducts = [],
   onReload,
 }) {
   const [isEditing, setIsEditing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [allProducts, setAllProducts] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState([]);
+  const [saving, setSaving] = useState(false);
 
-  /* -------- FETCH ALL PRODUCTS -------- */
   useEffect(() => {
     getProducts()
       .then((res) => setAllProducts(res.data))
       .catch(() => toast.error("Hastalıklar yüklenemedi"));
   }, []);
 
-  /* -------- SYNC SELECTED WHEN EDIT -------- */
   useEffect(() => {
     if (!isEditing) return;
 
     setSelectedProducts(
-      customerProducts.map((cp) => cp.product_id)
+      customerProducts.map((cp) => cp.product_id_read)
     );
   }, [isEditing, customerProducts]);
 
@@ -43,46 +46,55 @@ export default function CustomerDiseases({
     );
   };
 
-  /* -------- SAVE -------- */
-  const handleSave = async () => {
-    try {
-      const currentIds = customerProducts.map(
-        (cp) => cp.product_id
-      );
+const saveDiseases = async () => {
+  if (saving) return;
 
-      const toAdd = selectedProducts.filter(
-        (id) => !currentIds.includes(id)
-      );
+  setSaving(true);
 
-      const toRemove = customerProducts.filter(
-        (cp) => !selectedProducts.includes(cp.product_id)
-      );
+  try {
+    const currentIds = customerProducts.map(
+      (cp) => cp.product_id_read
+    );
 
-      // önce sil
-      for (const item of toRemove) {
-        await deleteCustomerProduct(item.id);
-      }
+    const toAdd = selectedProducts.filter(
+      (id) => !currentIds.includes(id)
+    );
 
-      // sonra ekle
-      for (const pid of toAdd) {
-        try {
-          await addCustomerProduct({
-            customer_id: customerId,
-            product_id: pid,
-          });
-        } catch (err) {
-          console.warn("Skip duplicate:", err?.response?.data);
-        }
-      }
+    const toRemove = customerProducts.filter(
+      (cp) => !selectedProducts.includes(cp.product_id_read)
+    );
 
-      toast.success("Hastalıklar güncellendi");
-      setIsEditing(false);
-      onReload();
-    } catch (err) {
-      console.error(err);
-      toast.error("Hastalıklar güncellenemedi");
+    const deleteRequests = toRemove.map((cp) =>
+      deleteCustomerProduct(cp.id)
+    );
+
+    const addRequests = toAdd.map((pid) =>
+      addCustomerProduct({
+        customer_id: customerId,
+        product_id: pid,
+      })
+    );
+
+    // Bekleyen tüm işlemleri bitir, ardından veriyi yenile
+    await Promise.all([...deleteRequests, ...addRequests]);
+
+    if (onReload) {
+      await onReload();
     }
-  };
+
+    toast.success("Hastalıklar güncellendi");
+    setIsEditing(false);
+    setShowConfirm(false);
+  } catch (err) {
+    console.error(err);
+    toast.error("Hastalıklar güncellenemedi");
+  } finally {
+    setSaving(false);
+  }
+};
+
+
+  /* -------- UI -------- */
 
   return (
     <div className="customer-diseases">
@@ -114,9 +126,13 @@ export default function CustomerDiseases({
         )
       ) : (
         <>
-          <div className="disease-edit-list">
+          {/* EDIT LIST – MINIMAL */}
+          <div className="disease-edit-grid">
             {allProducts.map((p) => (
-              <label key={p.id} className="checkbox-item">
+              <label
+                key={p.id}
+                className="checkbox-item minimal"
+              >
                 <input
                   type="checkbox"
                   checked={selectedProducts.includes(p.id)}
@@ -127,19 +143,35 @@ export default function CustomerDiseases({
             ))}
           </div>
 
+          {/* ACTIONS */}
           <div className="customer-edit-actions">
             <button
               className="btn-secondary"
+              disabled={saving}
               onClick={() => setIsEditing(false)}
             >
               İptal
             </button>
-            <button className="btn-primary" onClick={handleSave}>
+            <button
+              className="btn-primary"
+              disabled={saving}
+              onClick={() => setShowConfirm(true)}
+            >
               Kaydet
             </button>
           </div>
         </>
       )}
+
+      <ConfirmModal
+        open={showConfirm}
+        title="Hastalıkları Güncelle"
+        description="Seçilen hastalıklar kaydedilecek. Emin misiniz?"
+        confirmText="Evet, Kaydet"
+        cancelText="Vazgeç"
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={saveDiseases}
+      />
     </div>
   );
 }
