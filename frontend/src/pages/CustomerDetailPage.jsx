@@ -74,6 +74,7 @@ const handleCustomerUpdate = async (data) => {
                         customer={customer}
                         customerProducts={customerProducts}
                         onSave={handleCustomerUpdate}
+                        onReload={loadCustomer}
                         isAdmin={isAdmin}
                     />
 

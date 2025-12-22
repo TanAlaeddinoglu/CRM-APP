@@ -65,6 +65,8 @@ class CustomerProductsSerializer(serializers.ModelSerializer):
         queryset=Product.objects.all(),
         write_only=True,
     )
+    product_id_read = serializers.IntegerField(source="product.id", read_only=True)
+    # product_id_2 = ProductSerializer(many=False, read_only=True, required=False, source="product")
 
     class Meta:
         model = CustomerProduct

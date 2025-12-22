@@ -265,3 +265,18 @@
   margin-top: 4px;
   line-height: 1.4;
 }
+
+/* ===== DISEASE EDIT GRID ===== */
+.disease-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px 12px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 6px 2px;
+}
+
+.checkbox-item.minimal {
+  font-size: 13px;
+  padding: 4px 2px;
+}
