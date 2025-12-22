@@ -1,0 +1,71 @@
+.customer-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 18px 0 22px;
+}
+
+/* Sol ve sağ gruplar */
+.customer-actions-left,
+.customer-actions-right {
+  display: flex;
+  gap: 10px;
+}
+
+/* Genel butonlar */
+.customer-actions button {
+  font-size: 13px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Secondary (Filtre, Havuz) */
+.btn-secondary {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+}
+
+/* Primary (Ekle) */
+.btn-primary {
+  background: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  filter: brightness(0.95);
+}
+
+/* Danger (Reset vs için kullanılabilir) */
+.btn-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.btn-danger:hover {
+  background: #fecaca;
+}
+
+/* Mobil uyum */
+@media (max-width: 768px) {
+  .customer-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .customer-actions-left,
+  .customer-actions-right {
+    justify-content: space-between;
+  }
+}

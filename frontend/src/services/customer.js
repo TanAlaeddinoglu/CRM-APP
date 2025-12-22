@@ -13,10 +13,11 @@ export const getCustomerById = async (id, isAdmin) => {
   }
 };
 
-export const getCustomers = () => api.get("/customers/");
+export const getCustomers = (params = {}) =>
+  api.get("/customers/", { params });
 
-// User'ın kendi müşterileri
-export const getMyCustomers = () => api.get("/customers/me/");
+export const getMyCustomers = (params = {}) =>
+  api.get("/customers/me/", { params });
 
 
 // --- Get single customer (admin or owner) ---
@@ -30,14 +31,23 @@ export function getMyCustomer(id) {
 }
 
 // --- Create customer (admin only, I guess?) ---
-export function createCustomer(data) {
-  return api.post("/customers/", data);
+export function createCustomer(data, isAdmin) {
+  return isAdmin
+    ? api.post("/customers/", data)
+    : api.post("/customers/me/", data);
 }
 
+
 // --- Update customer (admin can update all, user only own customer) ---
-export function updateCustomer(id, data) {
-  return api.patch(`/customers/${id}/`, data);
+// src/services/customer.js
+export function updateCustomer(id, data, isAdmin = false) {
+  const url = isAdmin
+    ? `/customers/${id}/`
+    : `/customers/me/${id}/`;
+
+  return api.patch(url, data);
 }
+
 
 // --- Delete customer ---
 export function deleteCustomer(id) {

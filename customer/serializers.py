@@ -2,6 +2,7 @@ from django.utils import timezone
 from rest_framework import serializers
 from django.template.defaultfilters import slugify
 
+from accounts.models import CustomUser
 from customer.models import Customer, Tag, CustomerTagHistory, Notes
 from common.utils import DEFAULT_TAG_ID
 from customer.services import move_to_customer_pool
@@ -24,6 +25,21 @@ class CustomerSerializer(serializers.ModelSerializer):
     updated_by = serializers.ReadOnlyField(source="updated_by.username")
     assigned_to = serializers.SerializerMethodField()
     tag = serializers.SerializerMethodField()
+    assigned = serializers.PrimaryKeyRelatedField(
+        source="assigned_to",
+        queryset=CustomUser.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+
+    tag_id = serializers.PrimaryKeyRelatedField(
+        source="tag",
+        queryset=Tag.objects.all(),
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
 
     class Meta:
         model = Customer
@@ -40,10 +56,10 @@ class CustomerSerializer(serializers.ModelSerializer):
         ]
 
     def get_assigned_to(self, obj):
-        return obj.assigned_to.username
+        return obj.assigned_to.username if obj.assigned_to else None
 
     def get_tag(self, obj):
-        return obj.tag.tag_name
+        return obj.tag.tag_name if obj.tag else None
 
     def validate(self, attrs):
         phone_number = attrs.get("customer_phone")
@@ -87,6 +103,8 @@ class CustomerSerializer(serializers.ModelSerializer):
         new_tag = validated_data.pop("tag", None)
 
         customer = super().create(validated_data)
+        if customer.status == "pool":
+            return customer
 
         tag_to_apply = context_tag if context_tag is not None else new_tag
         if tag_to_apply is not None:
