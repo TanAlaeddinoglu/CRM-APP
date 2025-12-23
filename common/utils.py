@@ -6,8 +6,11 @@ STATUS_CHOICES = [
 ]
 SOURCE_CHOICES = [
     ("meta", "meta"),
-    ("google", "google"),
-    ("manual", "manual"),
+    ("google ads", "google"),
+    # ("manual", "manual"),
+    # ("referans-tavsiye", "referans-tavsiye"),
+    ("whatsapp", "whatsapp"),
+    # ("social_media", "social_media"),
 ]
 
 COLOUR_CHOICES = [

@@ -13,6 +13,7 @@ export const getCustomerById = async (id, isAdmin) => {
   }
 };
 
+
 export const getCustomers = (params = {}) =>
   api.get("/customers/", { params });
 

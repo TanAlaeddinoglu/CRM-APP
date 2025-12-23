@@ -1,152 +1,151 @@
+/* ================================
+   GLOBAL SAFETY (ZORUNLU)
+================================ */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ================================
+   CUSTOMER PAGE
+================================ */
+.customer-page-wrapper {
+  width: 100%;
+  max-width: 100%;
+  padding: 28px;
+  overflow-x: hidden;
+}
+
+/* ================================
+   CUSTOMER LIST CONTAINER
+================================ */
 .customer-list-container {
-  background: #fff;
-  padding: 20px;
-  border-radius: 12px;
+  width: 100%;
+  max-width: 100%;
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 14px;
+  overflow: hidden; /* ❗ ÖNEMLİ */
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
-.customer-list-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.customer-list-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.btn-secondary,
-.btn-pool {
-  padding: 8px 14px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-}
-
-.btn-secondary {
-  background: #6366f1;
-  color: white;
-}
-
-.btn-pool {
-  background: #4b5563;
-  color: white;
-}
-
-.customer-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.customer-table th {
-  padding: 10px;
-  color: #555;
-  border-bottom: 1px solid #eee;
-  text-align: left;
-}
-
-.customer-table td {
-  padding: 10px;
-}
-
-.customer-row {
-  cursor: pointer;
-  transition: background 0.15s;
-}
-
-.customer-row:hover {
-  background: #f6f6f6;
-}
-
-.tag-badge {
-  padding: 3px 8px;
-  background: #4f46e5;
-  color: white;
-  border-radius: 6px;
-  font-size: 12px;
-}
-
-.disease-badge {
-  padding: 3px 6px;
-  background: #0ea5e9;
-  color: white;
-  border-radius: 6px;
-  font-size: 11px;
-  margin-right: 4px;
-}
-.customer-page-wrapper {
-  padding: 28px;
-}
-
-.customer-page-header {
-  margin-bottom: 22px;
-}
-
-.customer-page-title {
-  font-size: 26px;
-  font-weight: 700;
-  margin-bottom: 6px;
-  color: #111827;
-}
-
-.customer-page-subtitle {
-  font-size: 14px;
-  color: #6b7280;
-}
-
+/* ================================
+   TABLE WRAPPER (TEK SCROLL ALANI)
+================================ */
 .customer-table-wrapper {
-  background: white;
-  padding: 18px;
-  border-radius: 14px;
-  box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+  width: 100%;
+  max-width: 100%;
+  max-height: 65vh;
+  min-width: 0; /* keep scrollbars usable inside flex layouts */
+  overflow: auto;
 }
 
+/* ================================
+   TABLE
+================================ */
 .customer-table {
   width: 100%;
+  min-width: 1100px; /* burada scroll tetiklenir */
   border-collapse: collapse;
 }
 
-.customer-table th {
-  padding: 12px 10px;
-  text-align: left;
-  color: #374151;
-  cursor: pointer;
-  font-size: 14px;
+/* ================================
+   STICKY HEADER
+================================ */
+.customer-table thead th {
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  z-index: 2;
 }
 
-.customer-table td {
+/* ================================
+   HEADERS
+================================ */
+.customer-table th {
   padding: 12px 10px;
-  border-top: 1px solid #f0f0f0;
   font-size: 14px;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+  cursor: pointer;
+  white-space: nowrap;
 }
+
+/* ================================
+   CELLS
+================================ */
+.customer-table td {
+  padding: 6px 12px;
+  font-size: 14px;
+  border-top: 1px solid #f0f0f0;
+  color: #374151;
+  vertical-align: middle;
+  text-align: center;
+
+}
+
+/* ================================
+   ROW
+================================ */
 
 .customer-row:hover {
   background: #f9fafb;
 }
 
-/* BADGES */
-.badge {
-  padding: 3px 8px;
-  border-radius: 8px;
-  font-size: 12px;
-  margin-right: 4px;
+/* ================================
+   CHECKBOX
+================================ */
+.checkbox-col {
+  width: 40px;
+  text-align: center;
 }
 
-.tag-badge {
-  background: #f3e8ff;
-  color: #6b21a8;
+/* ================================
+   PRODUCT COLUMN
+================================ */
+.product-col {
+  min-width: 220px;
+  max-width: 260px;
+  text-align: left;
+
 }
 
-.disease-badge {
+.product-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-height: 72px;
+  overflow-y: auto;
+  justify-content: flex-start;
+}
+
+.product-badge {
   background: #e0f2fe;
   color: #0369a1;
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 12px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* ================================
+   STATUS BADGES
+================================ */
 .status-badge {
   padding: 3px 8px;
   border-radius: 8px;
   font-size: 12px;
+  display: inline-block;
+
 }
 
 .status-badge.active {
@@ -164,8 +163,84 @@
   color: #374151;
 }
 
-.disease-list {
+/* ================================
+   EMPTY
+================================ */
+.customer-empty {
+  text-align: center;
+  padding: 16px;
+  color: #6b7280;
+}
+
+/* ================================
+   PAGINATION
+================================ */
+.customer-pagination {
+  margin-top: 14px;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 16px;
+}
+
+.customer-pagination button {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.customer-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.customer-pagination select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.page-indicator {
+  margin: 0 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+/* ================================
+   PAGINATION – FAST NAV
+================================ */
+.page-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-number {
+  min-width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.page-number:hover {
+  background: #f3f4f6;
+}
+
+.page-number.active {
+  background: #6366f1;
+  color: #ffffff;
+  border-color: #6366f1;
+  font-weight: 600;
+}
+
+.page-dots {
+  padding: 0 6px;
+  color: #6b7280;
+  font-size: 16px;
 }
