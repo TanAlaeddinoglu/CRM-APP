@@ -6,6 +6,7 @@ from accounts.models import CustomUser
 from customer.models import Customer, Tag, CustomerTagHistory, Notes
 from common.utils import DEFAULT_TAG_ID
 from customer.services import move_to_customer_pool
+from products.serializers import CustomerProductsSerializer
 
 
 # CUSTOMER SERIALIZER VALIDATE: VALIDATES PHONE NUMBER,
@@ -40,6 +41,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    products = CustomerProductsSerializer(many=True, read_only=True)
 
     class Meta:
         model = Customer

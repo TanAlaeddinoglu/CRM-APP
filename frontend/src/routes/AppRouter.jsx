@@ -10,7 +10,9 @@ import ProductsPage from "../pages/ProductsPage.jsx";
 import AppointmentsPage from "../pages/AppointmentsPage.jsx";
 import CustomerDetailPage from "../pages/CustomerDetailPage.jsx";
 import TagPage from "../pages/TagPage.jsx";
+//import CustomerListPage from "../pages/CustomerPage.jsx";
 import CustomerListPage from "../pages/CustomerPage.jsx";
+
 
 export default function AppRouter() {
     return (

@@ -6,6 +6,7 @@ from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework import status, viewsets, filters
 
 from accounts.authenticate import CustomAuthentication
+from common.pagination import CustomPagination
 from .filters import CustomerFilter, TagHistoryFilter, NoteHistoryFilter
 from .serializers import (
     CustomerSerializer,
@@ -26,6 +27,7 @@ class AdminCustomerViewSet(viewsets.ModelViewSet):
     authentication_classes = [CustomAuthentication]
     serializer_class = CustomerSerializer
     permission_classes = [IsAuthenticated, IsAdminUser]
+    pagination_class = CustomPagination
 
     filter_backends = [
         DjangoFilterBackend,
@@ -42,7 +44,7 @@ class AdminCustomerViewSet(viewsets.ModelViewSet):
     ]
 
     ordering_fields = ["created_at", "updated_at", "customer_name"]
-    ordering = ["-created_at"]  # varsayılan
+    ordering = ["customer_name"]  # varsayılan
 
 
 class UserCustomerViewSet(viewsets.ModelViewSet):
@@ -54,6 +56,7 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
     authentication_classes = [CustomAuthentication]
     serializer_class = CustomerSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomPagination
 
     filter_backends = [
         DjangoFilterBackend,
@@ -69,8 +72,17 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
         "customer_phone",
     ]
 
-    ordering_fields = ["created_at", "updated_at", "customer_name"]
-    ordering = ["-created_at"]  # varsayılan
+    # ordering_fields = ["created_at", "updated_at", "customer_name"]
+    ordering_fields = [
+        "customer_name",
+        "customer_surname",
+        "customer_email",
+        "created_at",
+        "updated_at",
+        "status",
+        "source",
+    ]
+    ordering = ["customer_name"]  # varsayılan
 
     def get_queryset(self):
         if self.request.user.is_staff or self.request.user.is_superuser:

@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useMemo } from "react";
+// src/components/TagStatistics.jsx
+import React, { useEffect, useMemo, useState } from "react";
 import { getCustomers, getMyCustomers } from "../services/customer";
 import { useAuth } from "../context/AuthContext";
 import "../assets/css/TagStatistics.css";
@@ -18,17 +19,21 @@ export default function TagStatistics() {
     try {
       setLoading(true);
 
-      const res = isAdmin ? await getCustomers() : await getMyCustomers();
-      setCustomers(res.data);
+      const res = isAdmin
+        ? await getCustomers({ page_size: 1000 })
+        : await getMyCustomers({ page_size: 1000 });
 
+      // 🔴 EN KRİTİK SATIR
+      setCustomers(res.data?.results || []);
     } catch (err) {
       console.error("Tag stats load error:", err);
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // TAG COUNT
+  /* ================= TAG COUNT ================= */
   const tagStats = useMemo(() => {
     const stats = {};
 
@@ -50,13 +55,12 @@ export default function TagStatistics() {
         <div className="tag-stats-loading">Yükleniyor...</div>
       ) : (
         <div className="tag-stats-list">
-
-          {/* TOTAL CUSTOMER */}
+          {/* TOTAL */}
           <div className="tag-stats-item total">
             Toplam müşteri <span>{total}</span>
           </div>
 
-          {/* TAG ITEMS */}
+          {/* TAGS */}
           {Object.entries(tagStats).map(([tag, count]) => (
             <div key={tag} className="tag-stats-item">
               {tag} <span>{count}</span>

@@ -1,122 +1,107 @@
 // src/pages/CustomerPage.jsx
-import React, { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useSearchParams } from "react-router-dom";
+import React, {useEffect, useState} from "react";
+import {useAuth} from "../context/AuthContext.jsx";
+import {useSearchParams} from "react-router-dom";
 
-import CustomerList from "../components/CustomerList";
-import TagStatistics from "../components/TagStatistics";
-import CustomerPageActions from "../components/customer/CustomerPageActions";
-import CustomerFilterModal from "../components/customer/CustomerFilterModal";
-import CustomerCreateModal from "../components/customer/CustomerCreateModal";
+import CustomerList from "../components/CustomerList.jsx";
+import TagStatistics from "../components/TagStatistics.jsx";
+import CustomerPageActions from "../components/customer/CustomerPageActions.jsx";
+import CustomerFilterModal from "../components/customer/CustomerFilterModal.jsx";
+import CustomerCreateModal from "../components/customer/CustomerCreateModal.jsx";
 
-import { getCustomers, getMyCustomers } from "../services/customer";
-import { getCustomerProducts } from "../services/customerProducts";
-import { getUsers } from "../services/user";
-import { getTags } from "../services/tag";
+import {getCustomers, getMyCustomers} from "../services/customer.js";
+import {getUsers} from "../services/user.js";
+import {getTags} from "../services/tag.js";
 
 export default function CustomerPage() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
-  const [searchParams] = useSearchParams();
+    const {user} = useAuth();
+    const isAdmin = user?.role === "ADMIN";
+    const [searchParams] = useSearchParams();
 
-  const [customers, setCustomers] = useState([]);
-  const [customerProducts, setCustomerProducts] = useState({});
-  const [users, setUsers] = useState([]);
-  const [tags, setTags] = useState([]);
+    const [customers, setCustomers] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [tags, setTags] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] = useState(true);
-  const [filterOpen, setFilterOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
+    const [filterOpen, setFilterOpen] = useState(false);
+    const [createOpen, setCreateOpen] = useState(false);
+    const [totalCount, setTotalCount] = useState(0);
 
-  /* ================= FETCH CUSTOMERS ================= */
-  const loadCustomers = async () => {
-    try {
-      setLoading(true);
 
-      const params = Object.fromEntries([...searchParams]);
 
-      const res = isAdmin
-        ? await getCustomers(params)
-        : await getMyCustomers(params);
 
-      const list = res.data || [];
-      setCustomers(list);
+    const loadCustomers = async () => {
+        setLoading(true);
+        const params = Object.fromEntries([...searchParams]);
 
-      const productMap = {};
-      for (const c of list) {
-        try {
-          const p = await getCustomerProducts(c.id);
-          productMap[c.id] = p.data;
-        } catch {
-          productMap[c.id] = [];
+        const res = isAdmin
+            ? await getCustomers(params)
+            : await getMyCustomers(params);
+
+        // DRF pagination uyumlu
+        setCustomers(res.data?.results || []);
+        setTotalCount(res.data?.count || 0);
+
+        setLoading(false);
+    };
+
+
+    useEffect(() => {
+        async function init() {
+            await loadCustomers();
+
+            const tagRes = await getTags();
+            setTags(tagRes.data || []);
+
+            if (isAdmin) {
+                const userRes = await getUsers();
+                setUsers(userRes.data || []);
+            }
         }
-      }
-      setCustomerProducts(productMap);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  /* ================= INITIAL LOAD ================= */
-  useEffect(() => {
-    async function loadInitial() {
-      await loadCustomers();
+        init();
+    }, []);
 
-      // TAGS herkese
-      const tagRes = await getTags();
-      setTags(tagRes.data || []);
+    useEffect(() => {
+        loadCustomers();
+    }, [searchParams.toString()]);
 
-      // USERS sadece admin
-      if (isAdmin) {
-        const userRes = await getUsers();
-        setUsers(userRes.data || []);
-      }
-    }
+    if (loading) return <div>Loading customers...</div>;
 
-    loadInitial();
-  }, []);
+    return (
+        <div className="customer-page-wrapper">
+            <div className="customer-page-header">
+                <h1>Hasta Listesi</h1>
+                <p>Müşterileri görüntüleyin ve yönetin</p>
+            </div>
 
-  /* ================= FILTER CHANGE ================= */
-  useEffect(() => {
-    loadCustomers();
-  }, [searchParams.toString()]);
+            <CustomerPageActions
+                onOpenFilter={() => setFilterOpen(true)}
+                onOpenCreate={() => setCreateOpen(true)}
+            />
 
-  if (loading) return <div>Loading customers...</div>;
+            <CustomerFilterModal
+                isOpen={filterOpen}
+                onClose={() => setFilterOpen(false)}
+                users={users}
+                tags={tags}
+                isAdmin={isAdmin}
+            />
 
-  return (
-    <div className="customer-page-wrapper">
-      <div className="customer-page-header">
-        <h1>Müşteri Yönetimi</h1>
-        <p>Müşterileri görüntüleyin ve yönetin</p>
-      </div>
+            <CustomerCreateModal
+                isOpen={createOpen}
+                onClose={() => setCreateOpen(false)}
+                users={users}
+                tags={tags}
+                onSuccess={loadCustomers}
+            />
+            <TagStatistics customers={customers} />
 
-      <CustomerPageActions
-        onOpenFilter={() => setFilterOpen(true)}
-        onOpenCreate={() => setCreateOpen(true)}
-      />
+            <CustomerList
+                customers={customers}
+                totalCount={totalCount}
+            />
 
-      <CustomerFilterModal
-        isOpen={filterOpen}
-        onClose={() => setFilterOpen(false)}
-        users={users}
-        tags={tags}
-        isAdmin={isAdmin}
-      />
-
-      <CustomerCreateModal
-        isOpen={createOpen}
-        onClose={() => setCreateOpen(false)}
-        users={users}
-        tags={tags}
-        onSuccess={loadCustomers}
-      />
-
-      <TagStatistics customers={customers} />
-
-      <CustomerList
-        customers={customers}
-        customerProducts={customerProducts}
-      />
-    </div>
-  );
+        </div>
+    );
 }
