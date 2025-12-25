@@ -2,20 +2,23 @@ import { useAuth } from "../context/AuthContext";
 import { logout } from "../services/auth";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
+import HeaderCustomerSearch from "./HeaderCustomerSearch";
 import "../assets/css/header.css";
 
 export default function Header() {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
 
-  const [open, setOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  /* USER DROPDOWN STATE (SADECE BU) */
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef(null);
 
   const firstLetter = user?.username?.[0]?.toUpperCase() || "?";
 
+  /* ================= ACTIONS ================= */
   const goToProfile = () => {
     navigate("/profile");
-    setOpen(false);
+    setUserMenuOpen(false);
   };
 
   const handleLogout = async () => {
@@ -24,26 +27,25 @@ export default function Header() {
     navigate("/login");
   };
 
+  /* ================= CLICK OUTSIDE (SADECE USER MENU) ================= */
   useEffect(() => {
     function handleClickOutside(e) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setOpen(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) {
+        setUserMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  /* ================= RENDER ================= */
   return (
     <header className="main-header">
 
-      <input className="search-input" placeholder="Search..." />
+      {/* 🔍 CUSTOMER SEARCH (KENDİ STATE'İNİ YÖNETİR) */}
+      <HeaderCustomerSearch role={user?.role} />
 
       <div className="user-area">
-
         <div className="avatar">{firstLetter}</div>
 
         <div className="user-info">
@@ -51,23 +53,26 @@ export default function Header() {
           <span className="user-role">{user?.role}</span>
         </div>
 
-        {/* CLICK DROPDOWN */}
-        <div className="dropdown" ref={dropdownRef}>
+        {/* USER MENU */}
+        <div className="dropdown" ref={userMenuRef}>
           <button
             className="dropdown-btn"
-            onClick={() => setOpen(!open)}
+            onClick={() => setUserMenuOpen((prev) => !prev)}
           >
             ⋮
           </button>
 
-          {open && (
+          {userMenuOpen && (
             <div className="dropdown-menu">
-              <button className="dropdown-item" onClick={goToProfile}>Profile</button>
-              <button className="dropdown-item" onClick={handleLogout}>Logout</button>
+              <button className="dropdown-item" onClick={goToProfile}>
+                Profile
+              </button>
+              <button className="dropdown-item" onClick={handleLogout}>
+                Logout
+              </button>
             </div>
           )}
         </div>
-
       </div>
 
     </header>
