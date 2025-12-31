@@ -1,0 +1,59 @@
+function formatDate(dateString) {
+  if (!dateString) return "-";
+
+  const d = new Date(dateString);
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+
+  return `${day}.${month}.${year}`;
+}
+
+export default function PaymentHistoryTable({ rows }) {
+  if (!rows || rows.length === 0) {
+    return (
+      <div className="payment-empty">
+        Kayıt bulunamadı.
+      </div>
+    );
+  }
+
+  return (
+    <table className="payment-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Customer</th>
+          <th>Appointment</th>
+          <th>Paid</th>
+          <th>Remaining</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {rows.map(p => (
+          <tr key={p.id}>
+            <td>{formatDate(p.payment_date)}</td>
+
+            <td>{p.appointment?.customer ?? "-"}</td>
+
+            <td>{p.appointment?.name ?? "-"}</td>
+
+            <td>{p.paid_amount} ₺</td>
+
+            <td>{p.remaining_amount} ₺</td>
+
+            <td>
+              <span
+                className={`payment-status ${p.payment_status}`}
+              >
+                {p.payment_status}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}

@@ -12,6 +12,8 @@ import CustomerDetailPage from "../pages/CustomerDetailPage.jsx";
 import TagPage from "../pages/TagPage.jsx";
 //import CustomerListPage from "../pages/CustomerPage.jsx";
 import CustomerListPage from "../pages/CustomerPage.jsx";
+import PaymentPage from "../pages/PaymentPage.jsx";
+import PaymentHistoryPage from "../components/payment/PaymentHistoryPage.jsx";
 
 
 export default function AppRouter() {
@@ -90,7 +92,26 @@ export default function AppRouter() {
                 }
             />
 
-
+            <Route
+                path="/payments"
+                element={
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <PaymentPage/>
+                        </MainLayout>
+                    </ProtectedRoute>
+                }
+            />
+             <Route
+                path="/payments/history"
+                element={
+                    <ProtectedRoute>
+                        <MainLayout>
+                            <PaymentHistoryPage/>
+                        </MainLayout>
+                    </ProtectedRoute>
+                }
+            />
         </Routes>
     );
 }

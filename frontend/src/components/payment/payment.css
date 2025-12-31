@@ -1,0 +1,345 @@
+/* ================================
+   GLOBAL SAFETY
+================================ */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* ================================
+   HEADINGS
+================================ */
+.h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 18px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  letter-spacing: -0.02em;
+}
+
+/* ================================
+   PAYMENT PAGE
+================================ */
+.payment-page-wrapper {
+  width: 100%;
+  padding: 28px;
+  overflow-x: hidden;
+}
+
+/* ================================
+   PAGE HEADER
+================================ */
+.page-header {
+  display: flex;
+  justify-content: space-between; /* ✅ butonlar sağda */
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.page-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ================================
+   PAYMENT LIST CONTAINER
+================================ */
+.payment-list-container {
+  width: 100%;
+  background: #ffffff;
+  padding: 18px;
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* ================================
+   PAYMENT ROW
+================================ */
+.customer-row {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-bottom: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.customer-row.open {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+/* ================================
+   SUMMARY ROW
+================================ */
+.summary {
+  display: grid;
+  grid-template-columns:
+    28px
+    minmax(200px, 1fr)
+    120px
+    120px
+    140px
+    36px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.summary:hover {
+  background: #f9fafb;
+}
+
+/* EXPAND BUTTON */
+.expand-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+/* ================================
+   CUSTOMER NAME
+================================ */
+.customer-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.customer-text {
+  font-weight: 600;
+  font-size: 14px;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.appointment-text {
+  font-size: 12px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* COMPLETED ICON */
+.payment-complete-icon {
+  margin-left: 6px;
+  color: #16a34a;
+  vertical-align: middle;
+}
+
+/* ================================
+   AMOUNTS
+================================ */
+.amount {
+  text-align: right;
+  font-size: 13px;
+  color: #374151;
+  white-space: nowrap;
+}
+
+/* ================================
+   ADD PAYMENT BUTTON
+================================ */
+.add-payment-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.add-payment-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ================================
+   PAYMENT DETAILS TABLE
+================================ */
+.payment-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-top: 1px solid #e5e7eb;
+}
+
+.payment-table th,
+.payment-table td {
+  padding: 10px 12px;
+  font-size: 13px;
+  text-align: center;
+  color: #374151;
+}
+
+.payment-table th {
+  font-weight: 500;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.payment-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* ================================
+   STATUS BADGE
+================================ */
+.payment-status {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.payment-status.tamamlandi {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.payment-status.kismi {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* ================================
+   EMPTY STATE
+================================ */
+.payment-empty {
+  text-align: center;
+  padding: 18px;
+  color: #6b7280;
+}
+
+/* ================================
+   FILTER INPUT
+================================ */
+.payment-page-wrapper > input {
+  max-width: 320px;
+  padding: 8px 12px;
+  margin-bottom: 14px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+}
+
+.payment-page-wrapper > input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+/* ================================
+   BUTTONS
+================================ */
+.btn-primary {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-secondary {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+}
+
+/* ================================
+   MODAL
+================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-card {
+  max-width: 520px;
+  width: 100%;
+  background: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.modal-header,
+.modal-footer {
+  padding: 14px 18px;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.modal-body input,
+.modal-body select {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+.info-text {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* ================================
+   RESPONSIVE
+================================ */
+@media (max-width: 900px) {
+  .summary {
+    grid-template-columns: 28px 1fr 36px;
+  }
+
+  .amount {
+    display: none;
+  }
+}
+/* ================================
+   DATE FILTER INPUTS
+================================ */
+.payment-page-wrapper input[type="date"] {
+  padding: 8px 12px;
+  font-size: 14px;
+
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+
+  color: #111827;
+}
+
+.payment-page-wrapper input[type="date"]:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
