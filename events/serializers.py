@@ -181,8 +181,8 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         """
-        remaining_amount cant bigger than total amount
-        paid cant be bigger than total amount and remaining amount
+        remaining_amount cannot bigger than total amount
+        paid cannot be bigger than total amount and remaining amount
         """
         total = attrs.get("total_amount")
         paid = attrs.get("paid_amount")

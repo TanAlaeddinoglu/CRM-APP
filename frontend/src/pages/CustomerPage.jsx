@@ -70,10 +70,6 @@ export default function CustomerPage() {
 
     return (
         <div className="customer-page-wrapper">
-            <div className="customer-page-header">
-                <h1>Hasta Listesi</h1>
-                <p>Müşterileri görüntüleyin ve yönetin</p>
-            </div>
 
             <CustomerPageActions
                 onOpenFilter={() => setFilterOpen(true)}
