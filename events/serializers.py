@@ -8,6 +8,7 @@ from products.models import Product
 from .models import Appointment, AppointmentPayment
 
 
+# TODO: payment hesaplamasini duzenle delete oldgunuda guncel kalsin
 class AppointmentSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source="created_by.username")
     updated_by = serializers.ReadOnlyField(source="updated_by.username")
