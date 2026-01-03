@@ -1,0 +1,303 @@
+/* ================================
+   GLOBAL SAFETY
+================================ */
+* {
+  box-sizing: border-box;
+}
+
+/* ================================
+   PAGE WRAPPER
+================================ */
+.appointment-history-page {
+  width: 100%;
+  max-width: 100%;
+  padding: 28px;
+  overflow-x: hidden;
+}
+
+/* ================================
+   HEADER
+================================ */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+/* ================================
+   FILTER BAR
+================================ */
+.filter-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.filter-bar input {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #111827;
+  background: #ffffff;
+  min-width: 180px;
+}
+
+.filter-bar input::placeholder {
+  color: #9ca3af;
+}
+
+.filter-bar input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* ================================
+   TABLE WRAPPER
+================================ */
+.appointment-table-wrapper {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+/* ================================
+   TABLE
+================================ */
+.appointment-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+/* ================================
+   TABLE HEADER
+================================ */
+.appointment-table thead th {
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  z-index: 2;
+
+  padding: 12px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* ================================
+   TABLE CELLS
+================================ */
+.appointment-table td {
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #374151;
+  border-top: 1px solid #f0f0f0;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.appointment-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* ================================
+   STATUS BADGES
+================================ */
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-badge.beklemede {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+.status-badge.satis {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-badge.olumsuz {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ================================
+   EMPTY STATE
+================================ */
+.appointment-empty {
+  text-align: center;
+  padding: 18px;
+  color: #6b7280;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+}
+
+/* ================================
+   BUTTONS (REUSE)
+================================ */
+.btn-secondary {
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.btn-secondary:hover {
+  background: #eef2f7;
+}
+
+/* ================================
+   RESPONSIVE
+================================ */
+@media (max-width: 900px) {
+  .appointment-history-page {
+    padding: 16px;
+  }
+
+  .appointment-table {
+    min-width: 700px;
+  }
+
+  .filter-bar {
+    flex-direction: column;
+  }
+}
+/* ================================
+   FILTER BAR
+================================ */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  margin-bottom: 10px;
+}
+
+/* INPUTS & SELECT */
+.filter-bar input,
+.filter-bar select {
+  height: 36px;
+  padding: 6px 10px;
+
+  font-size: 14px;
+  color: #111827;
+
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+
+  transition: border-color 150ms ease,
+              box-shadow 150ms ease;
+}
+
+.filter-bar input:focus,
+.filter-bar select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+
+/* ================================
+   QUICK FILTER BUTTONS
+================================ */
+.btn-ghost {
+  height: 36px;
+  padding: 0 12px;
+
+  font-size: 13px;
+  font-weight: 500;
+
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+
+  background: #f9fafb;
+  color: #374151;
+
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btn-ghost:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.btn-ghost:active {
+  transform: scale(0.97);
+}
+
+/* ================================
+   RESET FILTER BUTTON
+================================ */
+.btn-reset {
+  height: 36px;
+  padding: 0 14px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+
+  background: #fef2f2;
+  color: #b91c1c;
+
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.btn-reset:hover {
+  background: #fee2e2;
+}
+
+.btn-reset:active {
+  transform: scale(0.97);
+}
+
+/* ================================
+   RESULT COUNT
+================================ */
+.result-count {
+  margin: 6px 0 14px 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* ================================
+   RESPONSIVE
+================================ */
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-ghost,
+  .btn-reset {
+    width: 100%;
+    justify-content: center;
+  }
+}

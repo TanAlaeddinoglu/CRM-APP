@@ -26,6 +26,9 @@ export default function TagList() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [editTag, setEditTag] = useState(null);
 
+  /* =========================
+     LOAD TAGS
+  ========================= */
   const loadTags = async () => {
     try {
       setLoading(true);
@@ -43,6 +46,9 @@ export default function TagList() {
     loadTags();
   }, []);
 
+  /* =========================
+     SORT
+  ========================= */
   const sortedTags = useMemo(() => {
     let list = [...tags];
 
@@ -62,6 +68,9 @@ export default function TagList() {
     return list;
   }, [tags, sortConfig]);
 
+  /* =========================
+     FILTER
+  ========================= */
   const filteredTags = useMemo(() => {
     let list = [...sortedTags];
 
@@ -76,12 +85,17 @@ export default function TagList() {
     }
 
     if (showOnlyWithDescription) {
-      list = list.filter((t) => t.description && t.description.trim() !== "");
+      list = list.filter(
+        (t) => t.description && t.description.trim() !== ""
+      );
     }
 
     return list;
   }, [sortedTags, searchTerm, showOnlyWithDescription]);
 
+  /* =========================
+     ACTIONS
+  ========================= */
   const handleSort = (key) => {
     setSortConfig((prev) => ({
       key,
@@ -126,12 +140,18 @@ export default function TagList() {
     }
   };
 
+  /* =========================
+     UI
+  ========================= */
   return (
     <div className="product-list-container">
+      {/* HEADER */}
       <div className="product-list-header">
         <div>
           <h2 className="product-list-title">Tag Catalog</h2>
-          <p className="product-list-subtitle">Manage customer tags.</p>
+          <p className="product-list-subtitle">
+            Manage customer tags.
+          </p>
         </div>
 
         <div className="product-list-actions">
@@ -143,13 +163,23 @@ export default function TagList() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
 
-          <label style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <label
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
             <input
               type="checkbox"
               checked={showOnlyWithDescription}
-              onChange={(e) => setShowOnlyWithDescription(e.target.checked)}
+              onChange={(e) =>
+                setShowOnlyWithDescription(e.target.checked)
+              }
             />
-            <span style={{ fontSize: "13px" }}>Has description</span>
+            <span style={{ fontSize: "13px" }}>
+              Has description
+            </span>
           </label>
 
           {isAdmin && (
@@ -163,11 +193,16 @@ export default function TagList() {
         </div>
       </div>
 
+      {/* TABLE */}
       <div className="product-table-wrapper">
         {loading ? (
-          <div className="product-loading">Loading tags...</div>
+          <div className="product-loading">
+            Loading tags...
+          </div>
         ) : filteredTags.length === 0 ? (
-          <div className="product-empty">No tags found.</div>
+          <div className="product-empty">
+            No tags found.
+          </div>
         ) : (
           <table className="product-table">
             <thead>
@@ -186,7 +221,10 @@ export default function TagList() {
 
                 <th>Description</th>
 
-                <th onClick={() => handleSort("slug")} className="sortable">
+                <th
+                  onClick={() => handleSort("slug")}
+                  className="sortable"
+                >
                   Slug{" "}
                   {sortConfig.key === "slug"
                     ? sortConfig.direction === "asc"
@@ -194,8 +232,6 @@ export default function TagList() {
                       : "▼"
                     : ""}
                 </th>
-
-                <th>Color</th>
 
                 {isAdmin && <th>Edit</th>}
               </tr>
@@ -205,22 +241,12 @@ export default function TagList() {
               {filteredTags.map((t) => (
                 <tr key={t.id}>
                   <td>{t.tag_name}</td>
+
                   <td className="product-description-cell">
                     {t.description}
                   </td>
+
                   <td>{t.slug}</td>
-                  <td>
-                    <span
-                      style={{
-                        background: t.color,
-                        padding: "4px 10px",
-                        borderRadius: "6px",
-                        color: "white",
-                      }}
-                    >
-                      {t.color}
-                    </span>
-                  </td>
 
                   {isAdmin && (
                     <td>
@@ -239,6 +265,7 @@ export default function TagList() {
         )}
       </div>
 
+      {/* MODALS */}
       {addModalOpen && (
         <AddTagModal
           onClose={() => setAddModalOpen(false)}
@@ -251,7 +278,7 @@ export default function TagList() {
           tag={editTag}
           onClose={() => setEditTag(null)}
           onSave={handleEditSave}
-          onDelete={handleDeleteTag}   // 🔥 BURASI ÖNEMLİ
+          onDelete={handleDeleteTag}
         />
       )}
     </div>

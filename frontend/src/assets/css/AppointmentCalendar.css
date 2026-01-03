@@ -1,55 +1,178 @@
-/* src/assets/css/AppointmentCalendar.css */
-
-/* Wrapper */
-.calendar-wrapper {
-  padding: 20px;
-  background: #f9fafb;
-  border-radius: 12px;
+/* =========================
+   WRAPPER
+========================= */
+.appointment-calendar-wrapper {
+  padding: 16px 20px;
+  background: #ffffff;
+  border-radius: 14px;
   border: 1px solid #e5e7eb;
 }
 
-/* Controls */
-.calendar-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 14px;
-}
-
-.calendar-controls button {
-  background: var(--color-primary);
-  padding: 8px 14px;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.calendar-controls button:hover {
-  opacity: 0.9;
-}
-
-.calendar-controls h2 {
-  flex: 1;
-  text-align: right;
-  font-size: 20px;
-  color: var(--color-text);
-}
-
-/* FullCalendar overrides */
-.fc .fc-toolbar-title {
-  font-size: 20px !important;
-  font-weight: 600;
-}
-
-.fc .fc-daygrid-day-number {
-  font-size: 14px;
-}
-
-.fc .fc-event {
-  padding: 4px 6px;
-  border-radius: 6px;
+/* =========================
+   FULLCALENDAR BASE
+========================= */
+.fc {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Helvetica Neue", Arial, sans-serif;
   font-size: 13px;
-  font-weight: 600;
+  color: #111827;
+}
+
+/* =========================
+   HEADER / TOOLBAR
+========================= */
+.fc-toolbar {
+  margin-bottom: 12px;
+}
+
+.fc-toolbar-title {
+  font-size: 18px !important;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.fc-button {
+  background: transparent !important;
+  border: none !important;
+  color: #111827 !important;
+  font-weight: 500;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+}
+
+.fc-button:hover {
+  background: #f3f4f6 !important;
+}
+
+.fc-button-active {
+  background: #e5e7eb !important;
+}
+
+/* =========================
+   GRID LINES
+========================= */
+.fc-theme-standard td,
+.fc-theme-standard th {
+  border-color: #e5e7eb;
+}
+
+.fc-timegrid-slot {
+  height: 42px;
+}
+
+.fc-scrollgrid {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* =========================
+   DAY HEADERS
+========================= */
+.fc-col-header-cell-cushion {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b7280;
+  padding: 6px 0;
+}
+
+/* =========================
+   EVENT (APPLE STYLE)
+========================= */
+.fc-event {
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 10px !important;
+  padding: 4px 6px !important;
+  box-shadow: none !important;
+}
+
+.fc-event-title {
+  font-size: 12px;
+  font-weight: 500;
+  color: #111827;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.fc-event-time {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+/* Hover */
+.fc-event:hover {
+  background: #f3f4f6 !important;
+}
+
+/* =========================
+   NOW INDICATOR
+========================= */
+.fc-now-indicator-line {
+  border-color: #ef4444;
+  border-width: 1px;
+}
+
+/* =========================
+   LIST (AGENDA) VIEW
+========================= */
+.fc-list {
+  border: none;
+}
+
+.fc-list-day-cushion {
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.fc-list-event {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 12px 8px;
+}
+
+.fc-list-event-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.fc-list-event-time {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* =========================
+   TODAY HIGHLIGHT (SUBTLE)
+========================= */
+.fc-day-today {
+  background: #f9fafb !important;
+}
+
+/* =========================
+   SCROLLBAR (OPTIONAL NICE TOUCH)
+========================= */
+.fc-scroller::-webkit-scrollbar {
+  width: 8px;
+}
+
+.fc-scroller::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.fc-scroller::-webkit-scrollbar-track {
+  background: transparent;
+}
+.btn-danger {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #ef4444;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
 }
