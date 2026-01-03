@@ -1,0 +1,246 @@
+/* Backdrop */
+.excel-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+/* Modal shell */
+.excel-modal {
+  width: min(1400px, 96vw);
+  height: min(90vh, 900px);            /* ✅ sabit yükseklik mantığı */
+  background: #fff;
+  border-radius: 14px;
+  overflow: hidden;                    /* ✅ dışarı taşmayı engeller */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+/* Header */
+.excel-modal-header {
+  flex: 0 0 auto;                      /* ✅ header sabit */
+  padding: 14px 16px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;             /* ✅ küçülünce daha stabil */
+}
+
+.excel-modal-title {
+  margin: 0;
+  font-size: 18px;
+}
+
+.excel-modal-subtitle {
+  margin-top: 6px;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.excel-modal-header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;                     /* ✅ butonlar taşmaz */
+  justify-content: flex-end;
+  max-width: 45%;
+}
+
+/* Bulk bar */
+.excel-bulk-bar {
+  flex: 0 0 auto;                      /* ✅ bulk bar sabit */
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.excel-bulk-left {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;                     /* ✅ dropdownlar alt satıra iner */
+  align-items: center;
+  min-width: 0;                        /* ✅ taşma fix */
+  flex: 1;
+}
+
+.excel-bulk-right {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  min-width: 140px;                    /* ✅ kaydet butonu kaybolmasın */
+}
+
+.excel-bulk-title {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.excel-bulk-field {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.excel-bulk-field span {
+  white-space: nowrap;
+}
+
+.excel-bulk-field select {
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  max-width: 220px;                    /* ✅ taşma engeli */
+}
+
+/* ✅ Scroll area: only table scrolls */
+.excel-table-wrap {
+  flex: 1 1 auto;                      /* ✅ kalan alanı kaplar */
+  min-height: 0;                       /* ✅ overflow çalışması için kritik */
+  overflow: auto;                      /* ✅ hem x hem y scroll */
+  padding: 12px 16px 16px;
+}
+
+/* Table */
+.excel-table {
+  width: 100%;
+  min-width: 1300px;                   /* ✅ x scroll için */
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.excel-table thead th {
+  position: sticky;
+  top: 0;
+  background: #fafafa;
+  z-index: 2;
+  border-bottom: 1px solid #eee;
+  padding: 10px 8px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.excel-table tbody td {
+  border-bottom: 1px solid #f2f2f2;
+  padding: 8px;
+  vertical-align: top;
+}
+
+/* Inputs */
+.excel-input {
+  width: 160px;
+  max-width: 240px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  outline: none;
+}
+
+.excel-select {
+  width: 180px;
+  max-width: 220px;
+  padding: 6px 8px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+}
+
+/* Text fallback */
+.excel-muted {
+  margin-top: 4px;
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* Status badge */
+.excel-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.excel-badge.ok { background: #eafff1; }
+.excel-badge.warn { background: #fff4df; }
+.excel-badge.err { background: #ffecec; }
+
+.excel-badge-note {
+  opacity: 0.75;
+}
+
+/* Hint */
+.excel-hint {
+  margin-top: 10px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* Report footer */
+.excel-report {
+  flex: 0 0 auto;                      /* ✅ en altta sabit */
+  border-top: 1px solid #eee;
+  padding: 12px 16px 16px;
+  background: #fcfcfc;
+}
+
+.excel-report h4 {
+  margin: 0 0 10px 0;
+}
+
+.excel-report-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+.excel-report-table-wrap {
+  margin-top: 10px;
+  overflow: auto;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.excel-report-table {
+  width: 100%;
+  min-width: 700px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.excel-report-table th,
+.excel-report-table td {
+  border-bottom: 1px solid #f2f2f2;
+  padding: 10px 8px;
+  text-align: left;
+}
+
+/* ✅ Mobile tweaks */
+@media (max-width: 640px) {
+  .excel-modal-header-actions {
+    max-width: 100%;
+  }
+  .excel-input {
+    width: 140px;
+  }
+  .excel-select {
+    width: 160px;
+  }
+}

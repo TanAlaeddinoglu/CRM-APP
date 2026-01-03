@@ -8,3 +8,6 @@ djangorestframework-simplejwt ~= 5.5.1
 pytest~=8.4.2
 django-filter~=25.2
 drf-standardized-errors~=0.15.0
+drf-yasg~=1.21.6
+pandas~=2.3.3
+openpyxl~=3.1.5
