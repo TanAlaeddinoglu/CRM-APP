@@ -42,6 +42,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         allow_null=True,
     )
     products = CustomerProductsSerializer(many=True, read_only=True)
+    tag_timer_days = serializers.SerializerMethodField()
 
     class Meta:
         model = Customer
@@ -55,7 +56,22 @@ class CustomerSerializer(serializers.ModelSerializer):
             "created_by",
             "updated_by",
             "is_active",
+            "tag_timer_days",
         ]
+
+    def get_tag_timer_days(self, obj):
+        latest_tag = (
+            CustomerTagHistory.objects.filter(customer=obj, to_tag__isnull=False)
+            .order_by("-changed_at")
+            .values("changed_at")
+            .first()
+        )
+
+        if not latest_tag:
+            return None
+
+        delta = timezone.now() - latest_tag["changed_at"]
+        return delta.days
 
     def get_assigned_to(self, obj):
         return obj.assigned_to.username if obj.assigned_to else None
