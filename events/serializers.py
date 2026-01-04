@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.db.models import Sum
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -137,38 +138,49 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         request = self.context.get("request")
         user = getattr(request, "user", None)
+
         appointment = validated_data.get("appointment")
-        paid_amount = validated_data.get("paid_amount", 0)
-        existing_payment = (
-            AppointmentPayment.objects.filter(appointment=appointment)
-            .order_by("-created_at")
-            .first()
-        )
+        paid_amount = validated_data.get("paid_amount", Decimal("0.00"))
+
         if user and user.is_authenticated:
-            validated_data.setdefault("created_by", user)
-            if existing_payment:
-                total_amount = existing_payment.total_amount
-                remaining_amount = existing_payment.remaining_amount
-                validated_data["total_amount"] = total_amount
-                validated_data["remaining_amount"] = remaining_amount - paid_amount
-                if validated_data["remaining_amount"] < Decimal("0.00"):
-                    raise serializers.ValidationError(
-                        {
-                            "remaining_amount": [
-                                "Remaining amount cannot be less than 0.00."
-                            ]
-                        }
-                    )
-                if validated_data["remaining_amount"] == Decimal("0.00"):
-                    validated_data["payment_status"] = "tamamlandi"
+            validated_data["created_by"] = user
+
+        # 1️⃣ TOTAL AMOUNT BELİRLE
+        total_amount = validated_data.get("total_amount")
+
+        if total_amount is None:
+            # Önceki ödemelerden al
+            last_payment = (
+                AppointmentPayment.objects.filter(appointment=appointment)
+                .order_by("-created_at")
+                .first()
+            )
+            if last_payment:
+                total_amount = last_payment.total_amount
             else:
-                # ILK ODEME
-                total_amount = validated_data.get("total_amount", 0)
-                validated_data["remaining_amount"] = total_amount - paid_amount
+                raise serializers.ValidationError(
+                    {"total_amount": ["Total amount is required for first payment."]}
+                )
 
-        payment = super().create(validated_data)
+        payments_sum = AppointmentPayment.objects.filter(
+            appointment=appointment
+        ).aggregate(total=Sum("paid_amount")).get("total") or Decimal("0.00")
 
-        return payment
+        total_paid = payments_sum + paid_amount
+        remaining_amount = total_amount - total_paid
+
+        if remaining_amount < Decimal("0.00"):
+            raise serializers.ValidationError(
+                {"paid_amount": ["Total paid amount cannot exceed total amount."]}
+            )
+
+        validated_data["total_amount"] = total_amount
+        validated_data["remaining_amount"] = remaining_amount
+
+        if remaining_amount == Decimal("0.00"):
+            validated_data["payment_status"] = "tamamlandi"
+
+        return super().create(validated_data)
 
     def update(self, instance, validated_data):
         request = self.context.get("request")
