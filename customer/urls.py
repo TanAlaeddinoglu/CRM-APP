@@ -5,19 +5,21 @@ from .views import (
     TagViewSet,
     CustomerTagHistoryViewSet,
     NotesViewSet,
+)
+from .bulkViews import (
     CustomerExcelUploadView,
-    CustomerExcelUploadView,
-      CustomerExcelDryRunView
+    CustomerExcelDryRunView,
 )
 
-
-
 urlpatterns = [
-
-    path("import-excel/dry-run/", CustomerExcelDryRunView.as_view(), name="customer-import-excel-dry-run"),
-    
-    path("import-excel/", CustomerExcelUploadView.as_view(), name="customer-import-excel"),
-
+    path(
+        "import-excel/dry-run/",
+        CustomerExcelDryRunView.as_view(),
+        name="customer-import-excel-dry-run",
+    ),
+    path(
+        "import-excel/", CustomerExcelUploadView.as_view(), name="customer-import-excel"
+    ),
     path(
         "",
         AdminCustomerViewSet.as_view({"get": "list", "post": "create"}),

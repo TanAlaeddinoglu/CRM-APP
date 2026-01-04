@@ -5,6 +5,7 @@ import pandas as pd
 from django.db import transaction, IntegrityError
 from rest_framework import serializers
 
+
 from .models import Customer
 
 
@@ -32,6 +33,7 @@ class CustomerExcelImportSerializer(serializers.Serializer):
       - file: xlsx/xls
     Dönen: rapor dict (created, duplicates, errors...)
     """
+
     file = serializers.FileField()
 
     # Excel'de beklediğin kolonlar
@@ -46,7 +48,9 @@ class CustomerExcelImportSerializer(serializers.Serializer):
     def validate_file(self, f):
         name = (getattr(f, "name", "") or "").lower()
         if not (name.endswith(".xlsx") or name.endswith(".xls")):
-            raise serializers.ValidationError("Sadece .xlsx veya .xls dosyası yükleyebilirsin.")
+            raise serializers.ValidationError(
+                "Sadece .xlsx veya .xls dosyası yükleyebilirsin."
+            )
 
         # Excel'i burada okuyup serializer instance'ında tutuyoruz
         try:
@@ -78,7 +82,7 @@ class CustomerExcelImportSerializer(serializers.Serializer):
 
         duplicates = []
         errors = []
-        seen = {}         # phone -> first_row
+        seen = {}  # phone -> first_row
         parsed_rows = []  # file-unique ve phone valid satırlar
 
         for i, row in df.iterrows():
@@ -87,20 +91,24 @@ class CustomerExcelImportSerializer(serializers.Serializer):
             raw_phone = row.get("customer_phone")
             phone = normalize_phone(raw_phone)
             if not phone:
-                duplicates.append({
-                    "row": excel_row_no,
-                    "customer_phone": raw_phone,
-                    "reason": "invalid_phone",
-                })
+                duplicates.append(
+                    {
+                        "row": excel_row_no,
+                        "customer_phone": raw_phone,
+                        "reason": "invalid_phone",
+                    }
+                )
                 continue
 
             if phone in seen:
-                duplicates.append({
-                    "row": excel_row_no,
-                    "customer_phone": phone,
-                    "reason": "duplicate_in_file",
-                    "first_seen_row": seen[phone],
-                })
+                duplicates.append(
+                    {
+                        "row": excel_row_no,
+                        "customer_phone": phone,
+                        "reason": "duplicate_in_file",
+                        "first_seen_row": seen[phone],
+                    }
+                )
                 continue
             seen[phone] = excel_row_no
 
@@ -108,25 +116,33 @@ class CustomerExcelImportSerializer(serializers.Serializer):
             surname = str(row.get("customer_surname") or "").strip()
 
             email = row.get("customer_email")
-            email = (str(email).strip() if email is not None and str(email).strip() else None)
+            email = (
+                str(email).strip() if email is not None and str(email).strip() else None
+            )
 
             # Model alanların blank=False => boşsa hata
             if not name or not surname:
-                errors.append({
-                    "row": excel_row_no,
-                    "errors": {"customer_name/surname": "Name and surname are required."}
-                })
+                errors.append(
+                    {
+                        "row": excel_row_no,
+                        "errors": {
+                            "customer_name/surname": "Name and surname are required."
+                        },
+                    }
+                )
                 continue
 
-            parsed_rows.append({
-                "row": excel_row_no,
-                "customer_phone": phone,
-                "customer_name": name,
-                "customer_surname": surname,
-                "customer_email": email,
-                # bulk_create save() çalıştırmaz => email_normalized'i burada set etmeliyiz
-                "email_normalized": (email or "").strip().lower(),
-            })
+            parsed_rows.append(
+                {
+                    "row": excel_row_no,
+                    "customer_phone": phone,
+                    "customer_name": name,
+                    "customer_surname": surname,
+                    "customer_email": email,
+                    # bulk_create save() çalıştırmaz => email_normalized'i burada set etmeliyiz
+                    "email_normalized": (email or "").strip().lower(),
+                }
+            )
 
         # create aşamasına taşınacak veriler
         attrs["_total_rows"] = int(df.shape[0])
@@ -152,32 +168,37 @@ class CustomerExcelImportSerializer(serializers.Serializer):
 
         # 1) DB duplicate tek sorgu
         existing_map = dict(
-            Customer.objects.filter(customer_phone__in=phones)
-            .values_list("customer_phone", "id")
+            Customer.objects.filter(customer_phone__in=phones).values_list(
+                "customer_phone", "id"
+            )
         )
 
         to_create = []
         for r in parsed_rows:
             phone = r["customer_phone"]
             if phone in existing_map:
-                duplicates.append({
-                    "row": r["row"],
-                    "customer_phone": phone,
-                    "reason": "duplicate_in_db",
-                    "existing_customer_id": existing_map[phone],
-                })
+                duplicates.append(
+                    {
+                        "row": r["row"],
+                        "customer_phone": phone,
+                        "reason": "duplicate_in_db",
+                        "existing_customer_id": existing_map[phone],
+                    }
+                )
                 continue
 
-            to_create.append(Customer(
-                customer_name=r["customer_name"],
-                customer_surname=r["customer_surname"],
-                customer_phone=r["customer_phone"],
-                customer_email=r["customer_email"],
-                email_normalized=r["email_normalized"],
-                created_by=user,
-                updated_by=user,
-                # tag=None, assigned_to=None => etiketsiz/havuzda
-            ))
+            to_create.append(
+                Customer(
+                    customer_name=r["customer_name"],
+                    customer_surname=r["customer_surname"],
+                    customer_phone=r["customer_phone"],
+                    customer_email=r["customer_email"],
+                    email_normalized=r["email_normalized"],
+                    created_by=user,
+                    updated_by=user,
+                    # tag=None, assigned_to=None => etiketsiz/havuzda
+                )
+            )
 
         # 2) Create (transaction)
         try:
@@ -186,11 +207,15 @@ class CustomerExcelImportSerializer(serializers.Serializer):
         except IntegrityError:
             # Eş zamanlı import çakışması vs
             raise serializers.ValidationError(
-                {"detail": "Integrity error (muhtemel eşzamanlı import/duplicate çakışması)."}
+                {
+                    "detail": "Integrity error (muhtemel eşzamanlı import/duplicate çakışması)."
+                }
             )
 
         # sayımlar
-        dup_in_file = sum(1 for d in duplicates if d.get("reason") == "duplicate_in_file")
+        dup_in_file = sum(
+            1 for d in duplicates if d.get("reason") == "duplicate_in_file"
+        )
         dup_in_db = sum(1 for d in duplicates if d.get("reason") == "duplicate_in_db")
         invalid_phone = sum(1 for d in duplicates if d.get("reason") == "invalid_phone")
 
@@ -204,27 +229,14 @@ class CustomerExcelImportSerializer(serializers.Serializer):
             "duplicates": duplicates,
             "errors": errors,
         }
-# customer/serializers.py
-import re
-from rest_framework import serializers
-
-
-def normalize_phone(value: str | None) -> str | None:
-    if value is None:
-        return None
-    s = str(value).strip()
-    if not s:
-        return None
-    s = re.sub(r"\D", "", s)  # sadece rakam
-    if not (10 <= len(s) <= 13):
-        return None
-    return s
 
 
 class CustomerExcelRowSerializer(serializers.Serializer):
     customer_name = serializers.CharField(max_length=50)
     customer_surname = serializers.CharField(max_length=50)
-    customer_email = serializers.EmailField(required=False, allow_null=True, allow_blank=True)
+    customer_email = serializers.EmailField(
+        required=False, allow_null=True, allow_blank=True
+    )
     customer_phone = serializers.CharField()
 
     def validate_customer_name(self, v):
