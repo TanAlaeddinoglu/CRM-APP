@@ -154,6 +154,7 @@ export default function CustomerList({customers = [], totalCount = 0}) {
                                 <input
                                     type="checkbox"
                                     checked={selected.includes(c.id)}
+                                    onClick={(e) => e.stopPropagation()}   // 🔥 KRİTİK
                                     onChange={(e) => toggleOne(e, c.id)}
                                 />
                             </td>
