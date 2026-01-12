@@ -1,14 +1,15 @@
 -r requirements.txt   # include all production dependencies
 
 # Dev & debugging
-django-debug-toolbar>=4.3.0
-django-extensions>=3.2.3
+django-debug-toolbar>=6.0.0
+django-extensions>=4.1
 
 # Testing
-pytest>=8.0.0
-pytest-django>=4.7.0
+pytest==8.4.2
+pytest-django==4.11.1
 factory-boy>=3.3.0
-faker>=23.0.0
+Faker==37.8.0
+
 
 # Code quality / formatting
 black>=24.1.1
