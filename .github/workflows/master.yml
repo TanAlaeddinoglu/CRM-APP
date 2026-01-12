@@ -35,14 +35,5 @@ jobs:
             cd /opt/apps/djangoCRM &&
             git pull origin main &&
             docker compose -f docker-compose.prod.yml down &&
-            docker compose -f docker-compose.prod.yml build &&
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
-          "
-
-      - name: Deploy Nginx Config
-        run: |
-          ssh target "
-            sudo cp /opt/apps/djangoCRM/nginx/default.conf /etc/nginx/sites-available/melcrm.conf &&
-            sudo nginx -t &&
-            sudo systemctl reload nginx
+            docker compose -f docker-compose.prod.yml up -d --build
           "
