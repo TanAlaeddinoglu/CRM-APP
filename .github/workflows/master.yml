@@ -1,4 +1,5 @@
 name: Continuous Integration
+
 on:
   push:
     branches:
@@ -8,6 +9,7 @@ jobs:
   deploy:
     name: Deploy
     runs-on: ubuntu-latest
+
     steps:
       - name: Configure SSH
         env:
@@ -26,6 +28,21 @@ jobs:
             LogLevel ERROR
             StrictHostKeyChecking no
           END
-      - name: Run Deploy
+
+      - name: Deploy Application
         run: |
-          ssh target "cd /opt/apps/djangoCRM && docker compose -f docker-compose.prod.yml down && git pull && docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d --force-recreate"
+          ssh target "
+            cd /opt/apps/djangoCRM &&
+            git pull origin main &&
+            docker compose -f docker-compose.prod.yml down &&
+            docker compose -f docker-compose.prod.yml build &&
+            docker compose -f docker-compose.prod.yml up -d --force-recreate
+          "
+
+      - name: Deploy Nginx Config
+        run: |
+          ssh target "
+            sudo cp /opt/apps/djangoCRM/nginx/default.conf /etc/nginx/sites-available/melcrm.conf &&
+            sudo nginx -t &&
+            sudo systemctl reload nginx
+          "
