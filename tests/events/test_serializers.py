@@ -1,33 +1,48 @@
 import pytest
-from datetime import timedelta
+from datetime import datetime, timedelta
+from decimal import Decimal
 
 from django.utils import timezone
+from rest_framework import serializers
+from rest_framework.test import APIRequestFactory
 
+from common.utils import APPOINTMENT_TYPES
 from customer.models import Customer
-from events.serializers import AppointmentSerializer, AppointmentPaymentSerializer
-from events.models import Appointment
+from events.models import Appointment, AppointmentPayment
+from events.serializers import AppointmentPaymentSerializer, AppointmentSerializer
 from products.models import Product
-from common.utils import APPOINTMENT_TYPES, PAYMENT_STATUS
+from django.contrib.auth import get_user_model
+
+pytestmark = pytest.mark.django_db
+
+User = get_user_model()
 
 
-@pytest.mark.django_db
-def test_appointment_serializer_rejects_past_datetime(admin_user):
-    customer = Customer.objects.create(
-        customer_name="Past",
-        customer_surname="Check",
-        customer_email="past@example.com",
-        customer_phone="55555555555",
-        created_by=admin_user,
+def _make_customer(user, phone):
+    return Customer.objects.create(
+        customer_name="Cust",
+        customer_surname="User",
+        customer_phone=phone,
+        created_by=user,
     )
-    product = Product.objects.create(name="Consultation", created_by=admin_user)
+
+
+def _make_product(user, name="Service"):
+    return Product.objects.create(name=name, created_by=user)
+
+
+def test_appointment_serializer_rejects_past_datetime():
+    user = User.objects.create_user(username="past", password="pass")
+    customer = _make_customer(user, "1300000000")
+    product = _make_product(user, "Consult")
 
     past_time = timezone.now() - timedelta(hours=1)
     data = {
         "name": "Too Late",
         "scheduled_for": past_time,
         "appointment_type": APPOINTMENT_TYPES[0][0],
-        "customer": customer.pk,
-        "product": product.pk,
+        "customer_id": customer.pk,
+        "product_id": product.pk,
     }
 
     serializer = AppointmentSerializer(data=data)
@@ -36,16 +51,30 @@ def test_appointment_serializer_rejects_past_datetime(admin_user):
     assert "scheduled_for" in serializer.errors
 
 
-@pytest.mark.django_db
-def test_appointment_serializer_prevents_double_booking(admin_user):
-    customer = Customer.objects.create(
-        customer_name="Double",
-        customer_surname="Booked",
-        customer_email="double@example.com",
-        customer_phone="55555555556",
-        created_by=admin_user,
+def test_appointment_serializer_makes_naive_datetime_aware():
+    user = User.objects.create_user(username="aware", password="pass")
+    customer = _make_customer(user, "1300000001")
+    product = _make_product(user, "Aware")
+
+    naive_future = datetime.now() + timedelta(days=1)
+    serializer = AppointmentSerializer(
+        data={
+            "name": "Future",
+            "scheduled_for": naive_future,
+            "appointment_type": APPOINTMENT_TYPES[0][0],
+            "customer_id": customer.pk,
+            "product_id": product.pk,
+        }
     )
-    product = Product.objects.create(name="Surgery", created_by=admin_user)
+
+    assert serializer.is_valid(), serializer.errors
+    assert timezone.is_aware(serializer.validated_data["scheduled_for"])
+
+
+def test_appointment_serializer_prevents_double_booking():
+    user = User.objects.create_user(username="double", password="pass")
+    customer = _make_customer(user, "1300000002")
+    product = _make_product(user, "Surgery")
     scheduled_for = timezone.now() + timedelta(days=1)
 
     Appointment.objects.create(
@@ -54,15 +83,15 @@ def test_appointment_serializer_prevents_double_booking(admin_user):
         appointment_type=APPOINTMENT_TYPES[0][0],
         customer=customer,
         product=product,
-        created_by=admin_user,
+        created_by=user,
     )
 
     data = {
         "name": "Duplicate",
         "scheduled_for": scheduled_for,
         "appointment_type": APPOINTMENT_TYPES[0][0],
-        "customer": customer.pk,
-        "product": product.pk,
+        "customer_id": customer.pk,
+        "product_id": product.pk,
     }
 
     serializer = AppointmentSerializer(data=data)
@@ -71,34 +100,173 @@ def test_appointment_serializer_prevents_double_booking(admin_user):
     assert "scheduled_for" in serializer.errors
 
 
-@pytest.mark.django_db
-def test_payment_serializer_flags_overpayment(admin_user):
-    customer = Customer.objects.create(
-        customer_name="Pay",
-        customer_surname="Tester",
-        customer_email="pay@example.com",
-        customer_phone="55555555557",
-        created_by=admin_user,
+def test_appointment_serializer_sets_created_by():
+    user = User.objects.create_user(username="creator", password="pass")
+    customer = _make_customer(user, "1300000003")
+    product = _make_product(user, "Create")
+    factory = APIRequestFactory()
+    request = factory.post("/appointments/")
+    request.user = user
+
+    serializer = AppointmentSerializer(
+        data={
+            "name": "New",
+            "scheduled_for": timezone.now() + timedelta(days=1),
+            "appointment_type": APPOINTMENT_TYPES[0][0],
+            "customer_id": customer.pk,
+            "product_id": product.pk,
+        },
+        context={"request": request},
     )
-    product = Product.objects.create(name="Therapy", created_by=admin_user)
+    assert serializer.is_valid(), serializer.errors
+    appointment = serializer.save()
+    assert appointment.created_by == user
+
+
+def test_appointment_serializer_sets_updated_by():
+    user = User.objects.create_user(username="upd", password="pass")
+    customer = _make_customer(user, "1300000004")
+    product = _make_product(user, "Update")
     appointment = Appointment.objects.create(
-        name="Pay Check",
+        name="Old",
+        scheduled_for=timezone.now() + timedelta(days=1),
+        appointment_type=APPOINTMENT_TYPES[0][0],
+        customer=customer,
+        product=product,
+        created_by=user,
+    )
+    factory = APIRequestFactory()
+    request = factory.patch("/appointments/")
+    request.user = user
+
+    serializer = AppointmentSerializer(
+        appointment,
+        data={"name": "Updated"},
+        partial=True,
+        context={"request": request},
+    )
+    assert serializer.is_valid(), serializer.errors
+    updated = serializer.save()
+    assert updated.updated_by == user
+
+
+def test_payment_serializer_requires_total_on_first_payment():
+    user = User.objects.create_user(username="first", password="pass")
+    customer = _make_customer(user, "1300000005")
+    product = _make_product(user, "Therapy")
+    appointment = Appointment.objects.create(
+        name="Pay",
         scheduled_for=timezone.now() + timedelta(days=2),
         appointment_type=APPOINTMENT_TYPES[0][0],
         customer=customer,
         product=product,
-        created_by=admin_user,
+        created_by=user,
     )
 
     data = {
         "appointment": appointment.pk,
-        "total_amount": "100.00",
-        "paid_amount": "150.00",
+        "paid_amount": "10.00",
         "payment_date": timezone.now(),
-        "payment_status": PAYMENT_STATUS[0][0],
     }
-
     serializer = AppointmentPaymentSerializer(data=data)
-
     assert not serializer.is_valid()
+    assert "total_amount" in serializer.errors
+
+
+def test_payment_serializer_uses_previous_total_and_sets_remaining():
+    user = User.objects.create_user(username="pay", password="pass")
+    customer = _make_customer(user, "1300000006")
+    product = _make_product(user, "Plan")
+    appointment = Appointment.objects.create(
+        name="Plan",
+        scheduled_for=timezone.now() + timedelta(days=2),
+        appointment_type=APPOINTMENT_TYPES[0][0],
+        customer=customer,
+        product=product,
+        created_by=user,
+    )
+    AppointmentPayment.objects.create(
+        appointment=appointment,
+        total_amount=Decimal("100.00"),
+        paid_amount=Decimal("40.00"),
+        remaining_amount=Decimal("60.00"),
+        payment_date=timezone.now(),
+    )
+    factory = APIRequestFactory()
+    request = factory.post("/payments/")
+    request.user = user
+
+    serializer = AppointmentPaymentSerializer(
+        data={
+            "appointment": appointment.pk,
+            "total_amount": "100.00",
+            "paid_amount": "60.00",
+            "payment_date": timezone.now(),
+        },
+        context={"request": request},
+    )
+    assert serializer.is_valid(), serializer.errors
+    payment = serializer.save()
+
+    assert payment.total_amount == Decimal("100.00")
+    assert payment.remaining_amount == Decimal("0.00")
+    assert payment.payment_status == "tamamlandi"
+
+
+def test_payment_serializer_rejects_overpayment_across_payments():
+    user = User.objects.create_user(username="over", password="pass")
+    customer = _make_customer(user, "1300000007")
+    product = _make_product(user, "Over")
+    appointment = Appointment.objects.create(
+        name="Over",
+        scheduled_for=timezone.now() + timedelta(days=2),
+        appointment_type=APPOINTMENT_TYPES[0][0],
+        customer=customer,
+        product=product,
+        created_by=user,
+    )
+    AppointmentPayment.objects.create(
+        appointment=appointment,
+        total_amount=Decimal("100.00"),
+        paid_amount=Decimal("80.00"),
+        remaining_amount=Decimal("20.00"),
+        payment_date=timezone.now(),
+    )
+
+    serializer = AppointmentPaymentSerializer(
+        data={
+            "appointment": appointment.pk,
+            "total_amount": "100.00",
+            "paid_amount": "30.00",
+            "payment_date": timezone.now(),
+        }
+    )
+    assert serializer.is_valid(), serializer.errors
+    with pytest.raises(serializers.ValidationError):
+        serializer.save()
+
+
+def test_payment_serializer_validates_negative_values():
+    user = User.objects.create_user(username="neg", password="pass")
+    customer = _make_customer(user, "1300000008")
+    product = _make_product(user, "Neg")
+    appointment = Appointment.objects.create(
+        name="Neg",
+        scheduled_for=timezone.now() + timedelta(days=2),
+        appointment_type=APPOINTMENT_TYPES[0][0],
+        customer=customer,
+        product=product,
+        created_by=user,
+    )
+
+    serializer = AppointmentPaymentSerializer(
+        data={
+            "appointment": appointment.pk,
+            "total_amount": "-1.00",
+            "paid_amount": "-2.00",
+            "payment_date": timezone.now(),
+        }
+    )
+    assert not serializer.is_valid()
+    assert "total_amount" in serializer.errors
     assert "paid_amount" in serializer.errors
