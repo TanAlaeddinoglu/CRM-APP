@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.exceptions import (
     TokenError,
@@ -34,6 +34,8 @@ def get_tokens_for_user(user):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class UserLoginView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request, format=None):
         enforce_csrf(request)
         serializer = UserLoginSerializer(data=request.data)
