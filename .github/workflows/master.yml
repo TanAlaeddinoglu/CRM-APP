@@ -28,6 +28,4 @@ jobs:
           END
       - name: Run Deploy
         run: |
-          ssh target "cd /opt/apps/djangoCRM && docker compose -f docker compose.prod.yml down && git pull &&
-          docker compose -f docker compose.prod.yml build && docker compose -f docker compose.prod.yml up -d
-          --force-recreate"
+          ssh target "cd /opt/apps/djangoCRM && docker compose -f docker-compose.prod.yml down && git pull && docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d --force-recreate"
