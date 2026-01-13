@@ -39,7 +39,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Production stage
 FROM python:3.11-slim
 
-RUN useradd -m -r appuser && \
+RUN apt-get update && apt-get install -y --no-install-recommends gosu && \
+   rm -rf /var/lib/apt/lists/* && \
+   useradd -m -r appuser && \
    mkdir /app && \
    chown -R appuser /app
 
@@ -65,6 +67,3 @@ RUN chmod +x /app/docker/entrypoint.sh
 
 # Start the application using the entrypoint script
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
-
-# Switch to non-root user
-USER appuser
