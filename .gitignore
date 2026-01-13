@@ -64,7 +64,7 @@ static/
 
 # Environment variables / secrets
 .env
-.env.*
+# .env.*
 *.env
 **/migrations/**
 
