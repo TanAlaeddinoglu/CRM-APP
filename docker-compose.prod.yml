@@ -24,6 +24,17 @@ services:
     depends_on:
       - db
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: crm_frontend
+    restart: unless-stopped
+    volumes:
+      - frontend_dist:/usr/share/nginx/html
+
   nginx:
     image: nginx:1.27-alpine
     container_name: crm_nginx
@@ -32,9 +43,13 @@ services:
       - "8081:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - frontend_dist:/usr/share/nginx/html:ro
+      - static_volume:/static:ro
     depends_on:
       - web-app
+      - frontend
 
 volumes:
   crm_postgres_data:
   static_volume:
+  frontend_dist:
