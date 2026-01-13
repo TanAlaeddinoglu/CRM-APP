@@ -57,9 +57,6 @@ COPY --chown=appuser:appuser . .
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# Switch to non-root user
-USER appuser
-
 # Expose the application port
 EXPOSE 8000
 
@@ -68,3 +65,6 @@ RUN chmod +x /app/docker/entrypoint.sh
 
 # Start the application using the entrypoint script
 ENTRYPOINT ["/app/docker/entrypoint.sh"]
+
+# Switch to non-root user
+USER appuser
