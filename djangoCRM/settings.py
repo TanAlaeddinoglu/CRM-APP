@@ -28,7 +28,7 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
+DEBUG = os.getenv("DJANGO_DEBUG", "False")
 # DEBUG = True
 
 # ALLOWED_HOSTS = ["*"]
@@ -112,17 +112,6 @@ SPECTACULAR_SETTINGS = {
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.postgresql",
-#         "NAME": os.getenv("DB_NAME", "crm_database"),
-#         "USER": os.getenv("DB_USER", "crm_user"),
-#         "PASSWORD": os.getenv("DB_PASSWORD", "123456"),
-#         "HOST": os.getenv("DB_HOST", "127.0.0.1"),
-#         "PORT": os.getenv("DB_PORT", "5432"),
-#     }
-# }
 
 DATABASES = {
     "default": {
@@ -214,7 +203,7 @@ CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 # HTTP SETTINGS
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-SECURE_SSL_REDIRECT = os.getenv("DJANGO_SECURE_SSL_REDIRECT", "True") == "False"
+SECURE_SSL_REDIRECT = os.getenv("DJANGO_SECURE_SSL_REDIRECT", "False")
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 
