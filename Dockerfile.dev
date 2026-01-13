@@ -58,8 +58,5 @@ EXPOSE 8000
 # Entrypoint permissions
 RUN chmod +x /app/docker/entrypoint-dev.sh
 
-# Switch to non-root
-USER appuser
-
 # Start dev server via entrypoint
 ENTRYPOINT ["/app/docker/entrypoint-dev.sh"]
