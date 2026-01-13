@@ -1,6 +1,9 @@
 #!/usr/bin/env sh
 set -e
 
+mkdir -p /app/staticfiles
+chown -R appuser:appuser /app/staticfiles
+
 python manage.py collectstatic --noinput
 python manage.py migrate --noinput
 exec python -m gunicorn --bind 0.0.0.0:8000 --workers 3 djangoCRM.wsgi:application
