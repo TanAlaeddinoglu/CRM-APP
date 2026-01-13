@@ -15,7 +15,7 @@ services:
 
   web-app:
     build: .
-    container_name: crm_backend
+    container_name: web-app
     restart: unless-stopped
     volumes:
       - ./static:/app/staticfiles
