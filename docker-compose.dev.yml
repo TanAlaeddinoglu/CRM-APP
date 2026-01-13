@@ -79,7 +79,6 @@ services:
 networks:
   crm_dev_net:
     driver: bridge
-    internal: true
 
 volumes:
   crm_dev_postgres_data:
