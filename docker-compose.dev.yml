@@ -41,7 +41,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.prod
       args:
         VITE_API_BASE_URL: /api
     container_name: crm_dev_frontend
