@@ -49,8 +49,7 @@ COPY --chown=appuser:appuser . .
 # Python env vars
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=djangoCRM.settings
-ENV DEBUG=True
+
 
 # Expose Django dev port
 EXPOSE 8000
