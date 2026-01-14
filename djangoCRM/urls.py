@@ -20,15 +20,15 @@ from django.urls import path, include
 
 from accounts.views import UserLoginView
 
-api_patterns = [
+urlpatterns = [
+    path("", UserLoginView.as_view(), name="api-home"),
     path("accounts/", include("accounts.urls")),
     path("customers/", include("customer.urls")),
     path("products/", include("products.urls")),
     path("events/", include("events.urls")),
     path("admin/", admin.site.urls),
 ]
-
-urlpatterns = [
-    path("api/", include(api_patterns)),
-    path("", UserLoginView.as_view(), name="api-home"),
-]
+#
+# urlpatterns = [
+#     path("api/", include(api_patterns)),
+# ]
