@@ -18,15 +18,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-# from drf_spectacular.views import SpectacularSwaggerView, SpectacularAPIView
-
-from accounts.views import UserLoginView
-
 api_patterns = [
     path("accounts/", include("accounts.urls")),
     path("customers/", include("customer.urls")),
     path("products/", include("products.urls")),
     path("events/", include("events.urls")),
+    path("admin/", admin.site.urls),
     # path("schema/", SpectacularAPIView.as_view(), name="schema"),
     # path(
     #     "docs/",
@@ -35,8 +32,8 @@ api_patterns = [
     # ),
 ]
 
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("api/", include(api_patterns)),
-    path("", UserLoginView.as_view(), name="api-home"),
-]
+# urlpatterns = [
+#
+#     path("api/", include(api_patterns)),
+#     path("", UserLoginView.as_view(), name="api-home"),
+# ]
