@@ -53,7 +53,6 @@ class UserLoginView(APIView):
         if not identifier:
             raise AuthenticationFailed("Email or username is required.")
 
-        # 🔐 throttle kontrolü (BURASI DOĞRU)
         check_login_throttle(identifier)
 
         serializer = UserLoginSerializer(data=request.data)
@@ -71,7 +70,6 @@ class UserLoginView(APIView):
             increase_login_attempt(identifier)
             raise AuthenticationFailed("Incorrect credentials.")
 
-        # ✅ başarılı login → reset
         reset_login_attempts(identifier)
 
         user.last_login = timezone.now()
