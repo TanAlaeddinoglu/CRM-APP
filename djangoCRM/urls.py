@@ -18,7 +18,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
+from accounts.views import UserLoginView
+
 urlpatterns = [
+    path("", UserLoginView.as_view(), name="api-home"),
     path("accounts/", include("accounts.urls")),
     path("customers/", include("customer.urls")),
     path("products/", include("products.urls")),
@@ -35,5 +38,4 @@ urlpatterns = [
 # urlpatterns = [
 #
 #     path("api/", include(api_patterns)),
-#     path("", UserLoginView.as_view(), name="api-home"),
 # ]
