@@ -4,7 +4,7 @@ import Cookies from "js-cookie";
 
 
 export function login(data) {
-  return api.post("/", data, {
+  return api.post("/accounts/login/", data, {
     withCredentials: true,
     headers: {
       "X-CSRFToken": Cookies.get("csrftoken"),
