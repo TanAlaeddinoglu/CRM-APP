@@ -13,7 +13,9 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.local.backend
     container_name: crm_backend
     command: python manage.py runserver 0.0.0.0:8000
     restart: unless-stopped
@@ -28,8 +30,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: docker/Dockerfile.local.frontend
     container_name: crm_frontend
     command: npm run dev -- --host
     restart: unless-stopped
