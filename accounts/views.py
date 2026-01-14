@@ -213,3 +213,11 @@ class ProfileView(APIView):
 
 def csrf_token_view(request):
     return JsonResponse({"csrfToken": get_token(request)})
+
+
+class CsrfView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        csrf_token = get_token(request)
+        return Response({"csrfToken": csrf_token})

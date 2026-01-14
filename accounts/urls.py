@@ -8,7 +8,7 @@ from .views import (
     UserViewSetListCreate,
     UserViewSetRetrieveUpdateDestroy,
     LogoutView,
-    csrf_token_view,
+    CsrfView,
 )
 
 
@@ -24,5 +24,5 @@ urlpatterns = [
         name="user-detail",
     ),
     path("users/", UserViewSetListCreate.as_view(), name="user-list-create"),
-    path("csrf/", csrf_token_view, name="csrf"),
+    path("csrf/", CsrfView.as_view(), name="csrf"),
 ]
