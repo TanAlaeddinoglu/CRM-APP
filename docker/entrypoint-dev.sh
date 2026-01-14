@@ -4,6 +4,7 @@ set -e
 mkdir -p /app/staticfiles
 chown -R appuser:appuser /app/staticfiles
 
+python manage.py collectstatic --noinput
 python manage.py migrate --noinput
 
 exec gosu appuser python -m gunicorn \

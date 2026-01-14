@@ -20,8 +20,7 @@ from django.urls import path, include
 
 from accounts.views import UserLoginView
 
-urlpatterns = [
-    path("", UserLoginView.as_view(), name="api-home"),
+api_patterns = [
     path("accounts/", include("accounts.urls")),
     path("customers/", include("customer.urls")),
     path("products/", include("products.urls")),
@@ -29,7 +28,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
 ]
 
-# urlpatterns = [
-#
-#     path("api/", include(api_patterns)),
-# ]
+urlpatterns = [
+    path("api/", include(api_patterns)),
+    path("", UserLoginView.as_view(), name="api-home"),
+]
