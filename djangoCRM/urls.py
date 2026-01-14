@@ -22,17 +22,21 @@ from django.urls import path, include
 
 from accounts.views import UserLoginView
 
-urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("", UserLoginView.as_view(), name="home"),
+api_patterns = [
+    path("", UserLoginView.as_view(), name="api-home"),
     path("accounts/", include("accounts.urls")),
     path("customers/", include("customer.urls")),
     path("products/", include("products.urls")),
     path("events/", include("events.urls")),
-    # path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    # path("schema/", SpectacularAPIView.as_view(), name="schema"),
     # path(
-    #     "api/docs/",
+    #     "docs/",
     #     SpectacularSwaggerView.as_view(url_name="schema"),
     #     name="swagger-ui",
     # ),
+]
+
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("api/", include(api_patterns)),
 ]
