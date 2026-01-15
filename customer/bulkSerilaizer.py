@@ -35,7 +35,9 @@ class CustomerExcelRowSerializer(serializers.Serializer):
     customer_surname = serializers.CharField(max_length=100)
 
     # email opsiyonel (zaten sende böyle)
-    customer_email = serializers.EmailField(required=False, allow_null=True, allow_blank=True)
+    customer_email = serializers.EmailField(
+        required=False, allow_null=True, allow_blank=True
+    )
 
     customer_phone = serializers.CharField()
 
@@ -74,3 +76,32 @@ class CustomerExcelRowSerializer(serializers.Serializer):
         if v in ("", None):
             return None
         return str(v).strip()
+
+    # -------------------------
+    # ✅ BULK UPSERT (Admin Only)
+    # -------------------------
+
+
+class CustomerBulkItemSerializer(serializers.Serializer):
+    row = serializers.IntegerField(required=False)
+    existing_customer_id = serializers.IntegerField(required=False, allow_null=True)
+
+    customer_name = serializers.CharField(required=True)
+    customer_surname = serializers.CharField(required=True)
+    customer_phone = serializers.CharField(required=True)
+
+    customer_email = serializers.EmailField(
+        required=False, allow_null=True, allow_blank=True
+    )
+    assigned_to = serializers.IntegerField(required=False, allow_null=True)
+    tag = serializers.IntegerField(required=False, allow_null=True)
+    note = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+    # ✅ optional extras
+    city = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    products = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+    status = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+
+
+class CustomerBulkUpsertSerializer(serializers.Serializer):
+    items = CustomerBulkItemSerializer(many=True)
