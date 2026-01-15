@@ -175,12 +175,15 @@ export default function CustomerCreateModal({
               handleChange("customer_email", e.target.value)
             }
           />
-          <input
-            placeholder="Telefon"
-            onChange={(e) =>
-              handleChange("customer_phone", e.target.value)
-            }
-          />
+          <div className="field-with-hint">
+            <input
+              placeholder="Telefon"
+              onChange={(e) =>
+                handleChange("customer_phone", e.target.value)
+              }
+            />
+            <span className="input-hint">Örnek:+90532xxxxxxx</span>
+          </div>
           <input
             placeholder="Şehir"
             onChange={(e) => handleChange("city", e.target.value)}

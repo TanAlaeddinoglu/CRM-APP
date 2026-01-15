@@ -50,6 +50,18 @@
   gap: 10px 12px;
 }
 
+.field-with-hint {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.input-hint {
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.2;
+}
+
 /* FULL WIDTH */
 .modal-form-grid .full {
   grid-column: span 2;

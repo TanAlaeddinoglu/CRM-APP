@@ -46,18 +46,18 @@ export default function AppRouter() {
       <Route path="/login" element={<LoginPage />} />
 
       {/* ================= DASHBOARD ================= */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Suspense fallback={<PageLoader />}>
-                <Dashboard />
-              </Suspense>
-            </MainLayout>
-          </ProtectedRoute>
-        }
-      />
+      {/*<Route*/}
+      {/*  path="/"*/}
+      {/*  element={*/}
+      {/*    <ProtectedRoute>*/}
+      {/*      <MainLayout>*/}
+      {/*        <Suspense fallback={<PageLoader />}>*/}
+      {/*          <Dashboard />*/}
+      {/*        </Suspense>*/}
+      {/*      </MainLayout>*/}
+      {/*    </ProtectedRoute>*/}
+      {/*  }*/}
+      {/*/>*/}
 
       {/* ================= PROFILE ================= */}
       <Route
