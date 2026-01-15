@@ -29,7 +29,9 @@ import re
 import unicodedata
 import math
 
-from .bulkSerilaizer import CustomerExcelRowSerializer  # sadece serializer burada tanımlı olmalı!
+from .bulkSerilaizer import (
+    CustomerExcelRowSerializer,
+)  # sadece serializer burada tanımlı olmalı!
 
 User = get_user_model()
 
@@ -264,14 +266,18 @@ def _set_customer_products(customer: Customer, products_str: str, by_user):
     new_ids = {p.id for p in products}
 
     # mevcut ilişkiler
-    existing = CustomerProduct.objects.filter(customer_id=customer.id).values_list("product_id", flat=True)
+    existing = CustomerProduct.objects.filter(customer_id=customer.id).values_list(
+        "product_id", flat=True
+    )
     existing_ids = set(existing)
 
     to_add = list(new_ids - existing_ids)
     to_del = list(existing_ids - new_ids)
 
     if to_del:
-        CustomerProduct.objects.filter(customer_id=customer.id, product_id__in=to_del).delete()
+        CustomerProduct.objects.filter(
+            customer_id=customer.id, product_id__in=to_del
+        ).delete()
 
     if to_add:
         rows = []
@@ -338,7 +344,13 @@ def _read_excel_to_rows(excel_file):
     # ✅ Fallback: şehir kolonu farklı isimlerle gelebiliyor
     if "city" not in df.columns:
         for c in df.columns:
-            if c == "sehir" or c.startswith("sehir_") or "sehir" in c or c == "city" or "city" in c:
+            if (
+                c == "sehir"
+                or c.startswith("sehir_")
+                or "sehir" in c
+                or c == "city"
+                or "city" in c
+            ):
                 df = df.rename(columns={c: "city"})
                 break
 
@@ -406,7 +418,9 @@ def _analyze_rows(rows):
     for r in validated:
         phone = r.get("customer_phone")
         if _nullish(phone):
-            errors.append({"row": r["row"], "errors": {"customer_phone": ["Phone is required."]}})
+            errors.append(
+                {"row": r["row"], "errors": {"customer_phone": ["Phone is required."]}}
+            )
             continue
 
         key = str(phone).lstrip("+")  # +905.. ve 905.. aynı kabul
@@ -431,7 +445,9 @@ def _analyze_rows(rows):
         all_candidates |= _phone_candidates(p)
 
     existing_map = dict(
-        Customer.objects.filter(customer_phone__in=list(all_candidates)).values_list("customer_phone", "id")
+        Customer.objects.filter(customer_phone__in=list(all_candidates)).values_list(
+            "customer_phone", "id"
+        )
     )
 
     preview_rows = []
@@ -462,8 +478,12 @@ def _analyze_rows(rows):
         "total_rows": len(rows),
         "valid_rows": len(validated),
         "preview_rows": len(preview_rows),
-        "duplicates_in_file": sum(1 for d in duplicates if d["reason"] == "duplicate_in_file"),
-        "duplicates_in_db": sum(1 for d in duplicates if d["reason"] == "duplicate_in_db"),
+        "duplicates_in_file": sum(
+            1 for d in duplicates if d["reason"] == "duplicate_in_file"
+        ),
+        "duplicates_in_db": sum(
+            1 for d in duplicates if d["reason"] == "duplicate_in_db"
+        ),
         "errors": len(errors),
     }
 
@@ -481,7 +501,9 @@ class CustomerExcelDryRunView(APIView):
     def post(self, request, *args, **kwargs):
         excel_file = request.FILES.get("file")
         if not excel_file:
-            return Response({"detail": "file alanı boş."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "file alanı boş."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         rows, err = _read_excel_to_rows(excel_file)
         if err:
@@ -508,7 +530,9 @@ class CustomerExcelUploadView(APIView):
     def post(self, request, *args, **kwargs):
         excel_file = request.FILES.get("file")
         if not excel_file:
-            return Response({"detail": "file alanı boş."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "file alanı boş."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         rows, err = _read_excel_to_rows(excel_file)
         if err:
@@ -568,14 +592,18 @@ class CustomerExcelUploadView(APIView):
                         # products set
                         try:
                             if products_str and not _nullish(products_str):
-                                _set_customer_products(obj, products_str, by_user=request.user)
+                                _set_customer_products(
+                                    obj, products_str, by_user=request.user
+                                )
                         except Exception as ex:
                             create_row_errors.append(
                                 {
                                     "row": row_no,
                                     "detail": "Products attach failed",
                                     "error": str(ex),
-                                    "customer_phone": getattr(obj, "customer_phone", None),
+                                    "customer_phone": getattr(
+                                        obj, "customer_phone", None
+                                    ),
                                 }
                             )
 
@@ -589,14 +617,18 @@ class CustomerExcelUploadView(APIView):
 
                         try:
                             if products_str and not _nullish(products_str):
-                                _set_customer_products(obj, products_str, by_user=request.user)
+                                _set_customer_products(
+                                    obj, products_str, by_user=request.user
+                                )
                         except Exception as ex:
                             create_row_errors.append(
                                 {
                                     "row": row_no,
                                     "detail": "Products attach failed",
                                     "error": str(ex),
-                                    "customer_phone": getattr(obj, "customer_phone", None),
+                                    "customer_phone": getattr(
+                                        obj, "customer_phone", None
+                                    ),
                                 }
                             )
 
@@ -643,7 +675,9 @@ class CustomerBulkItemSerializer(serializers.Serializer):
     customer_surname = serializers.CharField(required=True)
     customer_phone = serializers.CharField(required=True)
 
-    customer_email = serializers.EmailField(required=False, allow_null=True, allow_blank=True)
+    customer_email = serializers.EmailField(
+        required=False, allow_null=True, allow_blank=True
+    )
     assigned_to = serializers.IntegerField(required=False, allow_null=True)
     tag = serializers.IntegerField(required=False, allow_null=True)
     note = serializers.CharField(required=False, allow_null=True, allow_blank=True)
@@ -673,8 +707,14 @@ class CustomerBulkUpsertView(APIView):
         for it in items:
             it["customer_phone"] = _normalize_phone(it.get("customer_phone"))
 
-        ids = [it.get("existing_customer_id") for it in items if it.get("existing_customer_id")]
-        existing_by_id = {c.id: c for c in Customer.objects.select_for_update().filter(id__in=ids)}
+        ids = [
+            it.get("existing_customer_id")
+            for it in items
+            if it.get("existing_customer_id")
+        ]
+        existing_by_id = {
+            c.id: c for c in Customer.objects.select_for_update().filter(id__in=ids)
+        }
 
         tag_ids = {it.get("tag") for it in items if it.get("tag")}
         tags_map = Tag.objects.in_bulk(tag_ids) if tag_ids else {}
@@ -693,7 +733,9 @@ class CustomerBulkUpsertView(APIView):
             existing_id = it.get("existing_customer_id")
 
             tag_obj = tags_map.get(it.get("tag")) if it.get("tag") else None
-            assignee = users_map.get(it.get("assigned_to")) if it.get("assigned_to") else None
+            assignee = (
+                users_map.get(it.get("assigned_to")) if it.get("assigned_to") else None
+            )
             note_text = it.get("note")
             products_str = it.get("products")
 
@@ -701,7 +743,13 @@ class CustomerBulkUpsertView(APIView):
             if existing_id:
                 customer = existing_by_id.get(existing_id)
                 if not customer:
-                    errors.append({"row": row, "existing_customer_id": existing_id, "detail": "Customer not found"})
+                    errors.append(
+                        {
+                            "row": row,
+                            "existing_customer_id": existing_id,
+                            "detail": "Customer not found",
+                        }
+                    )
                     continue
 
                 if "assigned_to" in CUSTOMER_FIELDS:
@@ -723,7 +771,10 @@ class CustomerBulkUpsertView(APIView):
                     if stv:
                         customer.status = stv
 
-                if "is_active" in CUSTOMER_FIELDS and getattr(customer, "is_active", True) is False:
+                if (
+                    "is_active" in CUSTOMER_FIELDS
+                    and getattr(customer, "is_active", True) is False
+                ):
                     customer.is_active = True
 
                 customer.updated_by = user
@@ -758,12 +809,14 @@ class CustomerBulkUpsertView(APIView):
                 if "city" in CUSTOMER_FIELDS and city:
                     c.city = city
                 if "status" in CUSTOMER_FIELDS:
-                    c.status = (it.get("status") or "active")
+                    c.status = it.get("status") or "active"
                 if "source" in CUSTOMER_FIELDS and _nullish(getattr(c, "source", None)):
                     c.source = "excel"
 
                 to_create.append(c)
-                create_jobs.append((c.customer_phone, tag_obj, assignee, note_text, products_str))
+                create_jobs.append(
+                    (c.customer_phone, tag_obj, assignee, note_text, products_str)
+                )
             except Exception as e:
                 errors.append({"row": row, "detail": str(e)})
 
@@ -778,7 +831,14 @@ class CustomerBulkUpsertView(APIView):
         if to_update:
             customers_only = [x[0] for x in to_update]
             fields = ["updated_by"]
-            for f in ["assigned_to", "customer_email", "email_normalized", "is_active", "city", "status"]:
+            for f in [
+                "assigned_to",
+                "customer_email",
+                "email_normalized",
+                "is_active",
+                "city",
+                "status",
+            ]:
                 if f in CUSTOMER_FIELDS:
                     fields.append(f)
             Customer.objects.bulk_update(customers_only, fields=fields, batch_size=500)
@@ -791,7 +851,9 @@ class CustomerBulkUpsertView(APIView):
 
         for customer, tag_obj, assignee, note_text, products_str in to_update:
             if tag_obj is not None and hasattr(customer, "set_current_tag"):
-                customer.set_current_tag(tag_obj, by=user, assign_to=assignee or customer.assigned_to or user)
+                customer.set_current_tag(
+                    tag_obj, by=user, assign_to=assignee or customer.assigned_to or user
+                )
                 tag_updated_count += 1
 
             if note_text and not _nullish(note_text):
@@ -806,7 +868,13 @@ class CustomerBulkUpsertView(APIView):
                     _set_customer_products(customer, products_str, by_user=user)
                     products_updated_count += 1
                 except Exception as ex:
-                    errors.append({"row": None, "existing_customer_id": customer.id, "detail": f"products failed: {ex}"})
+                    errors.append(
+                        {
+                            "row": None,
+                            "existing_customer_id": customer.id,
+                            "detail": f"products failed: {ex}",
+                        }
+                    )
 
         if create_jobs:
             phones = [p for (p, _, _, _, _) in create_jobs]
@@ -814,7 +882,10 @@ class CustomerBulkUpsertView(APIView):
             for p in phones:
                 all_cands |= _phone_candidates(p)
 
-            created_map = {c.customer_phone: c for c in Customer.objects.filter(customer_phone__in=list(all_cands))}
+            created_map = {
+                c.customer_phone: c
+                for c in Customer.objects.filter(customer_phone__in=list(all_cands))
+            }
 
             for phone, tag_obj, assignee, note_text, products_str in create_jobs:
                 customer = (
@@ -826,7 +897,11 @@ class CustomerBulkUpsertView(APIView):
                     continue
 
                 if tag_obj is not None and hasattr(customer, "set_current_tag"):
-                    customer.set_current_tag(tag_obj, by=user, assign_to=assignee or customer.assigned_to or user)
+                    customer.set_current_tag(
+                        tag_obj,
+                        by=user,
+                        assign_to=assignee or customer.assigned_to or user,
+                    )
                     tag_updated_count += 1
 
                 if note_text and not _nullish(note_text):
@@ -841,7 +916,13 @@ class CustomerBulkUpsertView(APIView):
                         _set_customer_products(customer, products_str, by_user=user)
                         products_updated_count += 1
                     except Exception as ex:
-                        errors.append({"row": None, "existing_customer_id": customer.id, "detail": f"products failed: {ex}"})
+                        errors.append(
+                            {
+                                "row": None,
+                                "existing_customer_id": customer.id,
+                                "detail": f"products failed: {ex}",
+                            }
+                        )
 
         return Response(
             {
@@ -866,10 +947,19 @@ class AdminCustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsAdminUser]
     pagination_class = CustomPagination
 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     filterset_class = CustomerFilter
 
-    search_fields = ["customer_name", "customer_surname", "customer_email", "customer_phone"]
+    search_fields = [
+        "customer_name",
+        "customer_surname",
+        "customer_email",
+        "customer_phone",
+    ]
     ordering_fields = ["created_at", "updated_at", "customer_name"]
     ordering = ["customer_name"]
 
@@ -925,7 +1015,9 @@ class AdminCustomerViewSet(viewsets.ModelViewSet):
                     raise NotFound("Tag not found.")
 
             if hasattr(customer, "set_current_tag"):
-                customer.set_current_tag(new_tag, by=user, assign_to=new_assignee or user)
+                customer.set_current_tag(
+                    new_tag, by=user, assign_to=new_assignee or user
+                )
             elif "tag" in CUSTOMER_FIELDS:
                 customer.tag = new_tag
                 customer.updated_by = user
@@ -950,7 +1042,11 @@ class AdminCustomerViewSet(viewsets.ModelViewSet):
         customer = self.get_object()
 
         if "is_active" not in CUSTOMER_FIELDS:
-            raise ValidationError({"detail": "Customer modelinde is_active alanı yok. Soft delete için gerekli."})
+            raise ValidationError(
+                {
+                    "detail": "Customer modelinde is_active alanı yok. Soft delete için gerekli."
+                }
+            )
 
         customer.is_active = False
         customer.updated_by = request.user
@@ -970,10 +1066,19 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = CustomPagination
 
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     filterset_class = CustomerFilter
 
-    search_fields = ["customer_name", "customer_surname", "customer_email", "customer_phone"]
+    search_fields = [
+        "customer_name",
+        "customer_surname",
+        "customer_email",
+        "customer_phone",
+    ]
     ordering_fields = [
         "customer_name",
         "customer_surname",
@@ -1005,7 +1110,9 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
         # User tarafında sadece tag + note
         allowed_fields = {"tag", "note"}
         if not incoming_fields.issubset(allowed_fields):
-            raise ValidationError({"non_field_errors": ["Only the tag and note fields can be updated."]})
+            raise ValidationError(
+                {"non_field_errors": ["Only the tag and note fields can be updated."]}
+            )
 
         if "tag" in request.data:
             tag_value = request.data.get("tag")
@@ -1018,7 +1125,11 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
                     raise NotFound("Tag not found.")
 
             if hasattr(customer, "set_current_tag"):
-                customer.set_current_tag(new_tag, by=user, assign_to=getattr(customer, "assigned_to", None) or user)
+                customer.set_current_tag(
+                    new_tag,
+                    by=user,
+                    assign_to=getattr(customer, "assigned_to", None) or user,
+                )
             elif "tag" in CUSTOMER_FIELDS:
                 customer.tag = new_tag
                 customer.updated_by = user
@@ -1077,12 +1188,16 @@ class TagViewSet(viewsets.ModelViewSet):
         if raw_str.isdigit():
             tag_obj = Tag.objects.filter(pk=int(raw_str)).first()
             if tag_obj:
-                return Response(self.get_serializer(tag_obj).data, status=status.HTTP_200_OK)
+                return Response(
+                    self.get_serializer(tag_obj).data, status=status.HTTP_200_OK
+                )
 
         name = raw_str
         existing = Tag.objects.filter(name__iexact=name).first()
         if existing:
-            return Response(self.get_serializer(existing).data, status=status.HTTP_200_OK)
+            return Response(
+                self.get_serializer(existing).data, status=status.HTTP_200_OK
+            )
 
         payload = request.data.copy()
         payload["name"] = name
@@ -1095,18 +1210,26 @@ class TagViewSet(viewsets.ModelViewSet):
         except IntegrityError:
             existing = Tag.objects.filter(name__iexact=name).first()
             if existing:
-                return Response(self.get_serializer(existing).data, status=status.HTTP_200_OK)
+                return Response(
+                    self.get_serializer(existing).data, status=status.HTTP_200_OK
+                )
             raise
 
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
 
 class CustomerTagHistoryViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerTagHistorySerializer
     authentication_classes = [CustomAuthentication]
     lookup_field = "pk"
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_backends = (
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    )
     filterset_class = TagHistoryFilter
 
     ordering_fields = ["changed_at", "customer_id"]
@@ -1118,7 +1241,9 @@ class CustomerTagHistoryViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated(), IsAdminUser()]
 
     def get_queryset(self):
-        base_qs = CustomerTagHistory.objects.select_related("customer", "from_tag", "to_tag")
+        base_qs = CustomerTagHistory.objects.select_related(
+            "customer", "from_tag", "to_tag"
+        )
         user = getattr(self.request, "user", None)
         if user and (user.is_staff or user.is_superuser):
             return base_qs.order_by("-changed_at")
@@ -1130,7 +1255,11 @@ class NotesViewSet(viewsets.ModelViewSet):
     serializer_class = NotesSerializer
     authentication_classes = [CustomAuthentication]
     lookup_field = "pk"
-    filter_backends = (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter)
+    filter_backends = (
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    )
     filterset_class = NoteHistoryFilter
 
     search_fields = ["id", "note"]
