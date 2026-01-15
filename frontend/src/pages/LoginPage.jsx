@@ -91,7 +91,7 @@ export default function LoginPage() {
             const response = await me();
             setUser(response.data);
 
-            navigate("/");
+            navigate("/customers");
         } catch (err) {
             const status = err?.response?.status || err?.status;
             const data = err?.response?.data || {};

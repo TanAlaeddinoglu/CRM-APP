@@ -15,7 +15,7 @@ export default function CustomerPageActions({
           🔍 Filtrele
         </button>
 
-        <button className="btn-secondary">🗂 Havuz</button>
+        {/*<button className="btn-secondary">🗂 Havuz</button>*/}
       </div>
 
       <div className="customer-actions-right">
