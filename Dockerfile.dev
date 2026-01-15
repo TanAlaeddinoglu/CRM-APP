@@ -1,0 +1,61 @@
+# =========================
+# Stage 1: Builder
+# =========================
+FROM python:3.11-slim AS builder
+
+# Create app directory
+RUN mkdir /app
+WORKDIR /app
+
+# Python env optimizations
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# System deps (minimal, dev-safe)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python deps first (cache-friendly)
+RUN pip install --upgrade pip
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+FROM python:3.11-slim
+
+# Install runtime tools (DEV needs more)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gosu \
+    curl \
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -m -r appuser && \
+    mkdir /app && \
+    chown -R appuser:appuser /app
+
+# Copy installed deps from builder
+COPY --from=builder /usr/local/lib/python3.11/site-packages/ /usr/local/lib/python3.11/site-packages/
+COPY --from=builder /usr/local/bin/ /usr/local/bin/
+
+# Set workdir
+WORKDIR /app
+
+# Copy project source
+COPY --chown=appuser:appuser . .
+
+# Python env vars
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+
+# Expose Django dev port
+EXPOSE 8000
+
+# Entrypoint permissions
+RUN chmod +x /app/docker/entrypoint-dev.sh
+
+# Start dev server via entrypoint
+ENTRYPOINT ["/app/docker/entrypoint-dev.sh"]

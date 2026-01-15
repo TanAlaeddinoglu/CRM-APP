@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.exceptions import AuthenticationFailed, ValidationError
 from rest_framework_simplejwt.exceptions import (
     TokenError,
@@ -21,6 +21,16 @@ from djangoCRM import settings
 from .authenticate import CustomAuthentication, enforce_csrf
 from .serializers import CustomUserSerializer, UserLoginSerializer
 from .models import CustomUser
+from .throttling import (
+    reset_login_attempts,
+    increase_login_attempt,
+    check_login_throttle,
+)
+
+from django.core.cache import cache
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def get_tokens_for_user(user):
@@ -34,18 +44,41 @@ def get_tokens_for_user(user):
 
 @method_decorator(csrf_exempt, name="dispatch")
 class UserLoginView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request, format=None):
         enforce_csrf(request)
+
+        identifier = request.data.get("email") or request.data.get("username")
+        if not identifier:
+            raise AuthenticationFailed("Email or username is required.")
+
+        check_login_throttle(identifier)
+
         serializer = UserLoginSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data
-        if not user:
+
+        try:
+            serializer.is_valid(raise_exception=True)
+            user = serializer.validated_data
+        except (ValidationError, AuthenticationFailed):
+            increase_login_attempt(identifier)
+            attempts = cache.get(f"login_attempts:{identifier}")
+            logger.warning(f"LOGIN ATTEMPTS [{identifier}]: {attempts}")
             raise AuthenticationFailed("Incorrect credentials.")
+
+        if not user:
+            increase_login_attempt(identifier)
+            raise AuthenticationFailed("Incorrect credentials.")
+
+        reset_login_attempts(identifier)
 
         user.last_login = timezone.now()
         user.save(update_fields=["last_login"])
+
         data = get_tokens_for_user(user)
+
         response = Response({"Success": "Login successfully", "data": data})
+
         response.set_cookie(
             key=settings.SIMPLE_JWT["AUTH_COOKIE"],
             value=data["access"],
@@ -54,6 +87,7 @@ class UserLoginView(APIView):
             httponly=settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
             samesite=settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
         )
+
         response.set_cookie(
             key=settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"],
             value=data["refresh"],
@@ -62,6 +96,7 @@ class UserLoginView(APIView):
             httponly=settings.SIMPLE_JWT["AUTH_COOKIE_HTTP_ONLY"],
             samesite=settings.SIMPLE_JWT["AUTH_COOKIE_SAMESITE"],
         )
+
         return response
 
 
@@ -176,3 +211,11 @@ class ProfileView(APIView):
 
 def csrf_token_view(request):
     return JsonResponse({"csrfToken": get_token(request)})
+
+
+class CsrfView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        csrf_token = get_token(request)
+        return Response({"csrfToken": csrf_token})

@@ -5,6 +5,8 @@ from .views import (
     TagViewSet,
     CustomerTagHistoryViewSet,
     NotesViewSet,
+)
+from .bulkViews import (
     CustomerExcelUploadView,
     CustomerExcelDryRunView,
     CustomerBulkUpsertView,  # ✅ eklendi

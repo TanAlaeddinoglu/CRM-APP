@@ -5,9 +5,12 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from accounts.authenticate import CustomAuthentication
+from common.utils import PAYMENT_STATUS
 from events.filters import AppointmentFilter
 from events.models import Appointment, AppointmentPayment
 from events.serializers import AppointmentSerializer, AppointmentPaymentSerializer
+from django.db.models import Sum
+from decimal import Decimal
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
@@ -49,3 +52,30 @@ class AppointmentPaymentsViewSet(viewsets.ModelViewSet):
         "appointment__customer__assigned_to__username",
     ]
     ordering = "-id"
+
+    def perform_destroy(self, instance):
+        appointment = instance.appointment
+        total_amount = instance.total_amount
+
+        super().perform_destroy(instance)
+
+        total_paid = AppointmentPayment.objects.filter(
+            appointment=appointment
+        ).aggregate(total=Sum("paid_amount")).get("total") or Decimal("0.00")
+
+        remaining = total_amount - total_paid
+
+        last_payment = (
+            AppointmentPayment.objects.filter(appointment=appointment)
+            .order_by("-created_at")
+            .first()
+        )
+
+        if last_payment:
+            last_payment.remaining_amount = remaining
+            last_payment.payment_status = (
+                PAYMENT_STATUS[1][0]
+                if remaining == Decimal("0.00")
+                else PAYMENT_STATUS[0][0]
+            )
+            last_payment.save(update_fields=["remaining_amount", "payment_status"])

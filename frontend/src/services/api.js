@@ -3,9 +3,9 @@ import axios from "axios";
 import Cookies from "js-cookie";
 
 export const api = axios.create({
-  baseURL: "http://localhost:8000",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
   withCredentials: true,
-    xsrfCookieName: "csrftoken",
+  xsrfCookieName: "csrftoken",
   xsrfHeaderName: "X-CSRFToken",
 });
 
