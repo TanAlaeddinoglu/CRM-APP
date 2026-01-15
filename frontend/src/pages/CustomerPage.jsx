@@ -4,7 +4,14 @@ import * as XLSX from "xlsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useSearchParams } from "react-router-dom";
 
-import { getCustomers, getMyCustomers, importCustomersExcel, checkExistingByPhones } from "../services/customer.js";
+import {
+  getCustomers,
+  getMyCustomers,
+  importCustomersExcel,
+  checkExistingByPhones,
+  updateCustomer,
+} from "../services/customer.js";
+
 import { getUsers } from "../services/user.js";
 import { getTags } from "../services/tag.js";
 
@@ -16,16 +23,219 @@ import CustomerCreateModal from "../components/customer/CustomerCreateModal.jsx"
 
 import ExcelImportModal from "../components/customer/ExcelImportModal.jsx";
 
-const normalizePhone = (value) => {
-  if (value === null || value === undefined) return "";
-  const s = String(value).trim();
-  if (!s) return "";
-  return s.replace(/\D/g, "");
-};
+// ----------------------------
+// Helpers
+// ----------------------------
 const toStr = (v) => (v === null || v === undefined ? "" : String(v).trim());
 const makeRowId = () => `${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
-const UI_COLS = ["Ad","Soyad","Email","Telefon","Şehir","Tag","Status","Assigned","Products","Updated","Source"];
+// normalize string for header matching
+const normCol = (s) =>
+  String(s || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/ı/g, "i") // ✅ TR dotless-i fix
+    .trim();
+
+// digits-only key (exact match)
+const phoneKey = (v) => String(v || "").replace(/\D/g, "");
+
+// keep leading + if present, remove other chars, handle "p:+...."
+const normalizePhoneKeepPlus = (value) => {
+  if (value === null || value === undefined) return "";
+  let s = String(value).trim();
+  if (!s) return "";
+
+  s = s.replace(/^p:\s*/i, "").trim();
+
+  const hasPlus = s.startsWith("+");
+  const digits = s.replace(/\D/g, "");
+  if (!digits) return "";
+
+  return hasPlus ? `+${digits}` : digits;
+};
+
+// candidates for searching/mapping (+ / no + / raw)
+const phoneCandidates = (value) => {
+  const p = normalizePhoneKeepPlus(value);
+  const d = phoneKey(p);
+  const withPlus = d ? `+${d}` : "";
+  const withoutPlus = d || "";
+  const arr = [p, withPlus, withoutPlus].filter(Boolean);
+  return Array.from(new Set(arr));
+};
+
+const st = (r) => String(r?._status || "").toLowerCase();
+const isNullishTag = (v) => {
+  const s = toStr(v).toLowerCase();
+  return !s || s === "-" || s === "null" || s === "none" || s === "undefined";
+};
+const isDigits = (v) => /^\d+$/.test(toStr(v));
+
+// ----------------------------
+// Disease mapping (Meta -> system)
+// ----------------------------
+const DISEASE_MAP = {
+  erkenbosalma: "erken boşalma",
+  sertlesme: "sertleşme",
+  peniskalinlastirma: "kalınlaştırma",
+  peniskalnlastirma: "kalınlaştırma", // ✅ “ı” silinince oluşan bozuk key için fallback
+  buyutme: "büyütme",
+  buyutmekalinlastirma: "büyütme kalınlaştırma",
+  penisegriligi: "penis eğriliği",
+};
+
+const diseaseKey = (s) =>
+  normCol(s)
+    .replace(/_/g, "")
+    .replace(/\s+/g, "")
+    .replace(/[^a-z0-9]/g, "");
+
+// meta field: "penis_kalinlastirma|erken_bosalma|sertlesme"
+const normalizeDiseasesToSystem = (raw) => {
+  const s = toStr(raw);
+  if (!s) return "";
+  const parts = s
+    .split(/[|,;]+/g)
+    .map((x) => x.trim())
+    .filter(Boolean);
+
+  const mapped = parts.map((p) => {
+    const key = diseaseKey(p);
+    return DISEASE_MAP[key] || p.replace(/_/g, " ").trim();
+  });
+
+  const seen = new Set();
+  const uniq = [];
+  for (const m of mapped) {
+    const k = normCol(m);
+    if (!seen.has(k)) {
+      seen.add(k);
+      uniq.push(m);
+    }
+  }
+  return uniq.join(", ");
+};
+
+// ----------------------------
+// Excel column mapping (auto-detect)
+// ----------------------------
+const EXCEL_CANDIDATES = {
+  Ad: ["Ad", "first name", "firstname", "first_name", "first-name", "name"],
+  Soyad: ["Soyad", "soyadı", "soyad", "soyadi", "surname", "last name", "lastname", "last_name"],
+  Telefon: [
+    "Telefon",
+    "telefon",
+    "telefon_nu",
+    "telefon_no",
+    "telefon_n",
+    "telefon_numarası",
+    "telefon_numarasi",
+    "telefon numarası",
+    "telefon numarasi",
+    "phone",
+    "phone_number",
+    "tel",
+    "gsm",
+  ],
+  Email: ["Email", "E-mail", "mail", "email"],
+  "Şehir": ["Şehir", "şehir", "sehir", "city"],
+  Products: [
+    "Products",
+    "hangi_işlem_ile_ilgileniyorsunuz_?",
+    "hangi_islem_ile_ilgileniyorsunuz_?",
+    "hangi_islem_ile_ilgileniyorsunuz__?",
+    "hangi_i̇şlem_i̇le_i̇lgileniyorsunuz_?",
+  ],
+  Tag: ["Tag", "etiket"],
+  Assigned: ["Assigned", "assigned_to", "sorumlu", "owner"],
+  Status: ["Status", "durum"],
+  Updated: ["Updated", "updated"],
+  Source: ["Source", "source"],
+};
+
+const pickExcelValue = (rowObj, candidates) => {
+  const obj = rowObj || {};
+  const keyMap = {};
+  Object.keys(obj).forEach((k) => (keyMap[normCol(k)] = k));
+
+  for (const c of candidates) {
+    const realKey = keyMap[normCol(c)];
+    if (realKey !== undefined) return obj[realKey];
+  }
+  return "";
+};
+
+const UI_COLS = [
+  "Ad",
+  "Soyad",
+  "Email",
+  "Telefon",
+  "Şehir",
+  "Tag",
+  "Status",
+  "Assigned",
+  "Products",
+  "Updated",
+  "Source",
+];
+
+// ----------------------------
+// Helpers: resolve tag/assigned from row
+// ----------------------------
+const getTagIdForRow = (row, tags) => {
+  if (row?._tagId) return Number(row._tagId);
+
+  const raw = row?.Tag;
+  if (isNullishTag(raw)) return null;
+
+  if (isDigits(raw)) return Number(raw);
+
+  const name = toStr(raw).toLowerCase();
+  const found = Array.isArray(tags)
+    ? tags.find((t) => toStr(t?.name || t?.tag_name).toLowerCase() === name)
+    : null;
+
+  return found?.id ? Number(found.id) : null;
+};
+
+const getAssignedIdForRow = (row) => {
+  if (row?._assignedId) return Number(row._assignedId);
+  const raw = row?.Assigned;
+  if (!raw) return null;
+  if (isDigits(raw)) return Number(raw);
+  return null;
+};
+
+const patchCustomerMeta = async (customerId, { assignedId, tagId, city, products }) => {
+  const payload = {};
+
+  if (assignedId) payload.assigned_to = Number(assignedId);
+  if (tagId) payload.tag = Number(tagId);
+
+  const cityStr = (city ?? "").toString().trim();
+  if (cityStr) payload.city = cityStr;
+
+  // ✅ Products: string olarak gönderiyoruz (backend tarafında parse edip ilişki kuracağız)
+  const productsStr = (products ?? "").toString().trim();
+  if (productsStr) payload.products = productsStr;
+
+  if (Object.keys(payload).length === 0) return;
+  await updateCustomer(customerId, payload, true);
+};
+
+const getExistingMetaFromMap = (existingMap, phoneValue) => {
+  if (!existingMap) return null;
+  const candidates = phoneCandidates(phoneValue);
+  const d = phoneKey(phoneValue);
+
+  for (const c of candidates) {
+    if (existingMap[c]) return existingMap[c];
+  }
+  if (d && existingMap[d]) return existingMap[d];
+  return null;
+};
 
 export default function CustomerPage() {
   const { user } = useAuth();
@@ -65,8 +275,10 @@ export default function CustomerPage() {
   useEffect(() => {
     async function init() {
       await loadCustomers();
+
       const tagRes = await getTags();
       setTags(tagRes.data || []);
+
       if (isAdmin) {
         const userRes = await getUsers();
         setUsers(userRes.data || []);
@@ -81,10 +293,14 @@ export default function CustomerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.toString()]);
 
-  // ---- validation (client) ----
+  // ---------------------------------
+  // Validation on UI rows
+  // ---------------------------------
   const recomputeValidation = (rows) => {
     const base = (Array.isArray(rows) ? rows : []).map((r, idx) => {
-      const phone = normalizePhone(r.Telefon);
+      const phone = normalizePhoneKeepPlus(r.Telefon);
+      const digits = phoneKey(phone);
+
       const name = toStr(r.Ad);
       const surname = toStr(r.Soyad);
 
@@ -94,13 +310,12 @@ export default function CustomerPage() {
       if (!name || !surname) {
         _status = "invalid_phone";
         _reason = "missing_name";
-      } else if (!phone || phone.length < 10 || phone.length > 13) {
+      } else if (!digits || digits.length < 10 || digits.length > 13) {
         _status = "invalid_phone";
         _reason = "invalid_phone";
       }
 
-      // eğer daha önce duplicate_in_db işaretlendiyse koru
-      if (r._status === "duplicate_in_db") {
+      if (st(r) === "duplicate_in_db") {
         _status = "duplicate_in_db";
         _reason = "duplicate_in_db";
       }
@@ -112,29 +327,35 @@ export default function CustomerPage() {
         Soyad: surname,
         Email: toStr(r.Email),
         Telefon: phone,
-        Şehir: toStr(r["Şehir"]),
+        "Şehir": toStr(r["Şehir"]),
         Tag: toStr(r.Tag),
-        Status: toStr(r.Status),
+        Status: toStr(r.Status || "active"), // ✅ default active
         Assigned: toStr(r.Assigned),
         Products: toStr(r.Products),
         Updated: toStr(r.Updated),
         Source: toStr(r.Source || "excel"),
+
         _status,
         _reason,
       };
     });
 
-    // file duplicate check (only rows that are OK — not duplicate_in_db)
     const seen = new Map();
     return base.map((r) => {
-      if (r._status !== "ok") return r;
-      const phone = r.Telefon;
+      if (st(r) !== "ok") return r;
+
+      const digits = phoneKey(r.Telefon);
       const rowNo = r._rowNo ?? r._idx + 2;
 
-      if (seen.has(phone)) {
-        return { ...r, _status: "duplicate_in_file", _reason: "duplicate_in_file", _firstSeenRow: seen.get(phone) };
+      if (seen.has(digits)) {
+        return {
+          ...r,
+          _status: "duplicate_in_file",
+          _reason: "duplicate_in_file",
+          _firstSeenRow: seen.get(digits),
+        };
       }
-      seen.set(phone, rowNo);
+      seen.set(digits, rowNo);
       return r;
     });
   };
@@ -146,7 +367,9 @@ export default function CustomerPage() {
     });
   };
 
-  // ---- parse excel ----
+  // ---------------------------------
+  // Parse Excel -> UI rows
+  // ---------------------------------
   const parseExcelToUiRows = async (file) => {
     const buf = await file.arrayBuffer();
     const wb = XLSX.read(buf, { type: "array" });
@@ -155,14 +378,46 @@ export default function CustomerPage() {
 
     const rows = json.map((item, idx) => {
       const ui = {};
-      UI_COLS.forEach((c) => (ui[c] = item[c] ?? ""));
-      return { _id: makeRowId(), _rowNo: idx + 2, ...ui };
+
+      ui["Ad"] = pickExcelValue(item, EXCEL_CANDIDATES.Ad);
+      ui["Soyad"] = pickExcelValue(item, EXCEL_CANDIDATES.Soyad);
+      ui["Email"] = pickExcelValue(item, EXCEL_CANDIDATES.Email);
+
+      const rawPhone = pickExcelValue(item, EXCEL_CANDIDATES.Telefon);
+      ui["Telefon"] = normalizePhoneKeepPlus(rawPhone);
+
+      ui["Şehir"] = pickExcelValue(item, EXCEL_CANDIDATES["Şehir"]);
+
+      const rawProducts = pickExcelValue(item, EXCEL_CANDIDATES.Products);
+      ui["Products"] = normalizeDiseasesToSystem(rawProducts);
+
+      ui["Tag"] = pickExcelValue(item, EXCEL_CANDIDATES.Tag);
+      ui["Assigned"] = pickExcelValue(item, EXCEL_CANDIDATES.Assigned);
+      ui["Status"] = pickExcelValue(item, EXCEL_CANDIDATES.Status) || "active"; // ✅ default active
+      ui["Updated"] = pickExcelValue(item, EXCEL_CANDIDATES.Updated);
+      ui["Source"] = pickExcelValue(item, EXCEL_CANDIDATES.Source) || "excel";
+
+      UI_COLS.forEach((c) => {
+        if (ui[c] === undefined) ui[c] = "";
+      });
+
+      return {
+        _id: makeRowId(),
+        _rowNo: idx + 2,
+        ...ui,
+
+        _tagId: null,
+        _assignedId: null,
+
+        _existingCustomerId: null,
+        _dbAssigned: null,
+        _dbTag: null,
+      };
     });
 
     return recomputeValidation(rows);
   };
 
-  // ---- excel flow ----
   const handleExcelImport = () => {
     if (!isAdmin) return;
     fileInputRef.current?.click();
@@ -170,6 +425,7 @@ export default function CustomerPage() {
 
   const handleExcelFileChange = async (e) => {
     if (!isAdmin) return;
+
     const file = e.target.files?.[0];
     if (!file) return;
     e.target.value = "";
@@ -177,32 +433,30 @@ export default function CustomerPage() {
     try {
       setExcelUploading(true);
 
-      // 1) parse + local validation
       let rows = await parseExcelToUiRows(file);
 
-      // 2) DB check only for rows that have a phone and are locally ok
-      const phones = rows
-        .filter((r) => r._status === "ok" && r.Telefon)
-        .map((r) => r.Telefon);
+      const candidatePhones = rows
+        .filter((r) => st(r) === "ok" && r.Telefon)
+        .flatMap((r) => phoneCandidates(r.Telefon));
 
-      const existingMap = await checkExistingByPhones(phones);
+      const existingMap = await checkExistingByPhones(candidatePhones);
 
-      // 3) mark rows as duplicate_in_db if exists
       rows = rows.map((r) => {
-        const existId = existingMap[r.Telefon];
-        if (existId) {
+        const meta = getExistingMetaFromMap(existingMap, r.Telefon);
+        if (meta?.id) {
           return {
             ...r,
             _status: "duplicate_in_db",
             _reason: "duplicate_in_db",
-            _existingCustomerId: existId,
+            _existingCustomerId: meta.id,
+            _dbAssigned: meta.assigned_to || null,
+            _dbTag: meta.tag || null,
           };
         }
         return r;
       });
 
       rows = recomputeValidation(rows);
-
       setExcelRows(rows);
       setServerReport(null);
       setExcelModalOpen(true);
@@ -213,7 +467,6 @@ export default function CustomerPage() {
     }
   };
 
-  // ---- build excel for backend ----
   const buildExcelFileFromUiRows = (rows) => {
     const data = rows.map((r) => {
       const obj = {};
@@ -233,20 +486,109 @@ export default function CustomerPage() {
     return new File([blob], "customer_import_modified.xlsx", { type: blob.type });
   };
 
-  // ✅ Save: DB dup/file dup olsa bile problem değil -> sadece OK satırlar import edilir
   const handleSaveImport = async () => {
-    const okRows = excelRows.filter((r) => r._status === "ok");
-    if (okRows.length === 0) {
-      alert("Kaydedilecek OK satır yok. Hatalı/duplicate satırları düzelt veya sil.");
+    const rows = Array.isArray(excelRows) ? excelRows : [];
+
+    const createRows = rows.filter((r) => st(r) === "ok");
+    const updateRows = rows.filter((r) => st(r) === "duplicate_in_db" && r._existingCustomerId);
+
+    if (createRows.length === 0 && updateRows.length === 0) {
+      alert("Kaydedilecek satır yok (ne yeni kayıt var, ne de güncellenecek duplicate).");
       return;
     }
 
-    const excelFile = buildExcelFileFromUiRows(okRows);
+    const blocking = rows.filter((r) => st(r) === "invalid_phone" || st(r) === "duplicate_in_file");
+    if (blocking.length > 0) {
+      alert("Hatalı veya dosya içi duplicate satırlar var. Kaydetmeden önce düzelt veya sil.");
+      return;
+    }
 
     setExcelUploading(true);
     try {
-      const res = await importCustomersExcel(excelFile);
-      setServerReport(res.data);
+      // 1) Yeni kayıtları import et
+      let importData = null;
+      if (createRows.length > 0) {
+        const excelFile = buildExcelFileFromUiRows(createRows);
+        const res = await importCustomersExcel(excelFile);
+        importData = res.data;
+      }
+
+      // 2) DB duplicate olanları update et (Assigned + Tag + City + Products)
+      const updateSummary = { total: updateRows.length, updated: 0, skipped: 0, failed: [] };
+
+      for (const r of updateRows) {
+        const customerId = r._existingCustomerId;
+
+        const tagId = getTagIdForRow(r, tags);
+        const assignedId = getAssignedIdForRow(r);
+
+        const city = r["Şehir"];
+        const products = r["Products"];
+
+        const hasCity = (city ?? "").toString().trim().length > 0;
+        const hasProducts = (products ?? "").toString().trim().length > 0;
+
+        if (!tagId && !assignedId && !hasCity && !hasProducts) {
+          updateSummary.skipped++;
+          continue;
+        }
+
+        try {
+          await patchCustomerMeta(customerId, { assignedId, tagId, city, products });
+          updateSummary.updated++;
+        } catch (e) {
+          updateSummary.failed.push({
+            existing_customer_id: customerId,
+            telefon: r.Telefon,
+            error:
+              e?.response?.data?.detail ||
+              JSON.stringify(e?.response?.data) ||
+              e?.message ||
+              "update failed",
+          });
+        }
+      }
+
+      // 3) OK satırlar import sonrası: phone -> id bul, varsa tag/assigned/city/products PATCH
+      if (createRows.length > 0) {
+        const candidatePhones = createRows.flatMap((r) => phoneCandidates(r.Telefon));
+        const phoneToMeta = await checkExistingByPhones(candidatePhones);
+
+        for (const r of createRows) {
+          const meta = getExistingMetaFromMap(phoneToMeta, r.Telefon);
+          const customerId = meta?.id;
+          if (!customerId) continue;
+
+          const tagId = getTagIdForRow(r, tags);
+          const assignedId = getAssignedIdForRow(r);
+          const city = r["Şehir"];
+          const products = r["Products"];
+
+          if (
+            tagId ||
+            assignedId ||
+            (city ?? "").toString().trim() ||
+            (products ?? "").toString().trim()
+          ) {
+            try {
+              await patchCustomerMeta(customerId, { assignedId, tagId, city, products });
+            } catch (e) {
+              console.warn("post-import patch failed", r.Telefon, e);
+            }
+          }
+        }
+      }
+
+      // 4) rapor
+      const mergedReport = {
+        ...(importData || {}),
+        updated_existing_total: updateSummary.total,
+        updated_existing: updateSummary.updated,
+        skipped_existing: updateSummary.skipped,
+        failed_existing: updateSummary.failed,
+      };
+
+      setServerReport(mergedReport);
       setExcelModalOpen(false);
       await loadCustomers();
     } catch (err) {
@@ -255,7 +597,7 @@ export default function CustomerPage() {
         err?.response?.data?.file?.[0] ||
         err?.response?.data?.error ||
         err?.message ||
-        "Excel kaydederken hata oluştu.";
+        "Kaydetme sırasında hata oluştu.";
       alert(msg);
     } finally {
       setExcelUploading(false);
