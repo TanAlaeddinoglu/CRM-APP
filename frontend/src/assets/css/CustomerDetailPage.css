@@ -102,6 +102,9 @@
 .info-item span {
   font-size: 14px;
   color: #111827;
+  display: block;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* ========== INPUTS ========== */
