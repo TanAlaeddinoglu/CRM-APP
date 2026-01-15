@@ -249,6 +249,8 @@ import unicodedata
 
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
+from django.db.models import Q
+from django.utils.text import slugify
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
@@ -262,12 +264,14 @@ from customer.bulkSerilaizer import (
 )
 from customer.models import Customer, Tag
 from customer.serializers import NotesSerializer
+from common.utils import STATUS_CHOICES
 
 User = get_user_model()
 
 CUSTOMER_FIELDS = {f.name for f in Customer._meta.fields}
 
 NULLISH = {"", "null", "none", "undefined"}
+VALID_STATUSES = {s for s, _ in STATUS_CHOICES}
 
 # ---- Products app (safe import) ----
 try:
@@ -363,6 +367,99 @@ def _normalize_phone(value):
         return None
 
     return ("+" + digits) if has_plus else digits
+
+
+def _safe_int(value):
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _resolve_excel_refs(rows):
+    if not rows:
+        return rows
+
+    tag_ids = set()
+    tag_slugs = set()
+    tag_names_raw = set()
+    assigned_ids = set()
+    assigned_names = set()
+
+    for r in rows:
+        tag_raw = _clean_str(r.get("tag"))
+        assigned_raw = _clean_str(r.get("assigned_to"))
+        status_raw = _clean_str(r.get("status"))
+
+        r["tag"] = tag_raw
+        r["assigned_to"] = assigned_raw
+
+        if status_raw:
+            st = str(status_raw).strip().lower()
+            r["status"] = st if st in VALID_STATUSES else None
+        else:
+            r["status"] = None
+
+        if tag_raw:
+            tag_id = _safe_int(tag_raw)
+            if tag_id is not None:
+                tag_ids.add(tag_id)
+            else:
+                tag_slugs.add(slugify(tag_raw))
+                tag_names_raw.add(str(tag_raw).strip())
+
+        assigned_id = _safe_int(assigned_raw)
+        if assigned_id is not None:
+            assigned_ids.add(assigned_id)
+        elif assigned_raw:
+            assigned_names.add(str(assigned_raw).strip().lower())
+
+    tags_by_id = Tag.objects.in_bulk(tag_ids) if tag_ids else {}
+    tags_by_slug = (
+        {t.slug: t for t in Tag.objects.filter(slug__in=tag_slugs)} if tag_slugs else {}
+    )
+    tags_by_name = {}
+    if tag_names_raw:
+        tag_q = Q()
+        for name in tag_names_raw:
+            tag_q |= Q(tag_name__iexact=name)
+        tags_by_name = {t.tag_name.lower(): t for t in Tag.objects.filter(tag_q)}
+    users_by_id = User.objects.in_bulk(assigned_ids) if assigned_ids else {}
+    users_by_username = {}
+    if assigned_names:
+        user_q = Q()
+        for name in assigned_names:
+            user_q |= Q(username__iexact=name)
+        users_by_username = {u.username.lower(): u for u in User.objects.filter(user_q)}
+
+    for r in rows:
+        tag_raw = r.get("tag")
+        assigned_raw = r.get("assigned_to")
+
+        tag_id = None
+        if tag_raw:
+            tag_id = _safe_int(tag_raw)
+            if tag_id is not None:
+                if tag_id not in tags_by_id:
+                    tag_id = None
+            else:
+                tag_obj = tags_by_slug.get(slugify(tag_raw))
+                if not tag_obj:
+                    tag_obj = tags_by_name.get(str(tag_raw).strip().lower())
+                tag_id = tag_obj.id if tag_obj else None
+
+        assigned_id = _safe_int(assigned_raw)
+        if assigned_id is not None:
+            if assigned_id not in users_by_id:
+                assigned_id = None
+        elif assigned_raw:
+            assigned_obj = users_by_username.get(str(assigned_raw).strip().lower())
+            assigned_id = assigned_obj.id if assigned_obj else None
+
+        r["tag"] = tag_id
+        r["assigned_to"] = assigned_id
+
+    return rows
 
 
 def _phone_candidates(phone: str):
@@ -557,6 +654,14 @@ EXCEL_COL_MAP_NORM = {
     "hangi_islem_ile_ilgileniyorsunuz": "products",
     "hangi_islem_ile_ilgileniyorsunuz_": "products",
     "lead_status": "lead_status",
+    "tag": "tag",
+    "etiket": "tag",
+    "assigned": "assigned_to",
+    "assigned_to": "assigned_to",
+    "sorumlu": "assigned_to",
+    "owner": "assigned_to",
+    "status": "status",
+    "durum": "status",
 }
 
 
@@ -610,10 +715,13 @@ def _read_excel_to_rows(excel_file):
             "city": _clean_str(r.get("city")),
             "products": _clean_str(r.get("products")),
             "lead_status": _clean_str(r.get("lead_status")),
+            "tag": _clean_str(r.get("tag")),
+            "assigned_to": _clean_str(r.get("assigned_to")),
+            "status": _clean_str(r.get("status")),
         }
         rows.append(row_dict)
 
-    return rows, None
+    return _resolve_excel_refs(rows), None
 
 
 def _analyze_rows(rows):
@@ -636,7 +744,14 @@ def _analyze_rows(rows):
         data = dict(ser.validated_data)
         data["customer_phone"] = _normalize_phone(data.get("customer_phone"))
 
-        for extra_key in ["city", "products", "lead_status"]:
+        for extra_key in [
+            "city",
+            "products",
+            "lead_status",
+            "tag",
+            "assigned_to",
+            "status",
+        ]:
             if extra_key in r and extra_key not in data:
                 data[extra_key] = r.get(extra_key)
 
@@ -777,6 +892,9 @@ class CustomerExcelUploadView(APIView):
 
             city = _clean_str(r.get("city"))
             products_str = _clean_str(r.get("products"))  # ✅ NEW
+            tag_id = r.get("tag")
+            assigned_id = r.get("assigned_to")
+            status_value = r.get("status")
 
             c = Customer(
                 customer_name=r["customer_name"],
@@ -796,6 +914,8 @@ class CustomerExcelUploadView(APIView):
             # ✅ şehir
             if "city" in CUSTOMER_FIELDS:
                 c.city = city
+            if "status" in CUSTOMER_FIELDS and status_value:
+                c.status = status_value
 
             # ✅ status/source default: OK satırlar ACTIVE olsun
             if "status" in CUSTOMER_FIELDS and _nullish(getattr(c, "status", None)):
@@ -803,22 +923,41 @@ class CustomerExcelUploadView(APIView):
             if "source" in CUSTOMER_FIELDS and _nullish(getattr(c, "source", None)):
                 c.source = "excel"
 
-            jobs.append((r["row"], c, products_str))
+            jobs.append((r["row"], c, products_str, tag_id, assigned_id))
 
         created_ids = []
         create_row_errors = []
 
         if jobs:
-            to_create = [c for (_, c, _) in jobs]
+            to_create = [c for (_, c, _, _, _) in jobs]
             try:
                 with transaction.atomic():
                     created = Customer.objects.bulk_create(to_create, batch_size=500)
 
+                    tag_ids = {tag_id for (_, _, _, tag_id, _) in jobs if tag_id}
+                    assigned_ids = {
+                        assigned_id for (_, _, _, _, assigned_id) in jobs if assigned_id
+                    }
+                    tags_map = Tag.objects.in_bulk(tag_ids) if tag_ids else {}
+                    users_map = (
+                        User.objects.in_bulk(assigned_ids) if assigned_ids else {}
+                    )
+
                     # ✅ Products relation: bulk_create sonrası (id varsa)
                     for idx, obj in enumerate(created):
-                        row_no, _, products_str = jobs[idx]
+                        row_no, _, products_str, tag_id, assigned_id = jobs[idx]
                         if getattr(obj, "id", None):
                             created_ids.append(obj.id)
+                        tag_obj = tags_map.get(tag_id) if tag_id else None
+                        assignee = users_map.get(assigned_id) if assigned_id else None
+                        if (
+                            tag_obj is not None
+                            and assignee is not None
+                            and hasattr(obj, "set_current_tag")
+                        ):
+                            obj.set_current_tag(
+                                tag_obj, by=request.user, assign_to=assignee
+                            )
                         # products set
                         try:
                             if products_str and not _nullish(products_str):
@@ -839,11 +978,28 @@ class CustomerExcelUploadView(APIView):
 
             except IntegrityError:
                 # rollback oldu; satır satır fallback
-                for row_no, obj, products_str in jobs:
+                for row_no, obj, products_str, tag_id, assigned_id in jobs:
                     try:
                         with transaction.atomic():
                             obj.save()
                         created_ids.append(obj.id)
+
+                        tag_obj = (
+                            Tag.objects.filter(pk=tag_id).first() if tag_id else None
+                        )
+                        assignee = (
+                            User.objects.filter(pk=assigned_id).first()
+                            if assigned_id
+                            else None
+                        )
+                        if (
+                            tag_obj is not None
+                            and assignee is not None
+                            and hasattr(obj, "set_current_tag")
+                        ):
+                            obj.set_current_tag(
+                                tag_obj, by=request.user, assign_to=assignee
+                            )
 
                         try:
                             if products_str and not _nullish(products_str):
