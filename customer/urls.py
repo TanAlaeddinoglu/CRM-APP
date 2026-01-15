@@ -5,11 +5,11 @@ from .views import (
     TagViewSet,
     CustomerTagHistoryViewSet,
     NotesViewSet,
-    CustomerBulkUpsertView,
 )
 from .bulkViews import (
-    CustomerExcelUploadView,
+    CustomerBulkUpsertView,
     CustomerExcelDryRunView,
+    CustomerExcelUploadView,
 )
 
 urlpatterns = [
