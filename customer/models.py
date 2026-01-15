@@ -84,7 +84,7 @@ class Customer(models.Model):
         blank=True,
     )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="active")
-    source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default="manual")
+    source = models.CharField(max_length=10, choices=SOURCE_CHOICES, default="excel")
     archived_at = models.DateTimeField(blank=True, null=True)
 
     class Meta:

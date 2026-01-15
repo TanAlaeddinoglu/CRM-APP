@@ -8,9 +8,9 @@ SOURCE_CHOICES = [
     ("meta", "meta"),
     ("google ads", "google"),
     # ("manual", "manual"),
-    # ("referans-tavsiye", "referans-tavsiye"),
+    ("instagram", "instagram"),
     ("whatsapp", "whatsapp"),
-    # ("social_media", "social_media"),
+    ("excel", "excel"),
 ]
 
 COLOUR_CHOICES = [
