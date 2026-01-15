@@ -1,79 +1,73 @@
 // src/services/customer.js
 import { api } from "./api";
-
 import Cookies from "js-cookie";
 
+// (Kullanılmıyorsa silebilirsin, şimdilik kalsın)
 const userRole = Cookies.get("user_role");
 
+// -----------------------------
+// CUSTOMERS
+// -----------------------------
 export const getCustomerById = async (id, isAdmin) => {
-  if (isAdmin) {
-    return api.get(`/customers/${id}/`);
-  } else {
-    return api.get(`/customers/me/${id}/`);
-  }
+  return isAdmin ? api.get(`/customers/${id}/`) : api.get(`/customers/me/${id}/`);
 };
 
+export const getCustomers = (params = {}) => api.get("/customers/", { params });
+export const getMyCustomers = (params = {}) => api.get("/customers/me/", { params });
 
-export const getCustomers = (params = {}) =>
-  api.get("/customers/", { params });
-
-export const getMyCustomers = (params = {}) =>
-  api.get("/customers/me/", { params });
-
-
-// --- Get single customer (admin or owner) ---
 export function getCustomer(id) {
   return api.get(`/customers/${id}/`);
 }
 
-// --- Get single customer owned by user ---
 export function getMyCustomer(id) {
   return api.get(`/customers/me/${id}/`);
 }
 
-// --- Create customer (admin only, I guess?) ---
 export function createCustomer(data, isAdmin) {
-  return isAdmin
-    ? api.post("/customers/", data)
-    : api.post("/customers/me/", data);
+  return isAdmin ? api.post("/customers/", data) : api.post("/customers/me/", data);
 }
 
-
-// --- Update customer (admin can update all, user only own customer) ---
-// src/services/customer.js
+/**
+ * PATCH customer
+ * Admin: /customers/:id/
+ * User : /customers/me/:id/
+ */
 export function updateCustomer(id, data, isAdmin = false) {
-  const url = isAdmin
-    ? `/customers/${id}/`
-    : `/customers/me/${id}/`;
-
+  const url = isAdmin ? `/customers/${id}/` : `/customers/me/${id}/`;
   return api.patch(url, data);
 }
 
-
-// --- Delete customer ---
+// Delete customer (admin) - soft delete backend'de
 export function deleteCustomer(id) {
   return api.delete(`/customers/${id}/`);
 }
 
-//NOTE ENDPOINTLERI
+// -----------------------------
+// BULK UPSERT (Excel duplicate "Kaydet")
+// -----------------------------
+export const bulkUpsertCustomers = (items = []) => {
+  return api.post("/customers/bulk/upsert/", { items });
+};
 
+// -----------------------------
+// NOTES
+// -----------------------------
 export function getCustomerNotes(customerId) {
   return api.get(`/customers/notes/?customerId=${customerId}`);
 }
+
 export function createCustomerNote(customerId, note) {
-  return api.post("/customers/notes/", {
-    customer_id: customerId,
-    note,
-  });
+  // ✅ Backend tarafında NotesSerializer "customer" bekliyor (customer_id değil)
+  return api.post("/customers/notes/", { customer: customerId, note });
 }
 
 export function updateCustomerNote(noteId, note) {
-  return api.patch(`/customers/notes/${noteId}/`, {
-    note,
-  });
+  return api.patch(`/customers/notes/${noteId}/`, { note });
 }
 
-//TAG HISTORY
+// -----------------------------
+// TAG HISTORY
+// -----------------------------
 export function getCustomerTagHistory(customerId) {
   return api.get(`/customers/tag-history/?customerId=${customerId}`);
 }
@@ -82,11 +76,43 @@ export function getTagHistoryById(id) {
   return api.get(`/customers/tag-history/${id}/`);
 }
 
-//TAG ENDPOINTLERI
-export function setCustomerTag(data) {
-  return api.post("/customers/tag/", data);
+// -----------------------------
+// TAGS (Tag endpoints)
+// -----------------------------
+export function getTags(params = {}) {
+  return api.get("/customers/tag/", { params });
 }
 
+export function setCustomerTag(data) {
+  if (data == null) {
+    return Promise.reject(new Error("setCustomerTag: missing payload"));
+  }
+
+  if (typeof data === "string") {
+    const name = data.trim();
+    if (!name || name === "-") {
+      return Promise.reject(new Error("setCustomerTag: empty tag name"));
+    }
+    return api.post("/customers/tag/", { name });
+  }
+
+  if (typeof data === "number") {
+    return Promise.reject(
+      new Error("setCustomerTag: tag id given; do not POST. Use updateCustomer with tag=id.")
+    );
+  }
+
+  if (typeof data === "object") {
+    const raw = data.name ?? data.tag ?? data.label ?? data.title ?? "";
+    const name = String(raw || "").trim();
+    if (!name || name === "-") {
+      return Promise.reject(new Error("setCustomerTag: empty tag name"));
+    }
+    return api.post("/customers/tag/", { ...data, name });
+  }
+
+  return Promise.reject(new Error("setCustomerTag: invalid payload type"));
+}
 
 export function updateCustomerTag(id, data) {
   return api.patch(`/customers/tag/${id}/`, data);
@@ -96,11 +122,42 @@ export function deleteCustomerTag(id) {
   return api.delete(`/customers/tag/${id}/`);
 }
 
-
-//TAG DETAY
 export const getTagDetail = (tagId) => api.get(`/customers/tag/${tagId}/`);
 
-// ✅ EXCEL IMPORT (Admin)
+// -----------------------------
+// HELPER: Resolve tag id
+// -----------------------------
+export async function resolveTagId(tagValue) {
+  if (tagValue == null) return null;
+
+  if (typeof tagValue === "number") return tagValue;
+
+  if (typeof tagValue === "object") {
+    if (tagValue.id) return Number(tagValue.id);
+
+    if (tagValue.name && String(tagValue.name).trim()) {
+      const res = await setCustomerTag(String(tagValue.name));
+      return res?.data?.id ?? null;
+    }
+    return null;
+  }
+
+  if (typeof tagValue === "string") {
+    const name = tagValue.trim();
+    if (!name || name === "-") return null;
+
+    if (/^\d+$/.test(name)) return Number(name);
+
+    const res = await setCustomerTag(name);
+    return res?.data?.id ?? null;
+  }
+
+  return null;
+}
+
+// -----------------------------
+// EXCEL IMPORT
+// -----------------------------
 export const importCustomersExcel = (file) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -108,8 +165,8 @@ export const importCustomersExcel = (file) => {
   return api.post("/customers/import-excel/", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
-  
 };
+
 export const dryRunCustomersExcel = (file) => {
   const formData = new FormData();
   formData.append("file", file);
@@ -118,13 +175,21 @@ export const dryRunCustomersExcel = (file) => {
     headers: { "Content-Type": "multipart/form-data" },
   });
 };
-// ✅ DB'de telefon var mı kontrol (admin için)
-// SearchFilter sayesinde: /customers/?search=90555...
+
+// -----------------------------
+// DB CHECK (phones -> existing customer meta)
+// ✅ search sonucu içinden TELEFON exact eşleşeni seçer
+// ✅ meta: { id, customer_phone, assigned_to, tag }
+// -----------------------------
+const phoneKey = (v) => String(v || "").replace(/\D/g, ""); // digits-only
+
 export async function checkExistingByPhones(phones = [], concurrency = 8) {
   const uniq = Array.from(new Set((phones || []).filter(Boolean)));
-  const result = {}; // phone -> existing_customer_id (ilk bulunan)
+  const result = {};
+  if (uniq.length === 0) return result;
 
   let i = 0;
+
   async function worker() {
     while (i < uniq.length) {
       const idx = i++;
@@ -132,17 +197,33 @@ export async function checkExistingByPhones(phones = [], concurrency = 8) {
 
       try {
         const res = await api.get("/customers/", { params: { search: phone } });
-        const first = res?.data?.results?.[0];
-        if (first?.id) result[phone] = first.id;
+        const results = res?.data?.results || [];
+
+        const targetKey = phoneKey(phone);
+        if (!targetKey) continue;
+
+        // exact match (digits-only)
+        const exact = results.find((c) => phoneKey(c?.customer_phone) === targetKey);
+        if (!exact?.id) continue;
+
+        const meta = {
+          id: exact.id,
+          customer_phone: exact.customer_phone || null,
+          assigned_to: exact.assigned_to ?? null, // list serializer: username döndürüyor olmalı
+          tag: exact.tag ?? null,                 // list serializer: tag name döndürüyor olmalı
+        };
+
+        // aynı meta’yı farklı key’lerle yaz
+        result[phone] = meta;
+        result[targetKey] = meta;
+        if (meta.customer_phone) result[meta.customer_phone] = meta;
       } catch (e) {
-        // istersen console.warn yapabilirsin
+        // sessiz geç
       }
     }
   }
 
-  const workers = Array.from({ length: Math.min(concurrency, uniq.length) }, worker);
+  const workers = Array.from({ length: Math.min(concurrency, uniq.length) }, () => worker());
   await Promise.all(workers);
-
   return result;
 }
-
