@@ -57,8 +57,14 @@ export default function ExcelImportModal({
     });
   };
   const clearSelection = () => setSelectedIds(new Set());
+
   const selectAllOk = () => {
     const ids = new Set(rows.filter((r) => r._status === "ok").map((r) => r._id));
+    setSelectedIds(ids);
+  };
+
+  const selectAllDbDup = () => {
+    const ids = new Set(rows.filter((r) => r._status === "duplicate_in_db").map((r) => r._id));
     setSelectedIds(ids);
   };
 
@@ -163,6 +169,10 @@ export default function ExcelImportModal({
               OK olanları seç
             </button>
 
+            <button type="button" className="btn-secondary" onClick={selectAllDbDup}>
+              DB duplicate olanları seç
+            </button>
+
             <button type="button" className="btn-secondary" onClick={clearSelection}>
               Seçimi temizle
             </button>
@@ -233,11 +243,19 @@ export default function ExcelImportModal({
               {rows.map((r) => {
                 const badge = statusBadge(r);
                 const selected = selectedIds.has(r._id);
+                const isDbDup = r._status === "duplicate_in_db";
+
+                const dbInfo =
+                  isDbDup && (r._dbAssigned || r._dbTag)
+                    ? `DB: ${r._dbAssigned || "-"} / ${r._dbTag || "-"}`
+                    : null;
 
                 return (
                   <tr key={r._id}>
                     <td>
                       <input
+                        id={`sel_${r._id}`}
+                        name={`sel_${r._id}`}
                         type="checkbox"
                         checked={selected}
                         onChange={() => toggleSelect(r._id)}
@@ -254,10 +272,16 @@ export default function ExcelImportModal({
                           <span className="excel-badge-note"> (id: {r._existingCustomerId})</span>
                         ) : null}
                       </span>
+
+                      {dbInfo ? (
+                        <div style={{ fontSize: 12, marginTop: 6, opacity: 0.75 }}>{dbInfo}</div>
+                      ) : null}
                     </td>
 
                     <td>
                       <input
+                        id={`ad_${r._id}`}
+                        name={`ad_${r._id}`}
                         className="excel-input"
                         value={r.Ad ?? ""}
                         onChange={(e) => updateCell(r._id, "Ad", e.target.value)}
@@ -266,6 +290,8 @@ export default function ExcelImportModal({
 
                     <td>
                       <input
+                        id={`soyad_${r._id}`}
+                        name={`soyad_${r._id}`}
                         className="excel-input"
                         value={r.Soyad ?? ""}
                         onChange={(e) => updateCell(r._id, "Soyad", e.target.value)}
@@ -274,6 +300,8 @@ export default function ExcelImportModal({
 
                     <td>
                       <input
+                        id={`email_${r._id}`}
+                        name={`email_${r._id}`}
                         className="excel-input"
                         value={r.Email ?? ""}
                         onChange={(e) => updateCell(r._id, "Email", e.target.value)}
@@ -282,6 +310,8 @@ export default function ExcelImportModal({
 
                     <td>
                       <input
+                        id={`telefon_${r._id}`}
+                        name={`telefon_${r._id}`}
                         className="excel-input"
                         value={r.Telefon ?? ""}
                         onChange={(e) => updateCell(r._id, "Telefon", e.target.value)}
@@ -290,6 +320,8 @@ export default function ExcelImportModal({
 
                     <td>
                       <input
+                        id={`sehir_${r._id}`}
+                        name={`sehir_${r._id}`}
                         className="excel-input"
                         value={r["Şehir"] ?? ""}
                         onChange={(e) => updateCell(r._id, "Şehir", e.target.value)}
@@ -298,6 +330,8 @@ export default function ExcelImportModal({
 
                     <td>
                       <select
+                        id={`tag_${r._id}`}
+                        name={`tag_${r._id}`}
                         className="excel-select"
                         value={r._tagId ?? ""}
                         onChange={(e) => {
@@ -314,10 +348,18 @@ export default function ExcelImportModal({
                           </option>
                         ))}
                       </select>
+
+                      {isDbDup && r._dbTag ? (
+                        <div style={{ fontSize: 12, marginTop: 6, opacity: 0.75 }}>
+                          DB Tag: {r._dbTag}
+                        </div>
+                      ) : null}
                     </td>
 
                     <td>
                       <select
+                        id={`assigned_${r._id}`}
+                        name={`assigned_${r._id}`}
                         className="excel-select"
                         value={r._assignedId ?? ""}
                         onChange={(e) => {
@@ -334,10 +376,18 @@ export default function ExcelImportModal({
                           </option>
                         ))}
                       </select>
+
+                      {isDbDup && r._dbAssigned ? (
+                        <div style={{ fontSize: 12, marginTop: 6, opacity: 0.75 }}>
+                          DB User: {r._dbAssigned}
+                        </div>
+                      ) : null}
                     </td>
 
                     <td>
                       <input
+                        id={`products_${r._id}`}
+                        name={`products_${r._id}`}
                         className="excel-input"
                         value={r.Products ?? ""}
                         onChange={(e) => updateCell(r._id, "Products", e.target.value)}
@@ -346,6 +396,8 @@ export default function ExcelImportModal({
 
                     <td>
                       <input
+                        id={`updated_${r._id}`}
+                        name={`updated_${r._id}`}
                         className="excel-input"
                         value={r.Updated ?? ""}
                         onChange={(e) => updateCell(r._id, "Updated", e.target.value)}
@@ -354,6 +406,8 @@ export default function ExcelImportModal({
 
                     <td>
                       <input
+                        id={`source_${r._id}`}
+                        name={`source_${r._id}`}
                         className="excel-input"
                         value={r.Source ?? ""}
                         onChange={(e) => updateCell(r._id, "Source", e.target.value)}
@@ -377,6 +431,7 @@ export default function ExcelImportModal({
 
           <div className="excel-hint">
             * DB’de olanlar “Dup(DB)” olarak görünür. OK olmayan satırlar kaydedilmez. <br />
+            * Dup(DB) satırında “DB: kullanıcı / tag” mevcut durumdur. <br />
             * Telefonu değiştirince durum otomatik yeniden hesaplanır (CustomerPage içinde).
           </div>
         </div>
@@ -385,10 +440,18 @@ export default function ExcelImportModal({
           <div className="excel-report">
             <h4>Import Sonucu</h4>
             <div className="excel-report-meta">
-              <span><b>Toplam:</b> {serverReport.total_rows ?? "-"}</span>
-              <span><b>Oluşturulan:</b> {serverReport.created ?? "-"}</span>
-              <span><b>DB duplicate:</b> {serverReport.duplicates_in_db ?? 0}</span>
-              <span><b>Invalid phone:</b> {serverReport.invalid_phone ?? 0}</span>
+              <span>
+                <b>Toplam:</b> {serverReport.total_rows ?? "-"}
+              </span>
+              <span>
+                <b>Oluşturulan:</b> {serverReport.created ?? "-"}
+              </span>
+              <span>
+                <b>DB duplicate:</b> {serverReport.duplicates_in_db ?? 0}
+              </span>
+              <span>
+                <b>Hatalı:</b> {serverReport.errors ?? 0}
+              </span>
             </div>
           </div>
         )}

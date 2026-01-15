@@ -6,17 +6,28 @@ from .views import (
     CustomerTagHistoryViewSet,
     NotesViewSet,
     CustomerExcelUploadView,
-    CustomerExcelUploadView,
-      CustomerExcelDryRunView
+    CustomerExcelDryRunView,
+    CustomerBulkUpsertView,  # ✅ eklendi
 )
 
-
-
 urlpatterns = [
+    path(
+        "import-excel/dry-run/",
+        CustomerExcelDryRunView.as_view(),
+        name="customer-import-excel-dry-run",
+    ),
+    path(
+        "import-excel/",
+        CustomerExcelUploadView.as_view(),
+        name="customer-import-excel",
+    ),
 
-    path("import-excel/dry-run/", CustomerExcelDryRunView.as_view(), name="customer-import-excel-dry-run"),
-    
-    path("import-excel/", CustomerExcelUploadView.as_view(), name="customer-import-excel"),
+    # ✅ bulk upsert (duplicate ekranı “Kaydet”)
+    path(
+        "bulk/upsert/",
+        CustomerBulkUpsertView.as_view(),
+        name="customer-bulk-upsert",
+    ),
 
     path(
         "",
@@ -35,26 +46,18 @@ urlpatterns = [
         ),
         name="customer-detail-update-destroy",
     ),
+
     path(
         "me/",
-        UserCustomerViewSet.as_view(
-            {
-                "get": "list",
-                "post": "create",
-            }
-        ),
+        UserCustomerViewSet.as_view({"get": "list", "post": "create"}),
         name="customer-assigned-to-user",
     ),
     path(
         "me/<int:pk>/",
-        UserCustomerViewSet.as_view(
-            {
-                "get": "retrieve",
-                "patch": "partial_update",
-            }
-        ),
+        UserCustomerViewSet.as_view({"get": "retrieve", "patch": "partial_update"}),
         name="customer-detail-update-to-assigned-user",
     ),
+
     path(
         "tag/",
         TagViewSet.as_view({"get": "list", "post": "create"}),
@@ -63,15 +66,11 @@ urlpatterns = [
     path(
         "tag/<int:pk>/",
         TagViewSet.as_view(
-            {
-                "get": "retrieve",
-                "put": "update",
-                "patch": "partial_update",
-                "delete": "destroy",
-            }
+            {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
         ),
         name="tag-detail-update-destroy",
     ),
+
     path(
         "tag-history/",
         CustomerTagHistoryViewSet.as_view({"get": "list", "post": "create"}),
@@ -80,20 +79,11 @@ urlpatterns = [
     path(
         "tag-history/<int:pk>/",
         CustomerTagHistoryViewSet.as_view(
-            {
-                "get": "retrieve",
-                "put": "update",
-                "patch": "partial_update",
-                "delete": "destroy",
-            }
+            {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
         ),
         name="tag-history-detail-update-destroy",
     ),
-    # path(
-    #     "tag-history/by-customer/",
-    #     CustomerTagHistoryViewSet.as_view({"get": "customers_tag_history"}),
-    #     name="tag-history-by-customer",
-    # ),
+
     path(
         "notes/",
         NotesViewSet.as_view({"get": "list", "post": "create"}),
@@ -102,18 +92,8 @@ urlpatterns = [
     path(
         "notes/<int:pk>/",
         NotesViewSet.as_view(
-            {
-                "get": "retrieve",
-                "put": "update",
-                "patch": "partial_update",
-                "delete": "destroy",
-            }
+            {"get": "retrieve", "put": "update", "patch": "partial_update", "delete": "destroy"}
         ),
         name="notes-detail-update-destroy",
     ),
-    # path(
-    #     "notes/by-customer/",
-    #     NotesViewSet.as_view({"get": "customers_note_history"}),
-    #     name="note-history-by-customer",
-    # ),
 ]

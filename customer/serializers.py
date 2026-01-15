@@ -1,6 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 from django.template.defaultfilters import slugify
+import re
 
 from accounts.models import CustomUser
 from customer.models import Customer, Tag, CustomerTagHistory, Notes
@@ -9,14 +10,55 @@ from customer.services import move_to_customer_pool
 from products.serializers import CustomerProductsSerializer
 
 
-# CUSTOMER SERIALIZER VALIDATE: VALIDATES PHONE NUMBER,
-# CUSTOMER SERIALIZER CREATE: created_by","updated_by", "is_active" SETS DEFAULT,
-# CUSTOMER SERIALIZER UPDATE: CUSTOMER TAG HISTORYE YAZIYOR UPDATE DURUMUNDA
-# TAG SERIALIZER VALIDATE : VALIDATE SLUG IS ANY EXIST bunu TAG MODEL SAVE DE YAPIYOR BURAYA BIR BAK
-# CUSTOMER MODEL SAVE: CHECK STATUS AND CHANGE "is_active"
-# CUSTOMER VIEW LERI BASTAN DUSUNEREK YAZ FONKSIYONLAR CALISIYOR AMA KOSULLAR ONEMLI (PERMISSIONLAR VE UPDATE
-# KOSULLARI GIBI)
-#
+NULLISH = {"", "null", "none", "undefined"}
+
+
+def normalize_customer_phone(value):
+    """
+    Ülke kodu tahmini YOK.
+    - p:+... -> +...
+    - 00...  -> +...
+    - + ile geldiyse + korunur
+    - + yoksa digits döner
+    - 8-15 digit arası kabul
+    """
+    if value is None:
+        return None
+
+    s = str(value).strip()
+    if not s or s.lower() in NULLISH:
+        return None
+
+    s = s.replace("p:", "").strip()
+
+    # excel numeric
+    if re.fullmatch(r"\d+(\.0)?", s):
+        s = s.split(".")[0]
+
+    if s.startswith("00"):
+        s = "+" + s[2:]
+
+    has_plus = s.startswith("+")
+    digits = re.sub(r"\D", "", s)
+
+    if not digits:
+        return None
+
+    if not (8 <= len(digits) <= 15):
+        return None
+
+    return ("+" + digits) if has_plus else digits
+
+
+def phone_candidates(phone_value: str):
+    """
+    DB karışık (+905.. / 905..) olduğu için iki varyant üret.
+    """
+    p = normalize_customer_phone(phone_value)
+    if not p:
+        return set()
+    digits = p.lstrip("+")
+    return {digits, "+" + digits}
 
 
 class CustomerSerializer(serializers.ModelSerializer):
@@ -26,6 +68,7 @@ class CustomerSerializer(serializers.ModelSerializer):
     updated_by = serializers.ReadOnlyField(source="updated_by.username")
     assigned_to = serializers.SerializerMethodField()
     tag = serializers.SerializerMethodField()
+
     assigned = serializers.PrimaryKeyRelatedField(
         source="assigned_to",
         queryset=CustomUser.objects.all(),
@@ -41,6 +84,7 @@ class CustomerSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+
     products = CustomerProductsSerializer(many=True, read_only=True)
 
     class Meta:
@@ -64,32 +108,29 @@ class CustomerSerializer(serializers.ModelSerializer):
         return obj.tag.tag_name if obj.tag else None
 
     def validate(self, attrs):
+        # PATCH'te phone gelmediyse zorlamayalım
+        if self.partial and "customer_phone" not in attrs:
+            return attrs
+
         phone_number = attrs.get("customer_phone")
         if not phone_number:
+            raise serializers.ValidationError({"customer_phone": ["Phone number is required."]})
+
+        normalized = normalize_customer_phone(phone_number)
+        if not normalized:
             raise serializers.ValidationError(
-                {"customer_phone": ["Phone number is required."]}
+                {"customer_phone": ["Phone number is invalid. Examples: +43..., 0043..., 90..., p:+90..."]}
             )
 
-        trimmed = str(phone_number).strip("+")
-
-        if not (10 <= len(trimmed) <= 13) or not trimmed.isdigit():
-            raise serializers.ValidationError(
-                {
-                    "customer_phone": [
-                        "Phone number must be one of these formats: "
-                        "90123456789, 01234567899, 1234567890, +901234567890."
-                    ]
-                }
-            )
-        queryset = Customer.objects.filter(customer_phone=trimmed)
+        cand = phone_candidates(normalized)
+        qs = Customer.objects.filter(customer_phone__in=list(cand))
         if self.instance is not None:
-            queryset = queryset.exclude(pk=self.instance.pk)
-        if queryset.exists():
-            raise serializers.ValidationError(
-                {"customer_phone": ["Phone number already exists."]}
-            )
-        attrs["customer_phone"] = trimmed
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError({"customer_phone": ["Phone number already exists."]})
 
+        # ✅ + varsa koruyarak kaydet
+        attrs["customer_phone"] = normalized
         return attrs
 
     def create(self, validated_data):
@@ -99,7 +140,6 @@ class CustomerSerializer(serializers.ModelSerializer):
         if user and user.is_authenticated:
             validated_data.setdefault("created_by", user)
             validated_data.setdefault("updated_by", user)
-        # validated_data.setdefault("is_active", True)
 
         context_tag = self.context.get("tag")
         new_tag = validated_data.pop("tag", None)
