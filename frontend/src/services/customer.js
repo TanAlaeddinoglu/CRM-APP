@@ -50,6 +50,13 @@ export const bulkUpsertCustomers = (items = []) => {
 };
 
 // -----------------------------
+// BULK UPDATE (selection actions)
+// -----------------------------
+export const bulkUpdateCustomers = (items = []) => {
+  return api.patch("/customers/bulk/", { items });
+};
+
+// -----------------------------
 // NOTES
 // -----------------------------
 export function getCustomerNotes(customerId) {

@@ -12,8 +12,10 @@ export default function CustomerFilterModal({
   users = [],
   tags = [],
   isAdmin = false,
+  forceStatus = "",
 }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const statusLocked = Boolean(forceStatus);
 
   const [form, setForm] = useState({
     status: "",
@@ -27,7 +29,7 @@ export default function CustomerFilterModal({
     if (!isOpen) return;
 
     setForm({
-      status: searchParams.get("status") || "",
+      status: forceStatus || searchParams.get("status") || "",
       source: searchParams.get("source") || "",
       assigned_to: searchParams.get("assigned_to") || "",
       tag: searchParams.get("tag") || "",
@@ -43,17 +45,22 @@ export default function CustomerFilterModal({
       // user ise sadece tag gönder
       if (!isAdmin && key !== "tag") return;
 
+      if (key === "status" && statusLocked) return;
       if (value !== "") {
         params[key] = value;
       }
     });
+
+    if (statusLocked) {
+      params.status = forceStatus;
+    }
 
     setSearchParams(params);
     onClose();
   };
 
   const resetFilter = () => {
-    setSearchParams({});
+    setSearchParams(statusLocked ? { status: forceStatus } : {});
     onClose();
   };
 
@@ -63,7 +70,7 @@ export default function CustomerFilterModal({
         <h3>Filtrele</h3>
 
         {/* 🔐 STATUS – SADECE ADMIN */}
-        {isAdmin && (
+        {isAdmin && !statusLocked && (
           <>
             <label>Status</label>
             <select

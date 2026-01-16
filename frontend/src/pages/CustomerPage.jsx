@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
   getCustomers,
@@ -20,6 +20,7 @@ import TagStatistics from "../components/TagStatistics.jsx";
 import CustomerPageActions from "../components/customer/CustomerPageActions.jsx";
 import CustomerFilterModal from "../components/customer/CustomerFilterModal.jsx";
 import CustomerCreateModal from "../components/customer/CustomerCreateModal.jsx";
+import CustomerBulkUpdateModal from "../components/customer/CustomerBulkUpdateModal.jsx";
 
 import ExcelImportModal from "../components/customer/ExcelImportModal.jsx";
 
@@ -237,10 +238,11 @@ const getExistingMetaFromMap = (existingMap, phoneValue) => {
   return null;
 };
 
-export default function CustomerPage() {
+export default function CustomerPage({ archiveOnly = false }) {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   const [customers, setCustomers] = useState([]);
   const [users, setUsers] = useState([]);
@@ -249,7 +251,9 @@ export default function CustomerPage() {
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
+  const [selectedIds, setSelectedIds] = useState([]);
 
   // Excel
   const fileInputRef = useRef(null);
@@ -259,11 +263,13 @@ export default function CustomerPage() {
   const [excelModalOpen, setExcelModalOpen] = useState(false);
   const [excelRows, setExcelRows] = useState([]);
   const [serverReport, setServerReport] = useState(null);
+  const forcedStatus = archiveOnly ? "archived" : "active,pool";
 
   const loadCustomers = async () => {
     setLoading(true);
     try {
       const params = Object.fromEntries([...searchParams]);
+      params.status = forcedStatus;
       const res = isAdmin ? await getCustomers(params) : await getMyCustomers(params);
       setCustomers(res.data?.results || []);
       setTotalCount(res.data?.count || 0);
@@ -271,6 +277,17 @@ export default function CustomerPage() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const currentStatus = searchParams.get("status") || "";
+    if (currentStatus !== forcedStatus) {
+      const params = new URLSearchParams(searchParams);
+      params.set("status", forcedStatus);
+      params.set("page", "1");
+      setSearchParams(params, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forcedStatus, searchParams, setSearchParams]);
 
   useEffect(() => {
     async function init() {
@@ -612,8 +629,14 @@ export default function CustomerPage() {
         onOpenFilter={() => setFilterOpen(true)}
         onOpenCreate={() => setCreateOpen(true)}
         onExcelImport={handleExcelImport}
+        onOpenBulkUpdate={() => setBulkOpen(true)}
+        onOpenArchive={() =>
+          navigate(archiveOnly ? "/customers" : "/customers/archive")
+        }
         isAdmin={isAdmin}
         excelUploading={excelUploading}
+        selectedCount={selectedIds.length}
+        archiveMode={archiveOnly}
       />
 
       {isAdmin && (
@@ -632,6 +655,7 @@ export default function CustomerPage() {
         users={users}
         tags={tags}
         isAdmin={isAdmin}
+        forceStatus={forcedStatus}
       />
 
       <CustomerCreateModal
@@ -643,7 +667,12 @@ export default function CustomerPage() {
       />
 
       <TagStatistics customers={customers} />
-      <CustomerList customers={customers} totalCount={totalCount} />
+      <CustomerList
+        customers={customers}
+        totalCount={totalCount}
+        selectedIds={selectedIds}
+        onSelectionChange={setSelectedIds}
+      />
 
       <ExcelImportModal
         open={excelModalOpen}
@@ -653,6 +682,18 @@ export default function CustomerPage() {
         saving={excelUploading}
         onSave={handleSaveImport}
         serverReport={serverReport}
+        tags={tags}
+        users={users}
+      />
+
+      <CustomerBulkUpdateModal
+        isOpen={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        onSuccess={() => {
+          setSelectedIds([]);
+          loadCustomers();
+        }}
+        selectedIds={selectedIds}
         tags={tags}
         users={users}
       />

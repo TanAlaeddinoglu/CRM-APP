@@ -5,8 +5,12 @@ export default function CustomerPageActions({
   onOpenFilter,
   onOpenCreate,
   onExcelImport,
+  onOpenBulkUpdate,
+  onOpenArchive,
   isAdmin,
   excelUploading,
+  selectedCount = 0,
+  archiveMode = false,
 }) {
   return (
     <div className="customer-actions">
@@ -19,6 +23,27 @@ export default function CustomerPageActions({
       </div>
 
       <div className="customer-actions-right">
+        {isAdmin && (
+          <button className="btn-secondary" onClick={onOpenArchive}>
+            {archiveMode ? "📋 Aktif + Pool" : "🗄 Archive"}
+          </button>
+        )}
+
+        {isAdmin && (
+          <button
+            className="btn-secondary"
+            onClick={onOpenBulkUpdate}
+            disabled={selectedCount === 0}
+            title={
+              selectedCount === 0
+                ? "Önce müşteri seçmelisin"
+                : `${selectedCount} müşteri seçili`
+            }
+          >
+            🧩 Toplu Güncelle {selectedCount > 0 ? `(${selectedCount})` : ""}
+          </button>
+        )}
+
         {isAdmin && (
           <button
             className="btn-secondary"
