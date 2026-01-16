@@ -33,7 +33,7 @@ export default function Sidebar() {
             {/* TOP */}
             <div className="sidebar-top">
                 {!collapsed && (
-                    <Link to="/" className="sidebar-logo">
+                    <Link to="/customers" className="sidebar-logo">
                         <img src={Logo} alt="CRM Logo" className="sidebar-logo-img"/>
                     </Link>
                 )}

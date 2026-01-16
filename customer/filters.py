@@ -10,12 +10,21 @@ class CustomerFilter(df.FilterSet):
         /customers/?tag=null&source=manual
     """
 
-    status = df.CharFilter(field_name="status", lookup_expr="icontains")
+    status = df.CharFilter(method="filter_status")
     source = df.CharFilter(field_name="source", lookup_expr="icontains")
     assigned_to = df.NumberFilter(field_name="assigned_to_id", lookup_expr="exact")
 
     # ?tag=5  veya ?tag=null  (string "null" geldiğinde NULL filtrele)
     tag = df.CharFilter(method="filter_tag")
+
+    def filter_status(self, queryset, name, value: str):
+        raw = (value or "").strip()
+        if not raw:
+            return queryset
+        parts = [v.strip() for v in raw.split(",") if v.strip()]
+        if not parts:
+            return queryset
+        return queryset.filter(status__in=parts)
 
     def filter_tag(self, queryset, name, value: str):
         v = value.strip().lower()

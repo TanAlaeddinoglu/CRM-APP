@@ -1,4 +1,6 @@
 from django.urls import path
+
+from .customerBulkViews import CustomerBulkView
 from .views import (
     AdminCustomerViewSet,
     UserCustomerViewSet,
@@ -13,6 +15,11 @@ from .bulkViews import (
 )
 
 urlpatterns = [
+    path(
+        "bulk/",
+        CustomerBulkView.as_view(),
+        name="customer-bulk",
+    ),
     path(
         "import-excel/dry-run/",
         CustomerExcelDryRunView.as_view(),

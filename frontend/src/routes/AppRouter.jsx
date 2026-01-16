@@ -130,6 +130,19 @@ export default function AppRouter() {
       />
 
       <Route
+        path="/customers/archive"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Suspense fallback={<PageLoader />}>
+                <CustomerListPage archiveOnly />
+              </Suspense>
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/customers/:id"
         element={
           <ProtectedRoute>
