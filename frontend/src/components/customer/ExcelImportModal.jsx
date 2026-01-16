@@ -10,7 +10,7 @@ const mapReasonTR = (reason) => {
     case "invalid_phone":
       return "Telefon geçersiz";
     case "missing_name":
-      return "Ad/Soyad eksik";
+      return "Ad eksik";
     default:
       return reason || "-";
   }

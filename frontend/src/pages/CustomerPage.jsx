@@ -324,7 +324,7 @@ export default function CustomerPage({ archiveOnly = false }) {
       let _status = "ok";
       let _reason = "";
 
-      if (!name || !surname) {
+      if (!name) {
         _status = "invalid_phone";
         _reason = "missing_name";
       } else if (!digits || digits.length < 10 || digits.length > 13) {
