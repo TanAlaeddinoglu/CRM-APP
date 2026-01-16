@@ -44,7 +44,7 @@ class AdminCustomerViewSet(viewsets.ModelViewSet):
         "customer_phone",
     ]
     ordering_fields = ["created_at", "updated_at", "customer_name"]
-    ordering = ["customer_name"]
+    ordering = ["customer_name", "updated_at"]
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user, updated_by=self.request.user)
@@ -170,7 +170,7 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
         "status",
         "source",
     ]
-    ordering = ["customer_name"]
+    ordering = ["-updated_at"]
 
     def get_queryset(self):
         if self.request.user.is_staff or self.request.user.is_superuser:

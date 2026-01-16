@@ -32,7 +32,9 @@ class CustomerExcelRowSerializer(serializers.Serializer):
     row = serializers.IntegerField(required=False)
 
     customer_name = serializers.CharField(max_length=100)
-    customer_surname = serializers.CharField(max_length=100)
+    customer_surname = serializers.CharField(
+        max_length=100, required=False, allow_blank=True, allow_null=True
+    )
 
     # email opsiyonel (zaten sende böyle)
     customer_email = serializers.EmailField(
@@ -53,10 +55,7 @@ class CustomerExcelRowSerializer(serializers.Serializer):
         return v
 
     def validate_customer_surname(self, v):
-        v = (v or "").strip()
-        if not v:
-            raise serializers.ValidationError("Surname is required.")
-        return v
+        return (v or "").strip()
 
     def validate_customer_phone(self, v):
         phone = normalize_phone_keep_plus(v)
@@ -87,7 +86,7 @@ class CustomerBulkItemSerializer(serializers.Serializer):
     existing_customer_id = serializers.IntegerField(required=False, allow_null=True)
 
     customer_name = serializers.CharField(required=True)
-    customer_surname = serializers.CharField(required=True)
+    customer_surname = serializers.CharField(required=True, allow_blank=True)
     customer_phone = serializers.CharField(required=True)
 
     customer_email = serializers.EmailField(

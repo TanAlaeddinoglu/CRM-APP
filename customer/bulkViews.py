@@ -689,7 +689,7 @@ def _read_excel_to_rows(excel_file):
                 df = df.rename(columns={c: "city"})
                 break
 
-    required_cols = {"customer_name", "customer_surname", "customer_phone"}
+    required_cols = {"customer_name", "customer_phone"}
     missing = required_cols - set(df.columns)
     if missing:
         return None, {"detail": f"Eksik kolon(lar): {sorted(missing)}"}
