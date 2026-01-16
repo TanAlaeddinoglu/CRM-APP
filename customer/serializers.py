@@ -130,12 +130,18 @@ class CustomerSerializer(serializers.ModelSerializer):
 
         phone_number = attrs.get("customer_phone")
         if not phone_number:
-            raise serializers.ValidationError({"customer_phone": ["Phone number is required."]})
+            raise serializers.ValidationError(
+                {"customer_phone": ["Phone number is required."]}
+            )
 
         normalized = normalize_customer_phone(phone_number)
         if not normalized:
             raise serializers.ValidationError(
-                {"customer_phone": ["Phone number is invalid. Examples: +43..., 0043..., 90..., p:+90..."]}
+                {
+                    "customer_phone": [
+                        "Phone number is invalid. Examples: +43..., 0043..., 90..., p:+90..."
+                    ]
+                }
             )
 
         cand = phone_candidates(normalized)
@@ -143,7 +149,9 @@ class CustomerSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             qs = qs.exclude(pk=self.instance.pk)
         if qs.exists():
-            raise serializers.ValidationError({"customer_phone": ["Phone number already exists."]})
+            raise serializers.ValidationError(
+                {"customer_phone": ["Phone number already exists."]}
+            )
 
         # ✅ + varsa koruyarak kaydet
         attrs["customer_phone"] = normalized

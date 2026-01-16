@@ -115,6 +115,14 @@ html, body {
   text-align: center;
 }
 
+.checkbox-col input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  transform: scale(1.2);
+  cursor: pointer;
+  accent-color: var(--color-border);
+}
+
 /* ================================
    PRODUCT COLUMN
 ================================ */
@@ -288,8 +296,17 @@ html, body {
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
-  background: linear-gradient(135deg, #e2e8f0, #f8fafc);
+  background: linear-gradient(135deg, #e2e8f0, #aefc88);
   color: #0f172a;
+}
+
+.tag-badge.tag-pool {
+  background: linear-gradient(135deg, #e2e8f0, #f8fafc);
+  color: #0f172a;}
+
+.tag-badge.tag-archived {
+  background: linear-gradient(135deg, #fee2e2, #ff8787);
+  color: #991b1b;
 }
 
 /* TAG TIMER – PREMIUM PILL */

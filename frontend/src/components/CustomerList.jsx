@@ -3,13 +3,21 @@ import React, {useEffect, useMemo, useState} from "react";
 import {useNavigate, useSearchParams} from "react-router-dom";
 import "../assets/css/CustomerList.css";
 
-export default function CustomerList({customers = [], totalCount = 0}) {
+export default function CustomerList({
+    customers = [],
+    totalCount = 0,
+    selectedIds,
+    onSelectionChange,
+}) {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
 
-    const [selected, setSelected] = useState([]);
+    const [localSelected, setLocalSelected] = useState([]);
     const [sortKey, setSortKey] = useState(null);
     const [asc, setAsc] = useState(true);
+
+    const selected = selectedIds ?? localSelected;
+    const setSelected = onSelectionChange ?? setLocalSelected;
 
     const page = Number(searchParams.get("page") || 1);
     const pageSize = Number(searchParams.get("page_size") || 10);
@@ -18,7 +26,7 @@ export default function CustomerList({customers = [], totalCount = 0}) {
     /* ================= SELECTION ================= */
     useEffect(() => {
         setSelected([]);
-    }, [customers]);
+    }, [customers, setSelected]);
 
     function toggleAll(e) {
         e.stopPropagation();
@@ -167,7 +175,11 @@ export default function CustomerList({customers = [], totalCount = 0}) {
 
                             {/* TAG */}
                             <td>
-                                <span className="tag-badge">{c.tag || "Pool"}</span>
+                                <span
+                                    className={`tag-badge ${c.status === "archived" ? "tag-archived" : (c.tag ? "" : "tag-pool")}`}
+                                >
+                                    {c.status === "archived" ? "Archive" : (c.tag || "Pool")}
+                                </span>
                             </td>
 
                             {/* TAG SÜRESİ */}
