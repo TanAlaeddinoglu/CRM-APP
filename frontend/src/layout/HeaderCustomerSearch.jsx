@@ -109,10 +109,13 @@ export default function HeaderCustomerSearch({role}) {
 
     /* ================= HIGHLIGHT ================= */
     function highlight(text, keyword) {
-        if (!keyword) return text;
+        if (text === null || text === undefined) return "";
+        const safeText = String(text);
+        if (!keyword) return safeText;
 
-        const regex = new RegExp(`(${keyword})`, "ig");
-        return text.split(regex).map((part, i) =>
+        const escaped = keyword.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const regex = new RegExp(`(${escaped})`, "ig");
+        return safeText.split(regex).map((part, i) =>
             part.toLowerCase() === keyword.toLowerCase() ? (
                 <strong key={i}>{part}</strong>
             ) : (
