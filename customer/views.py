@@ -106,7 +106,7 @@ class AdminCustomerViewSet(viewsets.ModelViewSet):
                 customer.save(update_fields=["tag", "updated_by"])
 
         if note_text is not None and not _nullish(note_text):
-            payload = {"customer": customer.id, "note": str(note_text)}
+            payload = {"customer_id": customer.id, "note": str(note_text)}
             ns = NotesSerializer(data=payload, context={"request": request})
             ns.is_valid(raise_exception=True)
             ns.save()
@@ -222,7 +222,7 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
             if _nullish(note_text):
                 raise ValidationError({"note": ["Note text is required."]})
 
-            payload = {"customer": customer.id, "note": str(note_text)}
+            payload = {"customer_id": customer.id, "note": str(note_text)}
             ns = NotesSerializer(data=payload, context={"request": request})
             ns.is_valid(raise_exception=True)
             ns.save()
