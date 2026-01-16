@@ -106,7 +106,7 @@ class AdminCustomerViewSet(viewsets.ModelViewSet):
                 customer.save(update_fields=["tag", "updated_by"])
 
         if note_text is not None and not _nullish(note_text):
-            payload = {"customer": customer.id, "note": str(note_text)}
+            payload = {"customer_id": customer.id, "note": str(note_text)}
             ns = NotesSerializer(data=payload, context={"request": request})
             ns.is_valid(raise_exception=True)
             ns.save()
@@ -222,7 +222,7 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
             if _nullish(note_text):
                 raise ValidationError({"note": ["Note text is required."]})
 
-            payload = {"customer": customer.id, "note": str(note_text)}
+            payload = {"customer_id": customer.id, "note": str(note_text)}
             ns = NotesSerializer(data=payload, context={"request": request})
             ns.is_valid(raise_exception=True)
             ns.save()
@@ -361,7 +361,7 @@ class NotesViewSet(viewsets.ModelViewSet):
     ordering = ["created_at"]
 
     def get_permissions(self):
-        if self.action in {"list", "create", "retrieve"}:
+        if self.action in {"list", "create", "retrieve", "update", "partial_update"}:
             return [IsAuthenticated()]
         return [IsAuthenticated(), IsAdminUser()]
 
@@ -376,6 +376,11 @@ class NotesViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         customer = serializer.validated_data["customer"]
+        is_admin_or_assigned_to_user(self.request, customer, self.request.user)
+        serializer.save()
+
+    def perform_update(self, serializer):
+        customer = serializer.instance.customer
         is_admin_or_assigned_to_user(self.request, customer, self.request.user)
         serializer.save()
 

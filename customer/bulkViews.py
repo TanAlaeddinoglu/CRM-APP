@@ -1215,7 +1215,7 @@ class CustomerBulkUpsertView(APIView):
                 tag_updated_count += 1
 
             if note_text and not _nullish(note_text):
-                payload = {"customer": customer.id, "note": str(note_text)}
+                payload = {"customer_id": customer.id, "note": str(note_text)}
                 ns = NotesSerializer(data=payload, context={"request": request})
                 ns.is_valid(raise_exception=True)
                 ns.save()
@@ -1263,7 +1263,7 @@ class CustomerBulkUpsertView(APIView):
                     tag_updated_count += 1
 
                 if note_text and not _nullish(note_text):
-                    payload = {"customer": customer.id, "note": str(note_text)}
+                    payload = {"customer_id": customer.id, "note": str(note_text)}
                     ns = NotesSerializer(data=payload, context={"request": request})
                     ns.is_valid(raise_exception=True)
                     ns.save()
