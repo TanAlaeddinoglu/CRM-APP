@@ -64,8 +64,8 @@ export function getCustomerNotes(customerId) {
 }
 
 export function createCustomerNote(customerId, note) {
-  // ✅ Backend tarafında NotesSerializer "customer" bekliyor (customer_id değil)
-  return api.post("/customers/notes/", { customer: customerId, note });
+  // NotesSerializer expects customer_id (write_only -> customer FK)
+  return api.post("/customers/notes/", { customer_id: customerId, note });
 }
 
 export function updateCustomerNote(noteId, note) {
