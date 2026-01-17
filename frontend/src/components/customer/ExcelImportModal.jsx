@@ -31,6 +31,7 @@ export default function ExcelImportModal({
   serverReport,
   tags = [],
   users = [],
+  onPhoneChange,
 }) {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkTagId, setBulkTagId] = useState("");
@@ -66,6 +67,25 @@ export default function ExcelImportModal({
   const selectAllDbDup = () => {
     const ids = new Set(rows.filter((r) => r._status === "duplicate_in_db").map((r) => r._id));
     setSelectedIds(ids);
+  };
+
+  const selectAllInvalid = () => {
+    const ids = new Set(
+      rows
+        .filter((r) => r._status !== "ok")
+        .filter((r) => r._status !== "duplicate_in_db" && r._status !== "duplicate_in_file")
+        .map((r) => r._id)
+    );
+    setSelectedIds(ids);
+  };
+
+  const deleteSelected = () => {
+    if (selectedIds.size === 0) {
+      alert("Önce satır seçmelisin.");
+      return;
+    }
+    setRows((prev) => prev.filter((r) => !selectedIds.has(r._id)));
+    clearSelection();
   };
 
   // row ops
@@ -147,7 +167,7 @@ export default function ExcelImportModal({
             <div className="excel-modal-subtitle">
               Toplam: <b>{stats.total}</b> • OK: <b>{stats.ok}</b> • Dup(File):{" "}
               <b>{stats.dupFile}</b> • Dup(DB): <b>{stats.dupDb}</b> • Hatalı:{" "}
-              <b>{stats.invalid}</b>
+              <b>{stats.invalid}</b> • Seçili: <b>{selectedIds.size}</b>
             </div>
           </div>
 
@@ -163,47 +183,59 @@ export default function ExcelImportModal({
 
         <div className="excel-bulk-bar">
           <div className="excel-bulk-left">
-            <span className="excel-bulk-title">Toplu işlemler (seçili satırlar):</span>
+            <div className="excel-bulk-row">
+              <span className="excel-bulk-title">Toplu işlemler (seçili satırlar):</span>
 
-            <button type="button" className="btn-secondary" onClick={selectAllOk}>
-              OK olanları seç
-            </button>
+              <button type="button" className="btn-secondary" onClick={selectAllOk}>
+                OK olanları seç
+              </button>
 
-            <button type="button" className="btn-secondary" onClick={selectAllDbDup}>
-              DB duplicate olanları seç
-            </button>
+              <button type="button" className="btn-secondary" onClick={selectAllDbDup}>
+                DB duplicate olanları seç
+              </button>
 
-            <button type="button" className="btn-secondary" onClick={clearSelection}>
-              Seçimi temizle
-            </button>
+              <button type="button" className="btn-secondary" onClick={selectAllInvalid}>
+                Hatalı olanları seç
+              </button>
 
-            <div className="excel-bulk-field">
-              <span>Toplu Tag:</span>
-              <select value={bulkTagId} onChange={(e) => setBulkTagId(e.target.value)}>
-                <option value="">— seç —</option>
-                {tags.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {tagLabel(t)}
-                  </option>
-                ))}
-              </select>
+              <button type="button" className="btn-secondary" onClick={clearSelection}>
+                Seçimi temizle
+              </button>
+
+              <button type="button" className="btn-secondary excel-btn-danger" onClick={deleteSelected}>
+                Seçili satırları sil
+              </button>
             </div>
 
-            <div className="excel-bulk-field">
-              <span>Toplu Assigned:</span>
-              <select value={bulkAssignedId} onChange={(e) => setBulkAssignedId(e.target.value)}>
-                <option value="">— seç —</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {userLabel(u)}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <div className="excel-bulk-row">
+              <div className="excel-bulk-field">
+                <span>Toplu Tag:</span>
+                <select value={bulkTagId} onChange={(e) => setBulkTagId(e.target.value)}>
+                  <option value="">— seç —</option>
+                  {tags.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {tagLabel(t)}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <button type="button" className="btn-secondary" onClick={applyBulk}>
-              Uygula
-            </button>
+              <div className="excel-bulk-field">
+                <span>Toplu Assigned:</span>
+                <select value={bulkAssignedId} onChange={(e) => setBulkAssignedId(e.target.value)}>
+                  <option value="">— seç —</option>
+                  {users.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {userLabel(u)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button type="button" className="btn-secondary" onClick={applyBulk}>
+                Uygula
+              </button>
+            </div>
           </div>
 
           <div className="excel-bulk-right">
@@ -314,7 +346,11 @@ export default function ExcelImportModal({
                         name={`telefon_${r._id}`}
                         className="excel-input"
                         value={r.Telefon ?? ""}
-                        onChange={(e) => updateCell(r._id, "Telefon", e.target.value)}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          updateCell(r._id, "Telefon", value);
+                          if (onPhoneChange) onPhoneChange(r._id, value);
+                        }}
                       />
                     </td>
 
@@ -417,7 +453,7 @@ export default function ExcelImportModal({
                     <td>
                       <button
                         type="button"
-                        className="btn-secondary"
+                        className="btn-secondary excel-btn-danger"
                         onClick={() => deleteRow(r._id)}
                       >
                         Sil
