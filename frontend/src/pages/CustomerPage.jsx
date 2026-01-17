@@ -263,6 +263,9 @@ export default function CustomerPage({ archiveOnly = false }) {
   const [excelModalOpen, setExcelModalOpen] = useState(false);
   const [excelRows, setExcelRows] = useState([]);
   const [serverReport, setServerReport] = useState(null);
+  const excelRowsRef = useRef([]);
+  const excelPhoneCheckTimers = useRef(new Map());
+  const excelPhoneCheckSeq = useRef(new Map());
   const forcedStatus = archiveOnly ? "archived" : "active,pool";
 
   const loadCustomers = async () => {
@@ -309,6 +312,10 @@ export default function CustomerPage({ archiveOnly = false }) {
     loadCustomers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.toString()]);
+
+  useEffect(() => {
+    excelRowsRef.current = excelRows;
+  }, [excelRows]);
 
   // ---------------------------------
   // Validation on UI rows
@@ -382,6 +389,67 @@ export default function CustomerPage({ archiveOnly = false }) {
       const next = typeof updaterOrArray === "function" ? updaterOrArray(prev) : updaterOrArray;
       return recomputeValidation(Array.isArray(next) ? next : []);
     });
+  };
+
+  const clearDbDuplicateMeta = (row) => ({
+    ...row,
+    _existingCustomerId: null,
+    _dbAssigned: null,
+    _dbTag: null,
+    ...(st(row) === "duplicate_in_db" ? { _status: "ok", _reason: "" } : {}),
+  });
+
+  const handleExcelPhoneChange = (rowId, phoneValue) => {
+    const timers = excelPhoneCheckTimers.current;
+    const seqMap = excelPhoneCheckSeq.current;
+
+    if (timers.has(rowId)) {
+      clearTimeout(timers.get(rowId));
+      timers.delete(rowId);
+    }
+
+    setRowsWithValidation((prev) => prev.map((r) => (r._id === rowId ? clearDbDuplicateMeta(r) : r)));
+
+    const row = (excelRowsRef.current || []).find((r) => r._id === rowId);
+    const nameValue = row?.Ad;
+    const normalized = normalizePhoneKeepPlus(phoneValue);
+    const digits = phoneKey(normalized);
+
+    if (!nameValue || !digits || digits.length < 10 || digits.length > 13) return;
+
+    const nextSeq = (seqMap.get(rowId) || 0) + 1;
+    seqMap.set(rowId, nextSeq);
+
+    const timer = setTimeout(async () => {
+      if (seqMap.get(rowId) !== nextSeq) return;
+
+      try {
+        const existingMap = await checkExistingByPhones(phoneCandidates(normalized));
+        if (seqMap.get(rowId) !== nextSeq) return;
+        const meta = getExistingMetaFromMap(existingMap, normalized);
+
+        setRowsWithValidation((prev) =>
+          prev.map((r) => {
+            if (r._id !== rowId) return r;
+            if (meta?.id) {
+              return {
+                ...r,
+                _status: "duplicate_in_db",
+                _reason: "duplicate_in_db",
+                _existingCustomerId: meta.id,
+                _dbAssigned: meta.assigned_to || null,
+                _dbTag: meta.tag || null,
+              };
+            }
+            return clearDbDuplicateMeta(r);
+          })
+        );
+      } catch (err) {
+        // Ignore transient check errors; user can re-edit to retry.
+      }
+    }, 500);
+
+    timers.set(rowId, timer);
   };
 
   // ---------------------------------
@@ -684,6 +752,7 @@ export default function CustomerPage({ archiveOnly = false }) {
         serverReport={serverReport}
         tags={tags}
         users={users}
+        onPhoneChange={handleExcelPhoneChange}
       />
 
       <CustomerBulkUpdateModal

@@ -66,11 +66,18 @@
 
 .excel-bulk-left {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;                     /* ✅ dropdownlar alt satıra iner */
-  align-items: center;
+  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
   min-width: 0;                        /* ✅ taşma fix */
   flex: 1;
+}
+
+.excel-bulk-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .excel-bulk-right {
@@ -105,6 +112,15 @@
   border-radius: 8px;
   background: #fff;
   max-width: 220px;                    /* ✅ taşma engeli */
+}
+
+.excel-btn-danger {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.excel-btn-danger:hover {
+  background: #fecaca;
 }
 
 /* ✅ Scroll area: only table scrolls */
