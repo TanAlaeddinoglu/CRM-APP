@@ -1,8 +1,8 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
-
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.exceptions import PermissionDenied
 
 from accounts.authenticate import CustomAuthentication
 from common.utils import PAYMENT_STATUS
@@ -27,6 +27,51 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     search_fields = ["name"]
     ordering_fields = ["name"]
     ordering = ("name",)
+
+    # ✅ LIST: Admin her şeyi görür, user sadece kendi customer'larının randevularını görür
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+
+        if user.is_staff or user.is_superuser:
+            return qs
+
+        return qs.filter(customer__assigned_to=user)
+
+    # ✅ DETAIL/UPDATE/DELETE: URL ile başka randevuya erişimi de kapat
+    def get_object(self):
+        obj = super().get_object()
+        user = self.request.user
+
+        if user.is_staff or user.is_superuser:
+            return obj
+
+        if obj.customer.assigned_to_id != user.id:
+            raise PermissionDenied("Bu randevuya erişim yetkin yok.")
+        return obj
+
+    # ✅ CREATE: user başka customer'a randevu açamasın
+    def perform_create(self, serializer):
+        user = self.request.user
+        customer = serializer.validated_data.get("customer")
+
+        if not (user.is_staff or user.is_superuser):
+            if customer is None or customer.assigned_to_id != user.id:
+                raise PermissionDenied("Bu müşteri için randevu oluşturamazsın.")
+
+        serializer.save(created_by=user, updated_by=user)
+
+    # ✅ UPDATE: user başka customer'a bağlı randevuyu güncelleyemesin
+    def perform_update(self, serializer):
+        user = self.request.user
+        customer = serializer.validated_data.get("customer", None)
+
+        if not (user.is_staff or user.is_superuser):
+            effective_customer = customer or getattr(serializer.instance, "customer", None)
+            if effective_customer is None or effective_customer.assigned_to_id != user.id:
+                raise PermissionDenied("Bu randevuyu güncelleyemezsin.")
+
+        serializer.save(updated_by=user)
 
 
 class AppointmentPaymentsViewSet(viewsets.ModelViewSet):

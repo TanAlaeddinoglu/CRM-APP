@@ -1,6 +1,6 @@
 // src/components/TagStatistics.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { getCustomers, getMyCustomers } from "../services/customer";
+import { getCustomerTagStats, getMyCustomerTagStats } from "../services/customer";
 import { useAuth } from "../context/AuthContext";
 import "../assets/css/TagStatistics.css";
 
@@ -8,26 +8,24 @@ export default function TagStatistics() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
 
-  const [customers, setCustomers] = useState([]);
+  const [stats, setStats] = useState({ total: 0, by_tag: [] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const load = async () => {
     try {
       setLoading(true);
 
-      const res = isAdmin
-        ? await getCustomers({ page_size: 1000 })
-        : await getMyCustomers({ page_size: 1000 });
+      const res = isAdmin ? await getCustomerTagStats() : await getMyCustomerTagStats();
 
-      // 🔴 EN KRİTİK SATIR
-      setCustomers(res.data?.results || []);
+      setStats(res.data || { total: 0, by_tag: [] });
     } catch (err) {
       console.error("Tag stats load error:", err);
-      setCustomers([]);
+      setStats({ total: 0, by_tag: [] });
     } finally {
       setLoading(false);
     }
@@ -35,17 +33,18 @@ export default function TagStatistics() {
 
   /* ================= TAG COUNT ================= */
   const tagStats = useMemo(() => {
-    const stats = {};
+    const obj = {};
 
-    customers.forEach((c) => {
-      const tag = c.tag || "Etiketsiz";
-      stats[tag] = (stats[tag] || 0) + 1;
+    (stats.by_tag || []).forEach((row) => {
+      // backend: values("tag__tag_name") -> null ise Etiketsiz
+      const tagName = row?.tag__tag_name ?? "Etiketsiz";
+      obj[tagName] = row?.count ?? 0;
     });
 
-    return stats;
-  }, [customers]);
+    return obj;
+  }, [stats]);
 
-  const total = customers.length;
+  const total = stats.total ?? 0;
 
   return (
     <div className="tag-stats-container">

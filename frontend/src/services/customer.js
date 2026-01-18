@@ -15,6 +15,13 @@ export const getCustomerById = async (id, isAdmin) => {
 export const getCustomers = (params = {}) => api.get("/customers/", { params });
 export const getMyCustomers = (params = {}) => api.get("/customers/me/", { params });
 
+// ✅ NEW: TAG STATS (pagination bağımsız)
+export const getCustomerTagStats = (params = {}) =>
+  api.get("/customers/tag-stats/", { params });
+
+export const getMyCustomerTagStats = (params = {}) =>
+  api.get("/customers/me/tag-stats/", { params });
+
 export function getCustomer(id) {
   return api.get(`/customers/${id}/`);
 }
@@ -105,7 +112,9 @@ export function setCustomerTag(data) {
 
   if (typeof data === "number") {
     return Promise.reject(
-      new Error("setCustomerTag: tag id given; do not POST. Use updateCustomer with tag=id.")
+      new Error(
+        "setCustomerTag: tag id given; do not POST. Use updateCustomer with tag=id."
+      )
     );
   }
 
@@ -217,7 +226,7 @@ export async function checkExistingByPhones(phones = [], concurrency = 8) {
           id: exact.id,
           customer_phone: exact.customer_phone || null,
           assigned_to: exact.assigned_to ?? null, // list serializer: username döndürüyor olmalı
-          tag: exact.tag ?? null,                 // list serializer: tag name döndürüyor olmalı
+          tag: exact.tag ?? null, // list serializer: tag name döndürüyor olmalı
         };
 
         // aynı meta’yı farklı key’lerle yaz
@@ -230,7 +239,10 @@ export async function checkExistingByPhones(phones = [], concurrency = 8) {
     }
   }
 
-  const workers = Array.from({ length: Math.min(concurrency, uniq.length) }, () => worker());
+  const workers = Array.from(
+    { length: Math.min(concurrency, uniq.length) },
+    () => worker()
+  );
   await Promise.all(workers);
   return result;
 }

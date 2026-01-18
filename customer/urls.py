@@ -7,6 +7,8 @@ from .views import (
     TagViewSet,
     CustomerTagHistoryViewSet,
     NotesViewSet,
+    CustomerTagStatsAdminView,
+    CustomerTagStatsMeView,
 )
 from .bulkViews import (
     CustomerBulkUpsertView,
@@ -114,4 +116,15 @@ urlpatterns = [
         ),
         name="notes-detail-update-destroy",
     ),
+    path(
+        "tag-stats/",
+        CustomerTagStatsAdminView.as_view(),
+        name="customer-tag-stats",
+    ),
+    path(
+        "me/tag-stats/",
+        CustomerTagStatsMeView.as_view(),
+        name="my-customer-tag-stats",
+    ),
+
 ]

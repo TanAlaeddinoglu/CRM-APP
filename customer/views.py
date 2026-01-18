@@ -6,6 +6,9 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHOD
 from rest_framework.exceptions import ValidationError, NotFound
 from rest_framework import status, viewsets, filters
 
+from django.db.models import Count, Q  # ✅ NEW
+from rest_framework.views import APIView  # ✅ NEW
+
 from accounts.authenticate import CustomAuthentication
 from common.pagination import CustomPagination
 from .bulkViews import CUSTOMER_FIELDS, _nullish, User, _set_customer_products
@@ -245,76 +248,6 @@ class TagViewSet(viewsets.ModelViewSet):
 # -------------------------
 # Tag / History / Notes
 # -------------------------
-# class TagViewSet(viewsets.ModelViewSet):
-#     queryset = Tag.objects.all().order_by("id")
-#     serializer_class = TagSerializer
-#     authentication_classes = [CustomAuthentication]
-#     lookup_field = "pk"
-#
-#     def get_permissions(self):
-#         if self.request.method in SAFE_METHODS:
-#             return [IsAuthenticated()]
-#         return [IsAuthenticated(), IsAdminUser()]
-#
-#     def perform_create(self, serializer):
-#         extra = {}
-#         if "created_by" in serializer.fields:
-#             extra["created_by"] = self.request.user
-#         if "updated_by" in serializer.fields:
-#             extra["updated_by"] = self.request.user
-#         serializer.save(**extra)
-#
-#     def create(self, request, *args, **kwargs):
-#         raw = (
-#             request.data.get("id")
-#             or request.data.get("pk")
-#             or request.data.get("name")
-#             or request.data.get("tag")
-#             or request.data.get("label")
-#             or request.data.get("title")
-#         )
-#
-#         if _nullish(raw) or str(raw).strip() == "-":
-#             raise ValidationError({"name": ["Tag name is required."]})
-#
-#         raw_str = str(raw).strip()
-#
-#         if raw_str.isdigit():
-#             tag_obj = Tag.objects.filter(pk=int(raw_str)).first()
-#             if tag_obj:
-#                 return Response(
-#                     self.get_serializer(tag_obj).data, status=status.HTTP_200_OK
-#                 )
-#
-#         name = raw_str
-#         existing = Tag.objects.filter(name__iexact=name).first()
-#         if existing:
-#             return Response(
-#                 self.get_serializer(existing).data, status=status.HTTP_200_OK
-#             )
-#
-#         payload = request.data.copy()
-#         payload["name"] = name
-#
-#         serializer = self.get_serializer(data=payload)
-#         serializer.is_valid(raise_exception=True)
-#
-#         try:
-#             self.perform_create(serializer)
-#         except IntegrityError:
-#             existing = Tag.objects.filter(name__iexact=name).first()
-#             if existing:
-#                 return Response(
-#                     self.get_serializer(existing).data, status=status.HTTP_200_OK
-#                 )
-#             raise
-#
-#         headers = self.get_success_headers(serializer.data)
-#         return Response(
-#             serializer.data, status=status.HTTP_201_CREATED, headers=headers
-#         )
-
-
 class CustomerTagHistoryViewSet(viewsets.ModelViewSet):
     serializer_class = CustomerTagHistorySerializer
     authentication_classes = [CustomAuthentication]
@@ -390,3 +323,72 @@ class NotesViewSet(viewsets.ModelViewSet):
         is_admin_or_assigned_to_user(request, customer, request.user)
         serializer = self.get_serializer(note)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ============================================================
+# ✅ NEW: Tag Statistics Endpoints (pagination bağımsız)
+# ============================================================
+class CustomerTagStatsAdminView(APIView):
+    authentication_classes = [CustomAuthentication]
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def get(self, request):
+        qs = Customer.objects.all()
+
+        # aynı filterset (status, source, assigned_to, tag)
+        qs = CustomerFilter(request.GET, queryset=qs).qs
+
+        # SearchFilter mantığı: ?search=
+        search = (request.GET.get("search") or "").strip()
+        if search:
+            qs = qs.filter(
+                Q(customer_name__icontains=search)
+                | Q(customer_surname__icontains=search)
+                | Q(customer_email__icontains=search)
+                | Q(customer_phone__icontains=search)
+            )
+
+        total = qs.count()
+
+        by_tag = (
+            qs.values("tag__tag_name")  # NULL -> None (frontend "Etiketsiz" yapabilir)
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        return Response({"total": total, "by_tag": list(by_tag)})
+
+
+class CustomerTagStatsMeView(APIView):
+    authentication_classes = [CustomAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        qs = Customer.objects.all()
+
+        # User list mantığınla aynı: admin değilse assigned_to=user + (varsa) is_active=True
+        if not (request.user.is_staff or request.user.is_superuser):
+            if "is_active" in CUSTOMER_FIELDS:
+                qs = qs.filter(is_active=True)
+            qs = qs.filter(assigned_to=request.user)
+
+        qs = CustomerFilter(request.GET, queryset=qs).qs
+
+        search = (request.GET.get("search") or "").strip()
+        if search:
+            qs = qs.filter(
+                Q(customer_name__icontains=search)
+                | Q(customer_surname__icontains=search)
+                | Q(customer_email__icontains=search)
+                | Q(customer_phone__icontains=search)
+            )
+
+        total = qs.count()
+
+        by_tag = (
+            qs.values("tag__tag_name")
+            .annotate(count=Count("id"))
+            .order_by("-count")
+        )
+
+        return Response({"total": total, "by_tag": list(by_tag)})
