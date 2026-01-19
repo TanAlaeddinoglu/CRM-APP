@@ -64,6 +64,7 @@ def phone_candidates(phone_value: str):
 class CustomerSerializer(serializers.ModelSerializer):
     """Serialize customer records including creator metadata."""
 
+    customer_surname = serializers.CharField(allow_blank=True, required=False)
     created_by = serializers.ReadOnlyField(source="created_by.username")
     updated_by = serializers.ReadOnlyField(source="updated_by.username")
     assigned_to = serializers.SerializerMethodField()
