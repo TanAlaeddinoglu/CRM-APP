@@ -37,7 +37,7 @@ class Tag(models.Model):
 
 class Customer(models.Model):
     customer_name = models.CharField(max_length=50)
-    customer_surname = models.CharField(max_length=50)
+    customer_surname = models.CharField(max_length=50, blank=True)
     customer_email = models.EmailField(max_length=50, null=True, blank=True)
     email_normalized = models.EmailField(editable=False)
     customer_phone = models.CharField(
