@@ -7,10 +7,17 @@ from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from accounts.authenticate import CustomAuthentication
 from common.utils import PAYMENT_STATUS
 from events.filters import AppointmentFilter
+from rest_framework.pagination import PageNumberPagination
 from events.models import Appointment, AppointmentPayment
 from events.serializers import AppointmentSerializer, AppointmentPaymentSerializer
 from django.db.models import Sum
 from decimal import Decimal
+
+
+class AppointmentPagination(PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 1000
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
@@ -18,15 +25,16 @@ class AppointmentViewSet(viewsets.ModelViewSet):
     serializer_class = AppointmentSerializer
     authentication_classes = [CustomAuthentication]
     permission_classes = [IsAuthenticated]
+    pagination_class = AppointmentPagination
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
     filterset_class = AppointmentFilter
-    search_fields = ["name"]
-    ordering_fields = ["name"]
-    ordering = ("name",)
+    search_fields = ["name", "customer__customer_name", "customer__customer_surname"]
+    ordering_fields = ["name", "scheduled_for"]
+    ordering = ("-scheduled_for",)
 
 
 class AppointmentPaymentsViewSet(viewsets.ModelViewSet):

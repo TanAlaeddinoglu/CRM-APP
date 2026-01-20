@@ -28,8 +28,9 @@ export default function AddPaymentModal({
   useEffect(() => {
     if (!isOpen) return;
 
-    getAppointments().then(res => {
-      setAppointments(res.data);
+    getAppointments().then((res) => {
+      const list = res.data?.results || res.data || [];
+      setAppointments(Array.isArray(list) ? list : []);
     });
   }, [isOpen]);
 
@@ -52,11 +53,12 @@ export default function AddPaymentModal({
   let cancelled = false;
 
   getAppointmentPayments()
-    .then(res => {
+    .then((res) => {
       if (cancelled) return;
 
-      const related = res.data.filter(
-        p => p.appointment === Number(form.appointment)
+      const list = res.data?.results || res.data || [];
+      const related = (Array.isArray(list) ? list : []).filter(
+        (p) => p.appointment === Number(form.appointment)
       );
 
       if (related.length > 0) {

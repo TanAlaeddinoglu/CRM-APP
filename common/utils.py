@@ -28,6 +28,7 @@ APPOINTMENT_TYPES = [
     ("muayene", "Muayene"),
     ("ameliyat", "Ameliyat"),
     ("tedavi", "Tedavi"),
+    ("hatirlatma", "Hatirlatma"),
 ]
 APPOINTMENT_STATUS = [
     ("beklemede", "Beklemede"),

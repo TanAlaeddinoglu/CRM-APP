@@ -26,7 +26,8 @@ const CustomerEventsSection = ({ customerId }) => {
     setLoading(true);
     try {
       const res = await getAppointments({ customerId });
-      setEvents(res.data);
+      const items = res.data?.results || res.data || [];
+      setEvents(Array.isArray(items) ? items : []);
     } catch (err) {
       console.error("Error loading events:", err);
       toast.error("Randevular yüklenirken bir hata oluştu.");
