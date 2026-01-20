@@ -74,27 +74,42 @@ export default function AppointmentCalendar() {
       const params = showReminders
         ? { appointmentType: "hatirlatma", page_size: 1000 }
         : { page_size: 1000 };
+
       const res = await getAppointments(params);
       const items = res.data?.results || res.data || [];
-      const list = items.map((a) => ({
+
+      const list = items.map((a) => {
+        const isReminder = a.appointment_type === "hatirlatma";
+
+        // Hatırlatıcı: açık sarı (sabit)
+        const REMINDER_BG = "#FDE68A";
+        const REMINDER_BORDER = "#F59E0B";
+        const REMINDER_TEXT = "#111827";
+
+        // Randevu: soft pastel (status'a göre)
+        const appointmentStyle =
+          a.status === "satis"
+            ? { bg: "#BBF7D0", border: "#22C55E", text: "#064E3B" }
+            : a.status === "beklemede"
+            ? { bg: "#BFDBFE", border: "#3B82F6", text: "#0B3B8F" } // soft mavi
+            : { bg: "#FECACA", border: "#EF4444", text: "#7F1D1D" }; // soft kırmızı
+
+        return {
           id: a.id,
           title: [a.customer, a.name].filter(Boolean).join(" • ") || "Randevu",
           start: a.scheduled_for,
           extendedProps: a,
-          backgroundColor:
-            a.status === "satis"
-              ? "#dcfce7"
-              : a.status === "beklemede"
-              ? "#e0f2fe"
-              : a.status === "hatirlatma"
-              ? "#cffafe"
-              : "#fee2e2",
-          textColor: "#111827",
-          borderColor: "#e5e7eb",
-        }));
+
+          backgroundColor: isReminder ? REMINDER_BG : appointmentStyle.bg,
+          borderColor: isReminder ? REMINDER_BORDER : appointmentStyle.border,
+          textColor: isReminder ? REMINDER_TEXT : appointmentStyle.text,
+        };
+      });
+
       const filtered = showReminders
         ? list.filter((e) => e.extendedProps?.appointment_type === "hatirlatma")
         : list.filter((e) => e.extendedProps?.appointment_type !== "hatirlatma");
+
       setEvents(filtered);
       updateTimeBounds(filtered, viewRangeRef.current);
     } catch (err) {
@@ -102,7 +117,7 @@ export default function AppointmentCalendar() {
     } finally {
       setLoading(false);
     }
-  }, [showReminders]);
+  }, [showReminders, updateTimeBounds]);
 
   useEffect(() => {
     loadAppointments();
@@ -182,6 +197,33 @@ export default function AppointmentCalendar() {
           slotMinTime={timeBounds.min}
           slotMaxTime={timeBounds.max}
           events={events}
+          eventDidMount={(info) => {
+            const bg = info.event.backgroundColor;
+            const border = info.event.borderColor;
+            const text = info.event.textColor;
+
+            // WEEK/DAY/MONTH event kutusu
+            if (bg) info.el.style.setProperty("background-color", bg, "important");
+            if (border) info.el.style.setProperty("border-color", border, "important");
+            if (text) info.el.style.setProperty("color", text, "important");
+
+            // LIST (Ajanda) görünümünde element <tr> + içindeki <td>’ler
+            info.el.querySelectorAll("td").forEach((td) => {
+              if (bg) td.style.setProperty("background-color", bg, "important");
+              if (text) td.style.setProperty("color", text, "important");
+            });
+
+            // Ajanda başlık linkleri
+            info.el.querySelectorAll("a").forEach((a) => {
+              if (text) a.style.setProperty("color", text, "important");
+              a.style.setProperty("text-decoration", "none", "important");
+            });
+
+            // Ajanda dot rengi
+            const dot = info.el.querySelector(".fc-list-event-dot");
+            if (dot && border)
+              dot.style.setProperty("border-color", border, "important");
+          }}
           datesSet={(info) => {
             lastViewRef.current = info.view.type;
             lastDateRef.current = info.view.calendar.getDate();

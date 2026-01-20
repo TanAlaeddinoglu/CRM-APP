@@ -22,3 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+cat >> .gitignore <<'EOF'
+
+# local env files
+.env
+.env.*
+db.env
+db.env.*
+docker/.env
+docker/.env.*
+
+# keep examples tracked
+!.env.example
+!.env.*.example
+!db.env.example
+!db.env.*.example
+EOF
