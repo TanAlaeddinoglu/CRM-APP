@@ -19,15 +19,16 @@ export default function PaymentPage() {
   const fetchData = () => {
     setLoading(true);
 
-    Promise.all([
-      getAppointmentPayments(),
-      getAppointments(),
-    ])
+    Promise.all([getAppointmentPayments(), getAppointments()])
       .then(([paymentsRes, appointmentsRes]) => {
-        setPayments(paymentsRes.data || []);
+        const paymentsList =
+          paymentsRes.data?.results || paymentsRes.data || [];
+        setPayments(Array.isArray(paymentsList) ? paymentsList : []);
 
         const map = {};
-        (appointmentsRes.data || []).forEach(a => {
+        const appointmentList =
+          appointmentsRes.data?.results || appointmentsRes.data || [];
+        (Array.isArray(appointmentList) ? appointmentList : []).forEach((a) => {
           map[a.id] = a;
         });
         setAppointments(map);

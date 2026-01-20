@@ -89,6 +89,7 @@
 .status-beklemede { color: #92400e; }
 .status-satis { color: #166534; }
 .status-olumsuz { color: #991b1b; }
+.status-hatirlatma { color: #0e7490; }
 
 /* Typography */
 .event-row-date {
@@ -133,6 +134,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  z-index: 1100;
 }
 
 
@@ -149,6 +151,8 @@
   border-radius: 12px;
   padding: 18px 20px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+  position: relative;
+  z-index: 1101;
 }
 
 .modal-title {

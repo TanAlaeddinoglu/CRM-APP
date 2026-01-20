@@ -3,18 +3,7 @@ import { getProducts } from "../../../services/product";
 import { toast } from "react-hot-toast";
 import "./eventStyles.css";
 import ConfirmModal from "../../common/ConfirmModal"; // 🔥 ortak confirm
-
-const APPOINTMENT_TYPES = [
-  { value: "muayene", label: "Muayene" },
-  { value: "ameliyat", label: "Ameliyat" },
-  { value: "tedavi", label: "Tedavi" },
-];
-
-const APPOINTMENT_STATUS = [
-  { value: "beklemede", label: "Beklemede" },
-  { value: "satis", label: "Satış" },
-  { value: "olumsuz", label: "Olumsuz" },
-];
+import { APPOINTMENT_STATUS, APPOINTMENT_TYPES } from "./eventConstants";
 
 const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) => {
   if (!isOpen) return null;

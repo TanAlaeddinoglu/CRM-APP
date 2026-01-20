@@ -21,18 +21,21 @@ export default function PaymentHistoryPage() {
      LOAD DATA
   ========================= */
   useEffect(() => {
-    Promise.all([
-      getAppointmentPayments(),
-      getAppointments(),
-    ]).then(([pRes, aRes]) => {
-      setPayments(pRes.data || []);
+    Promise.all([getAppointmentPayments(), getAppointments()]).then(
+      ([pRes, aRes]) => {
+        const paymentsList = pRes.data?.results || pRes.data || [];
+        setPayments(Array.isArray(paymentsList) ? paymentsList : []);
 
-      const map = {};
-      (aRes.data || []).forEach(a => {
-        map[a.id] = a;
-      });
-      setAppointments(map);
-    });
+        const map = {};
+        const appointmentList = aRes.data?.results || aRes.data || [];
+        (Array.isArray(appointmentList) ? appointmentList : []).forEach(
+          (a) => {
+            map[a.id] = a;
+          }
+        );
+        setAppointments(map);
+      }
+    );
   }, []);
 
   /* =========================
