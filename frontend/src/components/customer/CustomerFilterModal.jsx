@@ -3,8 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import "../../assets/css/FilterModal.css";
 
-const STATUS_CHOICES = ["active", "archived", "quarantine", "pool"];
-const SOURCE_CHOICES = ["meta", "google", "manual"];
+const STATUS_CHOICES = ["active", "pool"];
+const SOURCE_CHOICES = ["meta", "google ads", "instagram", "whatsapp", "excel"];
 
 export default function CustomerFilterModal({
   isOpen,
@@ -42,8 +42,8 @@ export default function CustomerFilterModal({
     const params = {};
 
     Object.entries(form).forEach(([key, value]) => {
-      // user ise sadece tag gönder
-      if (!isAdmin && key !== "tag") return;
+      // user ise sadece tag + status gönder
+      if (!isAdmin && key !== "tag" && key !== "status") return;
 
       if (key === "status" && statusLocked) return;
       if (value !== "") {
@@ -70,7 +70,7 @@ export default function CustomerFilterModal({
         <h3>Filtrele</h3>
 
         {/* 🔐 STATUS – SADECE ADMIN */}
-        {isAdmin && !statusLocked && (
+        {!statusLocked && (
           <>
             <label>Status</label>
             <select

@@ -41,10 +41,10 @@ export default function AddProductModal({ onClose, onSave }) {
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
-
-            <div className="modal-row">
+            <div className="modal-field">
               <label>Product Name</label>
               <input
+                className="modal-input"
                 name="name"
                 value={form.name}
                 onChange={handleChange}
@@ -52,17 +52,15 @@ export default function AddProductModal({ onClose, onSave }) {
               />
             </div>
 
-            <div className="modal-row">
+            <div className="modal-field">
               <label>Description</label>
               <textarea
+                className="modal-textarea"
                 name="description"
                 value={form.description}
                 onChange={handleChange}
                 placeholder="Short description (optional)"
                 rows={3}
-                style={{ resize: "vertical", padding: "10px 12px",
-                         borderRadius: "8px", border: "1px solid var(--color-border)",
-                         fontSize: "14px" }}
               />
             </div>
           </div>

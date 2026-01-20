@@ -266,13 +266,17 @@ export default function CustomerPage({ archiveOnly = false }) {
   const excelRowsRef = useRef([]);
   const excelPhoneCheckTimers = useRef(new Map());
   const excelPhoneCheckSeq = useRef(new Map());
-  const forcedStatus = archiveOnly ? "archived" : "active,pool";
+  const forcedStatus = archiveOnly ? "archived" : "";
 
   const loadCustomers = async () => {
     setLoading(true);
     try {
       const params = Object.fromEntries([...searchParams]);
-      params.status = forcedStatus;
+      if (forcedStatus) {
+        params.status = forcedStatus;
+      } else if (!params.status) {
+        params.status = "active,pool";
+      }
       const res = isAdmin ? await getCustomers(params) : await getMyCustomers(params);
       setCustomers(res.data?.results || []);
       setTotalCount(res.data?.count || 0);
@@ -283,9 +287,14 @@ export default function CustomerPage({ archiveOnly = false }) {
 
   useEffect(() => {
     const currentStatus = searchParams.get("status") || "";
-    if (currentStatus !== forcedStatus) {
+    if (forcedStatus && currentStatus !== forcedStatus) {
       const params = new URLSearchParams(searchParams);
       params.set("status", forcedStatus);
+      params.set("page", "1");
+      setSearchParams(params, { replace: true });
+    } else if (!forcedStatus && !currentStatus) {
+      const params = new URLSearchParams(searchParams);
+      params.set("status", "active,pool");
       params.set("page", "1");
       setSearchParams(params, { replace: true });
     }

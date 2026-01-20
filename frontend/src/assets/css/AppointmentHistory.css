@@ -287,6 +287,28 @@
 }
 
 /* ================================
+   PAGINATION BAR
+================================ */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.pagination-bar select {
+  height: 32px;
+}
+
+@media (max-width: 768px) {
+  .pagination-bar {
+    justify-content: space-between;
+  }
+}
+
+/* ================================
    RESPONSIVE
 ================================ */
 @media (max-width: 768px) {

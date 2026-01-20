@@ -11,13 +11,26 @@ const STATUS_OPTIONS = [
   { value: "olumsuz", label: "Olumsuz" },
 ];
 
+const TYPE_OPTIONS = [
+  { value: "", label: "Tüm Türler" },
+  { value: "muayene", label: "Muayene" },
+  { value: "ameliyat", label: "Ameliyat" },
+  { value: "tedavi", label: "Tedavi" },
+  { value: "hatirlatma", label: "Hatirlatma" },
+];
+
 export default function AppointmentHistoryPage() {
   const [appointments, setAppointments] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [loading, setLoading] = useState(false);
 
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
 
   const [selectedAppointment, setSelectedAppointment] =
     useState(null);
@@ -28,10 +41,28 @@ export default function AppointmentHistoryPage() {
      LOAD DATA
   ========================= */
   useEffect(() => {
-    getAppointments().then((res) => {
-      setAppointments(res.data || []);
-    });
-  }, []);
+    setLoading(true);
+    const params = {
+      page,
+      page_size: pageSize,
+    };
+    if (statusFilter) params.status = statusFilter;
+    if (typeFilter) params.appointmentType = typeFilter;
+    if (dateFrom) params.dateFrom = dateFrom;
+    if (dateTo) params.dateTo = dateTo;
+    if (search) params.search = search;
+
+    getAppointments(params)
+      .then((res) => {
+        setAppointments(res.data?.results || []);
+        setTotalCount(res.data?.count || 0);
+      })
+      .finally(() => setLoading(false));
+  }, [page, pageSize, statusFilter, typeFilter, dateFrom, dateTo, search]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [statusFilter, typeFilter, dateFrom, dateTo, search, pageSize]);
 
   /* =========================
      QUICK FILTERS
@@ -61,51 +92,13 @@ export default function AppointmentHistoryPage() {
   /* =========================
      FILTER + SORT
   ========================= */
-  const rows = useMemo(() => {
-    return appointments
-      .filter((a) => {
-        // TEXT
-        if (search) {
-          const s = search.toLowerCase();
-          if (
-            !a.name?.toLowerCase().includes(s) &&
-            !a.customer?.toLowerCase().includes(s)
-          ) {
-            return false;
-          }
-        }
-
-        // STATUS
-        if (statusFilter && a.status !== statusFilter) {
-          return false;
-        }
-
-        const d = new Date(a.scheduled_for);
-
-        // DATE FROM
-        if (dateFrom && d < new Date(dateFrom)) return false;
-
-        // DATE TO
-        if (dateTo) {
-          const to = new Date(dateTo);
-          to.setHours(23, 59, 59, 999);
-          if (d > to) return false;
-        }
-
-        return true;
-      })
-      .sort(
-        (a, b) =>
-          new Date(b.scheduled_for) -
-          new Date(a.scheduled_for)
-      );
-  }, [
-    appointments,
-    search,
-    dateFrom,
-    dateTo,
-    statusFilter,
-  ]);
+  const rows = useMemo(
+    () =>
+      [...appointments].sort(
+        (a, b) => new Date(b.scheduled_for) - new Date(a.scheduled_for)
+      ),
+    [appointments]
+  );
 
   return (
     <div className="appointment-page-wrapper">
@@ -141,6 +134,17 @@ export default function AppointmentHistoryPage() {
                 ))}
             </select>
 
+            <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+            >
+                {TYPE_OPTIONS.map((t) => (
+                    <option key={t.value} value={t.value}>
+                        {t.label}
+                    </option>
+                ))}
+            </select>
+
             <input
                 type="date"
                 value={dateFrom}
@@ -172,6 +176,7 @@ export default function AppointmentHistoryPage() {
                 onClick={() => {
                     setSearch("");
                     setStatusFilter("");
+                    setTypeFilter("");
                     setDateFrom("");
                     setDateTo("");
                 }}
@@ -183,11 +188,13 @@ export default function AppointmentHistoryPage() {
 
         {/* ================= COUNT ================= */}
         <div className="result-count">
-            {rows.length} kayıt bulundu
+            {totalCount} kayıt bulundu
         </div>
 
         {/* ================= TABLE ================= */}
-      {rows.length === 0 ? (
+      {loading ? (
+        <div className="appointment-empty">Yükleniyor…</div>
+      ) : rows.length === 0 ? (
         <div className="appointment-empty">
           Kayıt bulunamadı.
         </div>
@@ -198,6 +205,7 @@ export default function AppointmentHistoryPage() {
               <th>Tarih</th>
               <th>Müşteri</th>
               <th>Randevu</th>
+              <th>Tür</th>
               <th>Durum</th>
             </tr>
           </thead>
@@ -216,6 +224,7 @@ export default function AppointmentHistoryPage() {
                 </td>
                 <td>{a.customer}</td>
                 <td>{a.name}</td>
+                <td>{a.appointment_type}</td>
                 <td>
                   <span
                     className={`status-badge ${a.status}`}
@@ -228,6 +237,39 @@ export default function AppointmentHistoryPage() {
           </tbody>
         </table>
       )}
+
+      {/* ================= PAGINATION ================= */}
+      <div className="pagination-bar">
+        <span style={{ color: "#6b7280", fontSize: "12px" }}>
+          Sayfa {page} / {Math.max(1, Math.ceil(totalCount / pageSize))}
+        </span>
+        <select
+          value={pageSize}
+          onChange={(e) => setPageSize(Number(e.target.value))}
+        >
+          {[10, 20, 50, 100].map((size) => (
+            <option key={size} value={size}>
+              {size}/sayfa
+            </option>
+          ))}
+        </select>
+        <button
+          className="btn-ghost"
+          disabled={page <= 1}
+          onClick={() => setPage((p) => Math.max(1, p - 1))}
+        >
+          Önceki
+        </button>
+        <button
+          className="btn-ghost"
+          disabled={page >= Math.ceil(totalCount / pageSize)}
+          onClick={() =>
+            setPage((p) => Math.min(p + 1, Math.ceil(totalCount / pageSize)))
+          }
+        >
+          Sonraki
+        </button>
+      </div>
 
       {/* ================= DETAIL MODAL ================= */}
       <AppointmentDetailModal
