@@ -77,32 +77,49 @@
 
 /* =========================
    EVENT (APPLE STYLE)
+   - JS'ten verdiğin backgroundColor/borderColor/textColor çalışsın diye
+     FullCalendar'ın CSS değişkenlerini kullanıyoruz.
 ========================= */
 .fc-event {
-  background: #f9fafb !important;
-  border: 1px solid #e5e7eb !important;
+  background-color: var(--fc-event-bg-color, #f9fafb) !important;
+  border: 1px solid var(--fc-event-border-color, #e5e7eb) !important;
   border-radius: 10px !important;
   padding: 4px 6px !important;
   box-shadow: none !important;
 }
 
+/* =========================
+   FORCE EVENT TEXT BLACK (ALL VIEWS)
+   - Haftalık/Aylık görünümde bazen yazı beyaz olabiliyor
+   - Burada her yerde yazıyı siyaha zorluyoruz
+========================= */
+.fc .fc-event,
+.fc .fc-event .fc-event-main,
+.fc .fc-event .fc-event-main-frame,
+.fc .fc-event .fc-event-title,
+.fc .fc-event .fc-event-time,
+.fc .fc-event a {
+  color: #111827 !important;
+}
+
 .fc-event-title {
   font-size: 12px;
-  font-weight: 500;
-  color: #111827;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* Saat bilgisi biraz daha soft ama okunur */
 .fc-event-time {
   font-size: 11px;
-  color: #6b7280;
+  font-weight: 600;
+  opacity: 0.85;
 }
 
-/* Hover */
+/* Hover: rengi bozma, sadece hafif koyulaştır */
 .fc-event:hover {
-  background: #f3f4f6 !important;
+  filter: brightness(0.985);
 }
 
 /* =========================
@@ -115,6 +132,8 @@
 
 /* =========================
    LIST (AGENDA) VIEW
+   - Mavi bar/satır highlight'ını kapat
+   - Her satır event'in kendi pastel rengine boyansın
 ========================= */
 .fc-list {
   border: none;
@@ -130,11 +149,35 @@
 .fc-list-event {
   border-bottom: 1px solid #e5e7eb;
   padding: 12px 8px;
+  background: transparent !important;
+}
+
+/* FullCalendar list view bazen <a> / <td> üstünden mavi arka plan basıyor.
+   Burada event renklerini zorla uygulatıyoruz. */
+.fc .fc-list-event td {
+  background-color: var(--fc-event-bg-color, #ffffff) !important;
+  color: #111827 !important; /* list'te de siyah */
+}
+
+/* Link (başlık) rengi */
+.fc .fc-list-event a {
+  color: #111827 !important;
+  text-decoration: none !important;
+}
+
+/* Dot rengi border rengine uysun */
+.fc .fc-list-event-dot {
+  border-color: var(--fc-event-border-color, #e5e7eb) !important;
+}
+
+/* Ajanda hover: soft */
+.fc .fc-list-event:hover td {
+  filter: brightness(0.985);
 }
 
 .fc-list-event-title {
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .fc-list-event-time {
@@ -164,6 +207,7 @@
 .fc-scroller::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .btn-danger {
   padding: 8px 14px;
   border-radius: 8px;
