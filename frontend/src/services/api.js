@@ -20,20 +20,59 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+const refreshEndpoint = "/accounts/token/refresh/";
+let refreshPromise = null;
+
+const refreshAccessToken = () => {
+  if (!refreshPromise) {
+    refreshPromise = api
+      .post(refreshEndpoint, null, { skipAuthRefresh: true })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+};
+
+const forceLogout = () => {
+  Cookies.remove("access_token");
+  Cookies.remove("refresh_token");
+  window.location.href = "/login";
+};
 
 api.interceptors.response.use(
   (response) => response,
 
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      // Access token expired or invalid
-      Cookies.remove("access_token");
-      Cookies.remove("refresh_token");
-
-      // Force redirect to login
-      window.location.href = "/login";
+  async (error) => {
+    const { response, config } = error;
+    if (!response || !config) {
+      return Promise.reject(error);
     }
 
+    if (response.status !== 401) {
+      return Promise.reject(error);
+    }
+
+    const isRefreshRequest =
+      typeof config.url === "string" && config.url.includes(refreshEndpoint);
+
+    if (config.skipAuthRefresh || isRefreshRequest) {
+      forceLogout();
+      return Promise.reject(error);
+    }
+
+    if (!config._retry) {
+      config._retry = true;
+      try {
+        await refreshAccessToken();
+        return api(config);
+      } catch (refreshError) {
+        forceLogout();
+        return Promise.reject(refreshError);
+      }
+    }
+
+    forceLogout();
     return Promise.reject(error);
   }
 );
