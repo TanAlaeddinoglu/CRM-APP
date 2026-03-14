@@ -11,25 +11,69 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from datetime import timedelta
+from importlib.util import find_spec
 from pathlib import Path
 
+from django.core.exceptions import ImproperlyConfigured
 from drf_spectacular.contrib import rest_framework_simplejwt
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _load_env_file(path: Path) -> None:
+    if not path.exists():
+        return
+
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip("\"'")
+
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_env_file(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # SECRET_KEY = "django-insecure-=97im^5wzw-z%*k+v*=dn%4yyk^7ssd#g@$)unpbel5eg^1aa+"
-SECRET_KEY = "9e2cf01e74eb5f1269a65eda81dea8a6325aa709a9fdb2eb01d5642fcdf0bf57"
-# SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+# SECRET_KEY = "9e2cf01e74eb5f1269a65eda81dea8a6325aa709a9fdb2eb01d5642fcdf0bf57"
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
 
 def _env_bool(name: str, default: bool = False) -> bool:
     value = os.getenv(name, str(default))
     return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_str(
+    name: str, default: str | None = None, *, required: bool = False
+) -> str | None:
+    value = os.getenv(name, default)
+    if value is None:
+        if required:
+            raise ImproperlyConfigured(f"{name} environment variable must be set.")
+        return None
+
+    value = value.strip()
+    if required and not value:
+        raise ImproperlyConfigured(f"{name} environment variable must not be empty.")
+    return value or default
+
+
+def _module_exists(name: str) -> bool:
+    try:
+        return find_spec(name) is not None
+    except ModuleNotFoundError:
+        return False
 
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -52,6 +96,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "customer.apps.CustomerConfig",
     "events.apps.EventsConfig",
+    "notifications.apps.NotificationsConfig",
     "products.apps.ProductsConfig",
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
@@ -166,6 +211,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # STATICFILES_DIRS = [
 #     BASE_DIR / "static",
@@ -182,6 +229,20 @@ CACHES = {
         "LOCATION": "login-throttle",
     }
 }
+
+EMAIL_BACKEND = _env_str("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST = _env_str("EMAIL_HOST")
+EMAIL_PORT = int(_env_str("EMAIL_PORT", "587") or "587")
+EMAIL_HOST_PASSWORD = _env_str("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", False)
+EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", False)
+EMAIL_TIMEOUT = int(_env_str("EMAIL_TIMEOUT", "10") or "10")
+SERVER_EMAIL = _env_str("DEFAULT_FROM_EMAIL", required=True)
+
+if EMAIL_USE_TLS and EMAIL_USE_SSL:
+    raise ImproperlyConfigured(
+        "EMAIL_USE_TLS and EMAIL_USE_SSL cannot both be enabled."
+    )
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
@@ -210,6 +271,19 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
 
 CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+
+# CELERY
+CELERY_BROKER_URL = _env_str("CELERY_BROKER_URL", required=True)
+CELERY_RESULT_BACKEND = _env_str("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60
+CELERY_RESULT_EXPIRES = 60 * 60
 
 # LOCAL de calisirken commente al HTTP ve HSTS yi
 # HTTP SETTINGS

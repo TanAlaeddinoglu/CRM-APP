@@ -4,6 +4,7 @@ from typing import Any, Dict
 from .settings import *  # noqa: F401,F403
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+MEDIA_ROOT = BASE_DIR / "test_media"
 
 DATABASES: Dict[str, Dict[str, Any]] = {
     "default": {
@@ -11,3 +12,8 @@ DATABASES: Dict[str, Dict[str, Any]] = {
         "NAME": BASE_DIR / "test_db.sqlite3",
     }
 }
+
+CELERY_TASK_ALWAYS_EAGER = True
+CELERY_TASK_EAGER_PROPAGATES = True
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+DEFAULT_FROM_EMAIL = "tests@example.com"
