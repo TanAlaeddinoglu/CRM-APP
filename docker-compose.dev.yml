@@ -127,6 +127,33 @@ services:
         max-size: "10m"
         max-file: "5"
 
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: crm_dev_flower
+    restart: unless-stopped
+    env_file:
+      - .env.dev
+    command:
+      - /bin/sh
+      - -c
+      - exec celery -A djangoCRM flower --address=0.0.0.0 --port="$${FLOWER_PORT:-5555}" --basic_auth="$${FLOWER_BASIC_AUTH}"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - crm_dev_net
+    ports:
+      - "127.0.0.1:${FLOWER_PORT:-5555}:5555"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+
   frontend:
     build:
       context: ./frontend
