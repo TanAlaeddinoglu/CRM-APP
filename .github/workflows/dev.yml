@@ -36,5 +36,7 @@ jobs:
             git pull origin dev &&
             docker compose -f docker-compose.dev.yml down --remove-orphans &&
             docker volume rm djangocrm-dev_crm_dev_frontend_dist || true &&
+            docker compose -f docker-compose.dev.yml up -d --build db rabbitmq redis &&
+            docker compose -f docker-compose.dev.yml run --rm backend python manage.py migrate --noinput &&
             docker compose -f docker-compose.dev.yml up -d --build --force-recreate --remove-orphans
           "
