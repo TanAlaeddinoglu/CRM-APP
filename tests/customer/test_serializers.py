@@ -57,6 +57,7 @@ def test_customer_serializer_rejects_duplicate_phone():
     assert "customer_phone" in serializer.errors
 
 
+# TODO: normalize_customer_phone '+' ları silmiyor olduğu gibi kaydediyor düzelt
 def test_customer_serializer_create_sets_creator_and_tag():
     user = User.objects.create_user(username="creator", password="pass")
     tag = _make_tag("VIP")
