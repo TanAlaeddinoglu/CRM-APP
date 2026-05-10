@@ -6,7 +6,7 @@ services:
     container_name: crm_dev_db
     restart: unless-stopped
     env_file:
-      - .env.dev
+      - db.env.dev
     volumes:
       - crm_dev_postgres_data:/var/lib/postgresql/data
     networks:
@@ -27,9 +27,8 @@ services:
     image: rabbitmq:3.13-management-alpine
     container_name: crm_dev_rabbitmq
     restart: unless-stopped
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-crm_user}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-change_me}
+    env_file:
+      - .env.dev
     volumes:
       - crm_dev_rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -50,8 +49,8 @@ services:
     image: redis:7.4-alpine
     container_name: crm_dev_redis
     restart: unless-stopped
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me}
+    env_file:
+      - .env.dev
     command:
       - /bin/sh
       - -c
@@ -109,7 +108,10 @@ services:
     restart: unless-stopped
     env_file:
       - .env.dev
-    command: celery -A djangoCRM worker --loglevel=info --concurrency=${CELERY_WORKER_CONCURRENCY:-2}
+    command:
+      - /bin/sh
+      - -c
+      - exec celery -A djangoCRM worker --loglevel=info --concurrency="$${CELERY_WORKER_CONCURRENCY:-2}"
     depends_on:
       db:
         condition: service_healthy
@@ -147,7 +149,7 @@ services:
     networks:
       - crm_dev_net
     ports:
-      - "127.0.0.1:${FLOWER_PORT:-5555}:5555"
+      - "127.0.0.1:5555:5555"
     logging:
       driver: "json-file"
       options:
