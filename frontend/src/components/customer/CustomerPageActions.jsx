@@ -1,5 +1,6 @@
 import React from "react";
 import "../../assets/css/CustomerActions.css";
+import ExportActionButton from "../export/ExportActionButton.jsx";
 
 export default function CustomerPageActions({
   onOpenFilter,
@@ -8,6 +9,8 @@ export default function CustomerPageActions({
   onOpenBulkUpdate,
   onOpenArchive,
   isAdmin,
+  exportModel = "customer",
+  currentUserEmail = "",
   excelUploading,
   selectedCount = 0,
   archiveMode = false,
@@ -42,6 +45,15 @@ export default function CustomerPageActions({
           >
             🧩 Toplu Güncelle {selectedCount > 0 ? `(${selectedCount})` : ""}
           </button>
+        )}
+
+        {isAdmin && (
+          <ExportActionButton
+            model={exportModel}
+            initialRecipientEmail={currentUserEmail}
+            buttonClassName="btn-secondary"
+            buttonLabel="⬇️ Export"
+          />
         )}
 
         {isAdmin && (

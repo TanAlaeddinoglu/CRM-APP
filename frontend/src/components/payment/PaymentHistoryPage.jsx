@@ -5,10 +5,13 @@ import {
   getAppointments,
 } from "../../services/events";
 import PaymentHistoryTable from "./PaymentHistoryTable";
+import ExportActionButton from "../export/ExportActionButton.jsx";
+import { useAuth } from "../../context/AuthContext.jsx";
 import "./payment.css";
 
 export default function PaymentHistoryPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [payments, setPayments] = useState([]);
   const [appointments, setAppointments] = useState({});
@@ -87,12 +90,20 @@ export default function PaymentHistoryPage() {
       <div className="page-header">
         <h1 className="h1">Ödeme Geçmişi</h1>
 
-        <button
-          className="btn-secondary"
-          onClick={() => navigate("/payments")}
-        >
-          ← Ödemelere Dön
-        </button>
+        <div className="page-header-actions">
+          <ExportActionButton
+            model="payments"
+            initialRecipientEmail={user?.email || ""}
+            buttonClassName="btn-secondary"
+            buttonLabel="Export"
+          />
+          <button
+            className="btn-secondary"
+            onClick={() => navigate("/payments")}
+          >
+            ← Ödemelere Dön
+          </button>
+        </div>
       </div>
 
       {/* ================= FILTER BAR ================= */}

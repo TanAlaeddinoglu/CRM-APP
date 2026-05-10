@@ -24,6 +24,7 @@ urlpatterns = [
     path("api/", UserLoginView.as_view(), name="api-home"),
     path("api/accounts/", include("accounts.urls")),
     path("api/customers/", include("customer.urls")),
+    path("api/exports/", include("exporter.api.urls")),
     path("api/products/", include("products.urls")),
     path("api/events/", include("events.urls")),
     path("api/notifications/", include("notifications.urls")),

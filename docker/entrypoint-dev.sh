@@ -1,6 +1,10 @@
 #!/usr/bin/env sh
 set -e
 
+if [ "$#" -gt 0 ]; then
+    exec gosu appuser "$@"
+fi
+
 mkdir -p /app/staticfiles
 chown -R appuser:appuser /app/staticfiles
 

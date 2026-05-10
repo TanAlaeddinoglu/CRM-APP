@@ -70,7 +70,9 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (remaining > 0) {
-            setError(`Cok fazla deneme. Kalan sure: ${formatRemaining(remaining)}`);
+            setError(
+                `Cok fazla deneme. 120 saniyelik bekleme suresi aktif. Kalan sure: ${formatRemaining(remaining)}`
+            );
         } else if (banUntil === null) {
             setError("");
         }
@@ -81,7 +83,9 @@ export default function LoginPage() {
         setError("");
 
         if (banUntil && remaining > 0) {
-            setError(`Cok fazla deneme. Kalan sure: ${formatRemaining(remaining)}`);
+            setError(
+                `Cok fazla deneme. 120 saniyelik bekleme suresi aktif. Kalan sure: ${formatRemaining(remaining)}`
+            );
             return;
         }
 
@@ -111,12 +115,14 @@ export default function LoginPage() {
                     data.wait ||
                     data?.errors?.[0]?.wait ||
                     (Number.isFinite(retryAfter) ? retryAfter : parsedWait) ||
-                    300
+                    120
                 );
                 const until = Date.now() + waitSeconds * 1000;
                 setBanUntil(until);
                 localStorage.setItem("loginBanUntil", String(until));
-                setError(`Cok fazla deneme. Kalan sure: ${formatRemaining(waitSeconds)}`);
+                setError(
+                    `Cok fazla deneme. 120 saniyelik bekleme suresi aktif. Kalan sure: ${formatRemaining(waitSeconds)}`
+                );
                 return;
             }
 

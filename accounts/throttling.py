@@ -14,8 +14,9 @@ def check_login_throttle(identifier: str):
 
     if attempts >= LOGIN_ATTEMPT_LIMIT:
         raise Throttled(
-            detail="Bu hesap çok fazla başarısız giriş denemesi yaptı. "
-            "5 dakika sonra tekrar deneyin."
+            wait=BLOCK_TIME,
+            detail="Bu hesap çok fazla başarısız giris denemesi yapti. "
+            "120 saniye sonra tekrar deneyin.",
         )
 
 

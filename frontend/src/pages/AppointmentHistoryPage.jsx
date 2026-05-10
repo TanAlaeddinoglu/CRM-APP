@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAppointments } from "../services/appointment";
 import AppointmentDetailModal from "../components/AppointmentDetailModal";
+import ExportActionButton from "../components/export/ExportActionButton.jsx";
+import { useAuth } from "../context/AuthContext";
 import "../assets/css/AppointmentHistory.css";
 
 const STATUS_OPTIONS = [
@@ -20,6 +22,7 @@ const TYPE_OPTIONS = [
 ];
 
 export default function AppointmentHistoryPage() {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
@@ -106,12 +109,20 @@ export default function AppointmentHistoryPage() {
       <div className="page-header">
         <h1 className="h1">Randevu Listesi</h1>
 
-        <button
-          className="btn-secondary"
-          onClick={() => navigate("/events")}
-        >
-          ← Takvime Dön
-        </button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <ExportActionButton
+            model="events"
+            initialRecipientEmail={user?.email || ""}
+            buttonClassName="btn-secondary"
+            buttonLabel="Export"
+          />
+          <button
+            className="btn-secondary"
+            onClick={() => navigate("/events")}
+          >
+            ← Takvime Dön
+          </button>
+        </div>
       </div>
 
       {/* ================= FILTER BAR ================= */}

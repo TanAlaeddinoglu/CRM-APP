@@ -5,6 +5,7 @@ import {getProducts, createProduct, updateProduct} from "../services/product";
 import {useAuth} from "../context/AuthContext";
 import AddProductModal from "./AddProductModal.jsx";
 import EditProductModal from "./EditProductModal.jsx";
+import ExportActionButton from "./export/ExportActionButton.jsx";
 
 export default function ProductList() {
     const {user} = useAuth();
@@ -143,6 +144,15 @@ export default function ProductList() {
                         />
                         <span style={{fontSize: "13px"}}>Has description</span>
                     </label>
+
+                    {isAdmin && (
+                        <ExportActionButton
+                            model="product"
+                            initialRecipientEmail={user?.email || ""}
+                            buttonClassName="btn-secondary"
+                            buttonLabel="Export"
+                        />
+                    )}
 
                     {isAdmin && (
                         <button

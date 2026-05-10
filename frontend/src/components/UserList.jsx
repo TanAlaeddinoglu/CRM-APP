@@ -4,6 +4,7 @@ import {getUsers, updateUser} from "../services/user";
 import EditProfileModal from "./EditProfileModal";
 import { useAuth } from "../context/AuthContext";
 import {toast} from "react-hot-toast";
+import ExportActionButton from "./export/ExportActionButton.jsx";
 
 export default function UserList() {
   const { user } = useAuth();
@@ -127,6 +128,13 @@ export default function UserList() {
           <option value="ACTIVE">Active</option>
           <option value="INACTIVE">Inactive</option>
         </select>
+
+        <ExportActionButton
+          model="user"
+          initialRecipientEmail={user?.email || ""}
+          buttonClassName="btn-secondary"
+          buttonLabel="Export"
+        />
       </div>
 
       {/* USER TABLE */}
