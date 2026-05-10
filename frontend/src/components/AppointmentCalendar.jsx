@@ -1,6 +1,7 @@
 // src/components/AppointmentCalendar.jsx
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -17,11 +18,13 @@ import {
 
 import AppointmentDetailModal from "./AppointmentDetailModal";
 import EventModal from "../components/customer/events/EventModal.jsx";
+import ExportActionButton from "./export/ExportActionButton.jsx";
 
 import "../assets/css/AppointmentCalendar.css";
 
 export default function AppointmentCalendar() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -158,6 +161,12 @@ export default function AppointmentCalendar() {
         </h1>
 
         <div style={{ display: "flex", gap: "8px" }}>
+          <ExportActionButton
+            model="events"
+            initialRecipientEmail={user?.email || ""}
+            buttonClassName="btn-secondary"
+            buttonLabel="Export"
+          />
           <button
             className={showReminders ? "btn-primary" : "btn-secondary"}
             onClick={() => setShowReminders((prev) => !prev)}

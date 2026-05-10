@@ -4,6 +4,7 @@ import "../assets/css/ProductList.css";
 import { useAuth } from "../context/AuthContext";
 import { getTags, createTag, updateTag, deleteTag } from "../services/tag";
 import { toast } from "react-hot-toast";
+import ExportActionButton from "./export/ExportActionButton.jsx";
 
 import AddTagModal from "./AddTagModal";
 import EditTagModal from "./EditTagModal";
@@ -181,6 +182,15 @@ export default function TagList() {
               Has description
             </span>
           </label>
+
+          {isAdmin && (
+            <ExportActionButton
+              model="tag"
+              initialRecipientEmail={user?.email || ""}
+              buttonClassName="btn-secondary"
+              buttonLabel="Export"
+            />
+          )}
 
           {isAdmin && (
             <button

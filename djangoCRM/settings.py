@@ -96,6 +96,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "customer.apps.CustomerConfig",
     "events.apps.EventsConfig",
+    "exporter.apps.ExporterConfig",
     "notifications.apps.NotificationsConfig",
     "products.apps.ProductsConfig",
     "rest_framework_simplejwt.token_blacklist",
@@ -200,7 +201,6 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Europe/Istanbul"
-# TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -213,6 +213,7 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+EXPORT_FILES_ROOT = MEDIA_ROOT / "exports"
 
 # STATICFILES_DIRS = [
 #     BASE_DIR / "static",
@@ -223,16 +224,29 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+DJANGO_CACHE_URL = _env_str("DJANGO_CACHE_URL")
+
 CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-        "LOCATION": "login-throttle",
-    }
+    "default": (
+        {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": DJANGO_CACHE_URL,
+            "KEY_PREFIX": "djangocrm",
+            "TIMEOUT": 120,
+        }
+        if DJANGO_CACHE_URL
+        else {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "login-throttle",
+            "TIMEOUT": 120,
+        }
+    )
 }
 
 EMAIL_BACKEND = _env_str("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
 EMAIL_HOST = _env_str("EMAIL_HOST")
 EMAIL_PORT = int(_env_str("EMAIL_PORT", "587") or "587")
+EMAIL_HOST_USER = _env_str("EMAIL_HOST_USER")
 EMAIL_HOST_PASSWORD = _env_str("EMAIL_HOST_PASSWORD")
 EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", False)
 EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", False)
@@ -283,7 +297,7 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60
-CELERY_RESULT_EXPIRES = 60 * 60
+CELERY_RESULT_EXPIRES = 60 * 60 * 24 * 15  # CELERY RESULTLARIN RAM DEN SILINECEGI SURE
 
 # LOCAL de calisirken commente al HTTP ve HSTS yi
 # HTTP SETTINGS

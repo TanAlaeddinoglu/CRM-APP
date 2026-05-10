@@ -12,7 +12,7 @@ x-backend-common: &backend-common
 
 x-celery-worker-common: &celery-worker-common
   <<: *backend-common
-  command: celery -A djangoCRM worker --loglevel=info --concurrency=${CELERY_WORKER_CONCURRENCY:-2}
+  command: celery -A djangoCRM worker --loglevel=info --concurrency=${CELERY_WORKER_CONCURRENCY:-4}
   profiles: ["celery"]
   depends_on:
     rabbitmq:
