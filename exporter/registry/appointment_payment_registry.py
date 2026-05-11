@@ -30,4 +30,4 @@ class AppointmentPaymentExportRegistry(BaseExportRegistry):
     }
 
     def get_queryset(self, user):
-        return AppointmentPayment.objects.all().order_by("-appointment_id")
+        return AppointmentPayment.objects.all().order_by("appointment_id")

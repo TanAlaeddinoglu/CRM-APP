@@ -26,4 +26,4 @@ class UserExportRegistry(BaseExportRegistry):
     }
 
     def get_queryset(self, user):
-        return CustomUser.objects.all().order_by("-date_joined")
+        return CustomUser.objects.all().order_by("username")

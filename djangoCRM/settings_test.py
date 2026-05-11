@@ -16,7 +16,7 @@ DATABASES: Dict[str, Dict[str, Any]] = {
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
-DEFAULT_FROM_EMAIL = "tests@example.com"
+SERVER_EMAIL = "default-sender@example.com"
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.locmem.LocMemCache",

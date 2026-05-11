@@ -48,7 +48,6 @@ def test_export_service_uses_default_fields_and_saves_csv(
     assert result.file_name.endswith(".csv")
     assert result.row_count == 1
     assert result.fields == [
-        "id",
         "customer_name",
         "customer_surname",
         "customer_email",
@@ -97,6 +96,36 @@ def test_export_service_limits_regular_user_rows(tmp_path, admin_user, regular_u
     assert result.row_count == 1
     assert rows[0] == ("customer_name", "assigned_to")
     assert rows[1] == ("Mine", regular_user.username)
+
+
+def test_customer_excel_export_orders_names_ascending(tmp_path, admin_user):
+    _make_customer(
+        name="Zeta",
+        phone="1000000105",
+        created_by=admin_user,
+        assigned_to=admin_user,
+    )
+    _make_customer(
+        name="Alpha",
+        phone="1000000106",
+        created_by=admin_user,
+        assigned_to=admin_user,
+    )
+
+    with override_settings(MEDIA_ROOT=tmp_path, EXPORT_FILES_ROOT=tmp_path / "exports"):
+        result = ExportService().create_export(
+            user=admin_user,
+            model_name="customer",
+            file_type="excel",
+            fields=["customer_name"],
+        )
+
+    workbook = load_workbook(filename=BytesIO(result.absolute_path.read_bytes()))
+    rows = list(workbook.active.iter_rows(values_only=True))
+
+    assert rows[0] == ("customer_name",)
+    assert rows[1] == ("Alpha",)
+    assert rows[2] == ("Zeta",)
 
 
 def test_export_service_deletes_created_file(tmp_path, admin_user):

@@ -111,7 +111,7 @@ services:
     command:
       - /bin/sh
       - -c
-      - exec celery -A djangoCRM worker --loglevel=info --concurrency="$${CELERY_WORKER_CONCURRENCY:-2}"
+      - exec celery -A djangoCRM worker --loglevel=info --concurrency="$${CELERY_WORKER_CONCURRENCY:-1}"
     depends_on:
       db:
         condition: service_healthy

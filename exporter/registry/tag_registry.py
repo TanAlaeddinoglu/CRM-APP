@@ -16,4 +16,4 @@ class TagExportRegistry(BaseExportRegistry):
     }
 
     def get_queryset(self, user):
-        return Tag.objects.all().order_by("-id")
+        return Tag.objects.all().order_by("tag_name")
