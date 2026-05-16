@@ -38,7 +38,10 @@ export default function PaymentDetailsTable({ payments, onRefresh }) {
             <td>{p.paid_amount} ₺</td>
             <td>{p.remaining_amount} ₺</td>
             <td>
-              <PaymentStatusBadge status={p.payment_status} />
+              <PaymentStatusBadge
+                status={p.payment_status}
+                paidAmount={p.paid_amount}
+              />
             </td>
             <td>
               <button
@@ -56,10 +59,16 @@ export default function PaymentDetailsTable({ payments, onRefresh }) {
   );
 }
 
-function PaymentStatusBadge({ status }) {
+function PaymentStatusBadge({ status, paidAmount }) {
   const normalized = String(status || "").toLowerCase();
-  const statusClass = getPaymentStatusClass(normalized);
-  const statusLabel = getPaymentStatusLabel(normalized);
+  const isPaymentNotStarted =
+    normalized === "kismi" && Number(paidAmount || 0) === 0;
+  const statusClass = isPaymentNotStarted
+    ? "not-started"
+    : getPaymentStatusClass(normalized);
+  const statusLabel = isPaymentNotStarted
+    ? "Ödemeye başlanmadı"
+    : getPaymentStatusLabel(normalized);
 
   return (
     <span className={`payment-status-badge ${statusClass}`}>

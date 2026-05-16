@@ -35,7 +35,8 @@ export default function PaymentCustomerRow({
       <div className={`customer-row ${open ? "open" : ""}`}>
         <div
           className={`summary ${getCustomerSummaryStatusClass(
-            latestPayment?.payment_status
+            latestPayment?.payment_status,
+            paid
           )}`}
         >
           <button
@@ -97,10 +98,13 @@ export default function PaymentCustomerRow({
   );
 }
 
-function getCustomerSummaryStatusClass(status) {
+function getCustomerSummaryStatusClass(status, paidAmount) {
   const normalized = String(status || "").toLowerCase();
 
   if (normalized === "tamamlandi") return "payment-summary-completed";
+  if (normalized === "kismi" && Number(paidAmount || 0) === 0) {
+    return "payment-summary-not-started";
+  }
   if (normalized === "kismi") return "payment-summary-partial";
   if (normalized === "iptal") return "payment-summary-cancelled";
 

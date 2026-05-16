@@ -27,7 +27,7 @@ const PaymentPage = lazy(() => import("../pages/PaymentPage.jsx"));
 const PaymentHistoryPage = lazy(() =>
   import("../components/payment/PaymentHistoryPage.jsx")
 );
-const ReportsPage = lazy(() => import("../pages/ReportsPage.jsx"));
+const ReportsPage = lazy(() => import("../pages/reports/ReportsPage.jsx"));
 const ExportHistoryPage = lazy(() =>
   import("../pages/ExportHistoryPage.jsx")
 );

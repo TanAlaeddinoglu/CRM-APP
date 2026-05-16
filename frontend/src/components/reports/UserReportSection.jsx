@@ -116,7 +116,7 @@ export default function UserReportSection({
   );
 
   return (
-    <div style={{ display: "grid", gap: "18px" }}>
+    <div className="reports-section-stack">
       <FilterPanel
         title="Filtreler"
         onSubmit={onSubmit}
@@ -167,7 +167,7 @@ export default function UserReportSection({
           icon={<UserRound size={22} />}
         />
       ) : (
-        <div style={{ display: "grid", gap: "18px" }}>
+        <div className="reports-section-stack">
           <KpiGrid
             items={[
               ["Aktif Data", report.summary?.active_customer_count],
@@ -352,7 +352,7 @@ function SectionTitle({ icon: Icon, title }) {
           flexShrink: 0,
         }}
       >
-        <Icon size={16} />
+        {React.createElement(Icon, { size: 16 })}
       </div>
 
       <span

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
@@ -11,6 +11,7 @@ import ExportActionButton from "../components/export/ExportActionButton.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const MIN_SEARCH_LENGTH = 3;
 
 export default function PaymentPage() {
   const { user } = useAuth();
@@ -19,103 +20,140 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
   const [totalCount, setTotalCount] = useState(0);
-
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const currentPage = Math.max(1, Number(searchParams.get("page") || 1));
   const pageSize = Math.max(1, Number(searchParams.get("page_size") || 10));
+  const urlSearch = searchParams.get("search") || "";
+  const searchParamsKey = searchParams.toString();
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const [search, setSearch] = useState(urlSearch);
+
+  const updateSearchParams = useCallback(({
+    page = currentPage,
+    nextPageSize = pageSize,
+    nextSearch = urlSearch,
+  } = {}) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("page", String(page));
+    next.set("page_size", String(nextPageSize));
+
+    const trimmedSearch = nextSearch.trim();
+    if (trimmedSearch) {
+      next.set("search", trimmedSearch);
+    } else {
+      next.delete("search");
+    }
+
+    setSearchParams(next);
+  }, [currentPage, pageSize, searchParams, setSearchParams, urlSearch]);
+
+  useEffect(() => {
+    setSearch(urlSearch);
+  }, [urlSearch]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearch(search.trim());
-      updateSearchParams(1, pageSize);
+      const trimmedSearch = search.trim();
+      const nextSearch =
+        trimmedSearch.length >= MIN_SEARCH_LENGTH ? trimmedSearch : "";
+
+      if (nextSearch !== urlSearch) {
+        updateSearchParams({ page: 1, nextSearch });
+      }
     }, 350);
-
     return () => clearTimeout(timer);
-  }, [search]);
-
-  const fetchData = async () => {
-    setLoading(true);
-
-    try {
-      const paymentsRes = await getAppointmentPayments({
-        page: currentPage,
-        page_size: pageSize,
-        search: debouncedSearch || undefined,
-      });
-
-      const paymentsData = paymentsRes.data;
-      const paymentsList = paymentsData?.results || paymentsData || [];
-      const normalizedPayments = Array.isArray(paymentsList) ? paymentsList : [];
-
-      setPayments(normalizedPayments);
-      setTotalCount(Number(paymentsData?.count || normalizedPayments.length || 0));
-
-      const appointmentIds = Array.from(
-        new Set(
-          normalizedPayments
-            .map((payment) => payment?.appointment)
-            .filter(Boolean)
-        )
-      );
-
-      const appointmentResults = await Promise.all(
-        appointmentIds.map(async (id) => {
-          try {
-            const res = await getAppointmentById(id);
-            return res.data;
-          } catch (error) {
-            console.error(`Appointment detail fetch failed for id=${id}`, error);
-            return null;
-          }
-        })
-      );
-
-      const map = {};
-      appointmentResults.forEach((appointment) => {
-        if (appointment?.id) {
-          map[appointment.id] = appointment;
-        }
-      });
-
-      setAppointments(map);
-    } catch (error) {
-      console.error("Payment page fetch error:", error);
-      setPayments([]);
-      setAppointments({});
-      setTotalCount(0);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [search, searchParamsKey, updateSearchParams, urlSearch]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const fetchData = async () => {
+      setLoading(true);
+
+      try {
+        const paymentsRes = await getAppointmentPayments({
+          page: currentPage,
+          page_size: pageSize,
+          search: urlSearch || undefined,
+        });
+
+        if (cancelled) return;
+
+        const paymentsData = paymentsRes.data;
+        const paymentsList = paymentsData?.results || paymentsData || [];
+        const normalizedPayments = Array.isArray(paymentsList) ? paymentsList : [];
+
+        setPayments(normalizedPayments);
+        setTotalCount(Number(paymentsData?.count || normalizedPayments.length || 0));
+
+        const appointmentIds = Array.from(
+          new Set(
+            normalizedPayments
+              .map((payment) => payment?.appointment)
+              .filter(Boolean)
+          )
+        );
+
+        const appointmentResults = await Promise.all(
+          appointmentIds.map(async (id) => {
+            try {
+              const res = await getAppointmentById(id);
+              return res.data;
+            } catch (error) {
+              console.error(`Appointment detail fetch failed for id=${id}`, error);
+              return null;
+            }
+          })
+        );
+
+        if (cancelled) return;
+
+        const map = {};
+        appointmentResults.forEach((appointment) => {
+          if (appointment?.id) {
+            map[appointment.id] = appointment;
+          }
+        });
+
+        setAppointments(map);
+      } catch (error) {
+        if (!cancelled) {
+          console.error("Payment page fetch error:", error);
+          setPayments([]);
+          setAppointments({});
+          setTotalCount(0);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchData();
-  }, [currentPage, pageSize, debouncedSearch]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentPage, pageSize, urlSearch, refreshKey]);
 
   const grouped = useMemo(() => groupByAppointment(payments), [payments]);
   const groupedRows = Object.values(grouped);
-
-  const updateSearchParams = (nextPage, nextPageSize = pageSize) => {
-    const next = new URLSearchParams(searchParams);
-    next.set("page", String(nextPage));
-    next.set("page_size", String(nextPageSize));
-    setSearchParams(next);
-  };
+  const refreshPayments = () => setRefreshKey((key) => key + 1);
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages) return;
-    updateSearchParams(page, pageSize);
+    updateSearchParams({ page });
   };
 
   const handlePageSizeChange = (event) => {
     const nextSize = Number(event.target.value) || 10;
-    updateSearchParams(1, nextSize);
+    updateSearchParams({ page: 1, nextPageSize: nextSize });
   };
 
   const renderPageNumbers = () => {
@@ -149,10 +187,6 @@ export default function PaymentPage() {
 
     return pages;
   };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
 
   return (
     <div className="payment-page-wrapper">
@@ -193,18 +227,24 @@ export default function PaymentPage() {
       </div>
 
       <div className="payment-list-container">
-        {groupedRows.length === 0 && (
+        {loading && (
+          <div className="payment-empty">
+            Loading...
+          </div>
+        )}
+
+        {!loading && groupedRows.length === 0 && (
           <div className="payment-empty">
             Henüz ödeme bulunmuyor.
           </div>
         )}
 
-        {groupedRows.map((group) => (
+        {!loading && groupedRows.map((group) => (
           <PaymentCustomerRow
             key={group.appointmentId}
             appointment={appointments[group.appointmentId]}
             payments={group.payments}
-            onRefresh={fetchData}
+            onRefresh={refreshPayments}
           />
         ))}
       </div>
@@ -330,7 +370,7 @@ export default function PaymentPage() {
       <AddPaymentModal
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
-        onSuccess={fetchData}
+        onSuccess={refreshPayments}
       />
     </div>
   );

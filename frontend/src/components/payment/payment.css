@@ -117,6 +117,15 @@ body {
   background: #fff0cf;
 }
 
+.summary.payment-summary-not-started {
+  background: #fff1f2;
+  border: 1px solid #f6d2d7;
+}
+
+.summary.payment-summary-not-started:hover {
+  background: #ffe4e6;
+}
+
 .summary.payment-summary-cancelled {
   background: #fff1f2;
   border: 1px solid #f6d2d7;
@@ -253,6 +262,12 @@ body {
   background: #f6e8b3;
   color: #a16207;
   border: 1px solid #ecd98a;
+}
+
+.payment-status-badge.not-started {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
 }
 
 .payment-status-badge.cancelled {

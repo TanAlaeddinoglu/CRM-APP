@@ -45,15 +45,34 @@ export default function PaymentHistoryTable({ rows }) {
             <td>{p.remaining_amount} ₺</td>
 
             <td>
-              <span
-                className={`payment-status ${p.payment_status}`}
-              >
-                {p.payment_status}
-              </span>
+              <PaymentStatusBadge
+                status={p.payment_status}
+                paidAmount={p.paid_amount}
+              />
             </td>
           </tr>
         ))}
       </tbody>
     </table>
+  );
+}
+
+function PaymentStatusBadge({ status, paidAmount }) {
+  const normalized = String(status || "").toLowerCase();
+  const isPaymentNotStarted =
+    normalized === "kismi" && Number(paidAmount || 0) === 0;
+
+  if (isPaymentNotStarted) {
+    return (
+      <span className="payment-status-badge not-started">
+        Ödemeye başlanmadı
+      </span>
+    );
+  }
+
+  return (
+    <span className={`payment-status ${normalized}`}>
+      {status || "-"}
+    </span>
   );
 }
