@@ -21,7 +21,7 @@ import {
   Cell,
 } from "recharts";
 
-import { formatCurrency, formatPercent } from "./reportUtils";
+import { formatCurrency, formatPercent } from "../../utils/reportUtils";
 import {
   EmptyReportState,
   FilterGrid,
@@ -139,7 +139,7 @@ export default function PaymentReportSection({
   ].filter((item) => item.value > 0);
 
   return (
-    <div style={{ display: "grid", gap: "18px" }}>
+    <div className="reports-section-stack">
       <FilterPanel
         title="Filtreler"
         onSubmit={onSubmit}
@@ -199,7 +199,7 @@ export default function PaymentReportSection({
           icon={<CreditCard size={22} />}
         />
       ) : (
-        <div style={{ display: "grid", gap: "18px" }}>
+        <div className="reports-section-stack">
           <KpiGrid
             items={[
               ["Randevulu Satışlar", report.summary?.total_sales_appointments],
@@ -451,7 +451,7 @@ function SectionTitle({ icon: Icon, title }) {
           flexShrink: 0,
         }}
       >
-        <Icon size={16} />
+        {React.createElement(Icon, { size: 16 })}
       </div>
 
       <span

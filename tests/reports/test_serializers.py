@@ -48,11 +48,20 @@ class ReportQuerySerializerTests(APITestCase):
         serializer = AppointmentsSummaryQuerySerializer(
             data={
                 "date_from": "2025-01-01",
-                "date_to": "2026-02-01",
+                "date_to": "2025-07-01",
             }
         )
         self.assertFalse(serializer.is_valid())
         self.assertIn("date_range", serializer.errors)
+
+    def test_date_range_allows_180_day_limit(self):
+        serializer = AppointmentsSummaryQuerySerializer(
+            data={
+                "date_from": "2025-01-01",
+                "date_to": "2025-06-30",
+            }
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
 
     def test_valid_serializer_maps_related_filters(self):
         serializer = AppointmentsSummaryQuerySerializer(

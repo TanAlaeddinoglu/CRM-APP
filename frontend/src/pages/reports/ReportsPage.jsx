@@ -7,25 +7,26 @@ import {
   UserRound,
 } from "lucide-react";
 
-import { getUsers } from "../services/user";
-import { getProducts } from "../services/product";
+import { getUsers } from "../../services/user";
+import { getProducts } from "../../services/product";
 import {
   getAppointmentsSummary,
   getPaymentSummary,
   getProductPriceDistributionSummary,
   getUserDashboardSummary,
-} from "../services/report";
+} from "../../services/report";
 
-import { TabButton } from "./ReportUI";
-import UserReportSection from "./UserReportSection";
-import AppointmentsReportSection from "./AppointmentsReportSection";
-import PaymentReportSection from "./PaymentReportSection";
-import ProductPriceDistributionReportSection from "../components/ProductPriceDistributionReportSection";
+import { TabButton } from "../../components/reports/ReportUI";
+import UserReportSection from "../../components/reports/UserReportSection";
+import AppointmentsReportSection from "../../components/reports/AppointmentsReportSection";
+import PaymentReportSection from "../../components/reports/PaymentReportSection";
+import ProductPriceDistributionReportSection from "../../components/reports/ProductPriceDistributionReportSection";
 import {
   buildUserLabel,
   extractList,
   normalizeParams,
-} from "./reportUtils";
+} from "../../utils/reportUtils";
+import "../../assets/css/reports.css";
 
 const PRESET_OPTIONS = [
   { label: "7 Gün", value: "7" },
@@ -208,39 +209,14 @@ export default function ReportsPage() {
   };
 
   return (
-    <div
-      style={{
-        display: "grid",
-        gap: "18px",
-        paddingBottom: "32px",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "12px",
-          flexWrap: "wrap",
-        }}
-      >
-        <h1 className="h1" style={{ margin: 0 }}>
+    <div className="reports-page">
+      <div className="reports-page__header">
+        <h1 className="h1 reports-page__title">
           Reports
         </h1>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "10px",
-          flexWrap: "wrap",
-          background: "#ffffff",
-          padding: "12px",
-          borderRadius: "18px",
-          border: "1px solid #e6edf5",
-          boxShadow: "0 10px 30px rgba(15, 23, 42, 0.05)",
-        }}
-      >
+      <div className="reports-tabs">
         <TabButton
           active={activeTab === "user"}
           onClick={() => setActiveTab("user")}

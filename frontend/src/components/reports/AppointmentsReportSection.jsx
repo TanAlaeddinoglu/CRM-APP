@@ -20,7 +20,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { formatPercent } from "./reportUtils";
+import { formatPercent } from "../../utils/reportUtils";
 import {
   EmptyReportState,
   FilterGrid,
@@ -137,7 +137,7 @@ export default function AppointmentsReportSection({
     : [];
 
   return (
-    <div style={{ display: "grid", gap: "18px" }}>
+    <div className="reports-section-stack">
       <FilterPanel
         title="Filtreler"
         onSubmit={onSubmit}
@@ -197,7 +197,7 @@ export default function AppointmentsReportSection({
           icon={<CalendarDays size={22} />}
         />
       ) : (
-        <div style={{ display: "grid", gap: "18px" }}>
+        <div className="reports-section-stack">
           <KpiGrid
             items={[
               ["Toplam Randevu", report.summary?.total_appointments],
@@ -392,7 +392,7 @@ function SectionTitle({ icon: Icon, title }) {
           flexShrink: 0,
         }}
       >
-        <Icon size={16} />
+        {React.createElement(Icon, { size: 16 })}
       </div>
 
       <span
