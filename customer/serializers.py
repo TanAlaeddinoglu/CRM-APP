@@ -154,8 +154,8 @@ class CustomerSerializer(serializers.ModelSerializer):
                 {"customer_phone": ["Phone number already exists."]}
             )
 
-        # ✅ + varsa koruyarak kaydet
-        attrs["customer_phone"] = normalized
+        # Tekli create/update akışını bulk ile aynı saklama formatına getir.
+        attrs["customer_phone"] = normalized.lstrip("+")
         return attrs
 
     def create(self, validated_data):

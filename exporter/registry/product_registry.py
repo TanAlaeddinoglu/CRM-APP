@@ -8,7 +8,8 @@ class ProductExportRegistry(BaseExportRegistry):
         "name",
         "description",
         "created_by",
-        "created_at" "slug",
+        "created_at",
+        "slug",
     ]
     field_map = {
         "name": "name",

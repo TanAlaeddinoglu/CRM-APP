@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from exporter.exportFactory.factory import ExporterFactory
 from exporter.registry.base_registry import ExportRegistry
+from exporter.models import ExportJob
+from notifications.serializers import EmailLogSerializer
 
 
 class ExportRequestSerializer(serializers.Serializer):
@@ -51,3 +53,60 @@ class ExportDeleteSerializer(serializers.Serializer):
             )
 
         return attrs
+
+
+class ExportHistoryQuerySerializer(serializers.Serializer):
+    model = serializers.CharField(required=False, allow_blank=True)
+    date_from = serializers.DateField(required=False)
+    date_to = serializers.DateField(required=False)
+
+    def validate_model(self, value):
+        if not value:
+            return ""
+
+        try:
+            return ExportRegistry.get(value).model_name
+        except KeyError as exc:
+            raise serializers.ValidationError("Unsupported model.") from exc
+
+    def validate(self, attrs):
+        date_from = attrs.get("date_from")
+        date_to = attrs.get("date_to")
+
+        if date_from and date_to and date_from > date_to:
+            raise serializers.ValidationError(
+                {"date_to": ["date_to must be greater than or equal to date_from."]}
+            )
+
+        return attrs
+
+
+class ExportHistorySerializer(serializers.ModelSerializer):
+    created_by = serializers.CharField(source="created_by.username", read_only=True)
+    email_log = EmailLogSerializer(read_only=True)
+
+    class Meta:
+        model = ExportJob
+        fields = [
+            "id",
+            "created_by",
+            "model_name",
+            "file_type",
+            "selected_fields",
+            "recipient_email",
+            "email_subject",
+            "email_body",
+            "status",
+            "file_status",
+            "email_status",
+            "row_count",
+            "file_name",
+            "relative_path",
+            "absolute_path",
+            "workflow_task_id",
+            "email_log",
+            "metadata",
+            "error_message",
+            "created_at",
+            "updated_at",
+        ]
