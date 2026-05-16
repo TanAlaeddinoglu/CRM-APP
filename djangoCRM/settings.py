@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "customer.apps.CustomerConfig",
     "events.apps.EventsConfig",
     "products.apps.ProductsConfig",
+    "reports.apps.ReportsConfig",
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "rest_framework",

@@ -27,6 +27,7 @@ const PaymentPage = lazy(() => import("../pages/PaymentPage.jsx"));
 const PaymentHistoryPage = lazy(() =>
   import("../components/payment/PaymentHistoryPage.jsx")
 );
+const ReportsPage = lazy(() => import("../pages/ReportsPage.jsx"));
 
 /* =========================
    LOADER
@@ -45,7 +46,7 @@ export default function AppRouter() {
       {/* ================= LOGIN ================= */}
       <Route path="/login" element={<LoginPage />} />
 
-       ================= DASHBOARD =================
+      {/* ================= DASHBOARD ================= */}
       <Route
         path="/"
         element={
@@ -59,7 +60,7 @@ export default function AppRouter() {
         }
       />
 
-       ================= PROFILE =================
+      {/* ================= PROFILE ================= */}
       <Route
         path="/profile"
         element={
@@ -190,6 +191,20 @@ export default function AppRouter() {
             <MainLayout>
               <Suspense fallback={<PageLoader />}>
                 <PaymentHistoryPage />
+              </Suspense>
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ================= REPORTS (ADMIN) ================= */}
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute staffOnly>
+            <MainLayout>
+              <Suspense fallback={<PageLoader />}>
+                <ReportsPage />
               </Suspense>
             </MainLayout>
           </ProtectedRoute>

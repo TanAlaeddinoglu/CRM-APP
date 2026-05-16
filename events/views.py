@@ -1,17 +1,17 @@
+from decimal import Decimal
+
+from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework import filters, viewsets
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from accounts.authenticate import CustomAuthentication
 from common.utils import PAYMENT_STATUS
 from events.filters import AppointmentFilter
-from rest_framework.pagination import PageNumberPagination
 from events.models import Appointment, AppointmentPayment
 from events.serializers import AppointmentSerializer, AppointmentPaymentSerializer
-from django.db.models import Sum
-from decimal import Decimal
 
 
 class AppointmentPagination(PageNumberPagination):
@@ -32,11 +32,15 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     ]
     filterset_class = AppointmentFilter
-    search_fields = ["name", "customer__customer_name", "customer__customer_surname"]
+    search_fields = [
+        "name",
+        "customer__customer_name",
+        "customer__customer_surname",
+        "customer__customer_phone",
+    ]
     ordering_fields = ["name", "scheduled_for"]
     ordering = ("-scheduled_for",)
 
-    # ✅ LIST: Admin her şeyi görür, user sadece kendi customer'larının randevularını görür
     def get_queryset(self):
         qs = super().get_queryset()
         user = self.request.user
@@ -46,7 +50,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
         return qs.filter(customer__assigned_to=user)
 
-    # ✅ DETAIL/UPDATE/DELETE: URL ile başka randevuya erişimi de kapat
     def get_object(self):
         obj = super().get_object()
         user = self.request.user
@@ -58,7 +61,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Bu randevuya erişim yetkin yok.")
         return obj
 
-    # ✅ CREATE: user başka customer'a randevu açamasın
     def perform_create(self, serializer):
         user = self.request.user
         customer = serializer.validated_data.get("customer")
@@ -69,7 +71,6 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
         serializer.save(created_by=user, updated_by=user)
 
-    # ✅ UPDATE: user başka customer'a bağlı randevuyu güncelleyemesin
     def perform_update(self, serializer):
         user = self.request.user
         customer = serializer.validated_data.get("customer", None)
@@ -83,10 +84,16 @@ class AppointmentViewSet(viewsets.ModelViewSet):
 
 
 class AppointmentPaymentsViewSet(viewsets.ModelViewSet):
-    queryset = AppointmentPayment.objects.all()
+    queryset = AppointmentPayment.objects.select_related(
+        "appointment",
+        "appointment__customer",
+        "appointment__customer__assigned_to",
+    ).all()
     serializer_class = AppointmentPaymentSerializer
     authentication_classes = [CustomAuthentication]
     permission_classes = [IsAuthenticated, IsAdminUser]
+    pagination_class = AppointmentPagination
+
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -96,15 +103,17 @@ class AppointmentPaymentsViewSet(viewsets.ModelViewSet):
         "total_amount",
         "payment_status",
         "payment_date",
+        "appointment__name",
         "appointment__customer__customer_name",
         "appointment__customer__customer_surname",
+        "appointment__customer__customer_phone",
         "appointment__customer__assigned_to__username",
     ]
     ordering_fields = [
         "payment_date",
         "appointment__customer__assigned_to__username",
     ]
-    ordering = "-id"
+    ordering = ("-id",)
 
     def perform_destroy(self, instance):
         appointment = instance.appointment

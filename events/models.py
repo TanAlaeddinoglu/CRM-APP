@@ -58,6 +58,11 @@ class Appointment(models.Model):
         indexes = [
             models.Index(fields=("scheduled_for",)),
             models.Index(fields=("customer", "scheduled_for")),
+            models.Index(fields=("created_at",)),
+            models.Index(fields=("status",)),
+            models.Index(fields=("product",)),
+            models.Index(fields=("customer", "created_at")),
+            models.Index(fields=("product", "created_at")),
         ]
 
     def __str__(self) -> str:
@@ -115,6 +120,9 @@ class AppointmentPayment(models.Model):
         ordering = ("-created_at",)
         indexes = [
             models.Index(fields=("appointment", "created_at")),
+            models.Index(fields=("payment_date",)),
+            models.Index(fields=("payment_status",)),
+            models.Index(fields=("appointment", "payment_date")),
         ]
 
     def __str__(self) -> str:
