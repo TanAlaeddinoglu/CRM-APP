@@ -3,13 +3,11 @@ import "../assets/css/sidebar.css";
 import {Link, useLocation} from "react-router-dom";
 import Logo from "../assets/melagrana-logo.png";
 
-
 import {
     Users,
     Calendar,
     CreditCard,
     Package,
-    BarChart3,
     ChevronLeft,
     ChevronRight,
     Tag
@@ -25,7 +23,6 @@ export default function Sidebar() {
         {icon: <CreditCard size={20}/>, label: "Payments", path: "/payments"},
         {icon: <Package size={20}/>, label: "Products", path: "/products"},
         {icon: <Tag size={20}/>, label: "Tags", path: "/tags"},
-        // {icon: <BarChart3 size={20}/>, label: "Reports", path: "/reports"},
     ];
 
     return (

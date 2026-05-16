@@ -4,7 +4,7 @@ from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.renderers import BrowsableAPIRenderer, JSONRenderer
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
@@ -16,7 +16,7 @@ from .services import send_email_notification
 
 class SendEmailView(generics.GenericAPIView):
     authentication_classes = [JWTAuthentication, CustomAuthentication]
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminUser]
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     renderer_classes = [JSONRenderer, BrowsableAPIRenderer]
     serializer_class = SendEmailSerializer

@@ -1,5 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 import { logout } from "../services/auth";
+import { clearExportHistoryCache } from "../services/export";
 import { useNavigate } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
 import HeaderCustomerSearch from "./HeaderCustomerSearch";
@@ -21,9 +22,16 @@ export default function Header() {
     setUserMenuOpen(false);
   };
 
+  const goToExportHistory = () => {
+    navigate("/exports/history");
+    setUserMenuOpen(false);
+  };
+
   const handleLogout = async () => {
     await logout();
+    clearExportHistoryCache();
     setUser(null);
+    setUserMenuOpen(false);
     navigate("/login");
   };
 
@@ -67,6 +75,11 @@ export default function Header() {
               <button className="dropdown-item" onClick={goToProfile}>
                 Profile
               </button>
+              {user?.is_staff && (
+                <button className="dropdown-item" onClick={goToExportHistory}>
+                  Export History
+                </button>
+              )}
               <button className="dropdown-item" onClick={handleLogout}>
                 Logout
               </button>

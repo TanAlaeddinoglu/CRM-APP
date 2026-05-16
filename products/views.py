@@ -2,7 +2,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from accounts.authenticate import CustomAuthentication
 from products.filters import ProductFilter, CustomerProductFilter
@@ -14,7 +14,7 @@ class ProductsViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     authentication_classes = (CustomAuthentication,)
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = (
         DjangoFilterBackend,
         filters.SearchFilter,
