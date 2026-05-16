@@ -78,6 +78,9 @@ static/
 .DS_Store
 Thumbs.db
 
+# Node
+node_modules/
+
 # Mypy / pylint
 .mypy_cache/
 .dmypy.json

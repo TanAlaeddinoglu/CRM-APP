@@ -5,7 +5,8 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
@@ -38,7 +39,7 @@ html, body {
 ================================ */
 .page-header {
   display: flex;
-  justify-content: space-between; /* ✅ butonlar sağda */
+  justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
@@ -56,7 +57,7 @@ html, body {
   background: #ffffff;
   padding: 18px;
   border-radius: 14px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 /* ================================
@@ -95,6 +96,34 @@ html, body {
 
 .summary:hover {
   background: #f9fafb;
+}
+
+/* Soft status colors for top summary row */
+.summary.payment-summary-completed {
+  background: #e8f8ee;
+  border: 1px solid #cfe8d8;
+}
+
+.summary.payment-summary-completed:hover {
+  background: #dff3e7;
+}
+
+.summary.payment-summary-partial {
+  background: #fff6df;
+  border: 1px solid #eedfb0;
+}
+
+.summary.payment-summary-partial:hover {
+  background: #fff0cf;
+}
+
+.summary.payment-summary-cancelled {
+  background: #fff1f2;
+  border: 1px solid #f6d2d7;
+}
+
+.summary.payment-summary-cancelled:hover {
+  background: #ffe4e6;
 }
 
 /* EXPAND BUTTON */
@@ -200,6 +229,47 @@ html, body {
 /* ================================
    STATUS BADGE
 ================================ */
+.payment-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.payment-status-badge.completed {
+  background: #c9f0dc;
+  color: #0f766e;
+  border: 1px solid #b7ebcf;
+}
+
+.payment-status-badge.partial {
+  background: #f6e8b3;
+  color: #a16207;
+  border: 1px solid #ecd98a;
+}
+
+.payment-status-badge.cancelled {
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.payment-status-badge.default {
+  background: #eef2f7;
+  color: #475569;
+  border: 1px solid #d9e2ec;
+}
+
+/* ================================
+   LEGACY STATUS (optional old usage)
+================================ */
 .payment-status {
   display: inline-block;
   padding: 3px 8px;
@@ -241,7 +311,7 @@ html, body {
 .payment-page-wrapper > input:focus {
   outline: none;
   border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
 }
 
 /* ================================
@@ -270,7 +340,7 @@ html, body {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.4);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -313,6 +383,24 @@ html, body {
 }
 
 /* ================================
+   DATE FILTER INPUTS
+================================ */
+.payment-page-wrapper input[type="date"] {
+  padding: 8px 12px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #111827;
+}
+
+.payment-page-wrapper input[type="date"]:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* ================================
    RESPONSIVE
 ================================ */
 @media (max-width: 900px) {
@@ -324,22 +412,102 @@ html, body {
     display: none;
   }
 }
-/* ================================
-   DATE FILTER INPUTS
-================================ */
-.payment-page-wrapper input[type="date"] {
-  padding: 8px 12px;
-  font-size: 14px;
 
-  border-radius: 10px;
+.appointment-search-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.appointment-search-results {
+  max-height: 220px;
+  overflow-y: auto;
   border: 1px solid #e5e7eb;
+  border-radius: 10px;
   background: #ffffff;
+}
 
+.appointment-search-item {
+  width: 100%;
+  border: none;
+  background: #ffffff;
+  text-align: left;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.appointment-search-item:last-child {
+  border-bottom: none;
+}
+
+.appointment-search-item:hover {
+  background: #f8fafc;
+}
+
+.appointment-search-title {
+  font-size: 14px;
+  font-weight: 600;
   color: #111827;
 }
 
-.payment-page-wrapper input[type="date"]:focus {
+.appointment-search-subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.payment-history-filters {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.payment-history-filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.payment-history-search {
+  width: 300px;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid #d9e2ec;
+  background: #ffffff;
+  font-size: 15px;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.payment-history-search::placeholder {
+  color: #9aa4b2;
+}
+
+.payment-history-search:focus {
   outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+  border-color: #c7d2e3;
+  box-shadow: 0 0 0 3px rgba(15, 37, 79, 0.06);
+}
+
+.payment-history-date {
+  width: 210px;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid #d9e2ec;
+  background: #ffffff;
+  font-size: 15px;
+  color: #0f172a;
+}
+
+.payment-history-date:focus {
+  outline: none;
+  border-color: #c7d2e3;
+  box-shadow: 0 0 0 3px rgba(15, 37, 79, 0.06);
 }

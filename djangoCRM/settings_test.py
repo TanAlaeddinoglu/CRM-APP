@@ -1,5 +1,10 @@
 from pathlib import Path
 from typing import Any, Dict
+import os
+
+os.environ.setdefault("DEFAULT_FROM_EMAIL", "default-sender@example.com")
+os.environ.setdefault("CELERY_BROKER_URL", "memory://")
+os.environ.setdefault("CELERY_RESULT_BACKEND", "cache+memory://")
 
 from .settings import *  # noqa: F401,F403
 

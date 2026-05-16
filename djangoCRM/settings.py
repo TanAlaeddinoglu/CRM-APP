@@ -99,6 +99,7 @@ INSTALLED_APPS = [
     "exporter.apps.ExporterConfig",
     "notifications.apps.NotificationsConfig",
     "products.apps.ProductsConfig",
+    "reports.apps.ReportsConfig",
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "rest_framework",

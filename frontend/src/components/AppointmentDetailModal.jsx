@@ -1,4 +1,3 @@
-// src/components/AppointmentDetailModal.jsx
 import React from "react";
 
 export default function AppointmentDetailModal({
@@ -11,17 +10,21 @@ export default function AppointmentDetailModal({
   return (
     <div className="modal-backdrop">
       <div className="modal-card">
-        {/* ================= HEADER ================= */}
         <div className="modal-header">
           <h3>Randevu Detayı</h3>
           <button onClick={onClose}>✕</button>
         </div>
 
-        {/* ================= BODY ================= */}
         <div className="modal-body">
           <Detail label="Müşteri">
             {appointment.customer}
           </Detail>
+
+          {appointment.customer_phone && (
+            <Detail label="Telefon">
+              {appointment.customer_phone}
+            </Detail>
+          )}
 
           <Detail label="Randevu Adı">
             {appointment.name}
@@ -52,7 +55,6 @@ export default function AppointmentDetailModal({
           )}
         </div>
 
-        {/* ================= FOOTER ================= */}
         <div
           className="modal-footer"
           style={{
@@ -61,16 +63,16 @@ export default function AppointmentDetailModal({
             gap: "8px",
           }}
         >
-          {/* LEFT ACTION */}
           <button
             className="btn-secondary"
             onClick={() => {
               onClose();
-              onEdit(appointment); // 🔥 EventModal EDIT
+              onEdit(appointment);
             }}
-          >Randevu Güncelle </button>
+          >
+            Randevu Güncelle
+          </button>
 
-          {/* RIGHT ACTION */}
           <button className="btn-secondary" onClick={onClose}>
             Kapat
           </button>
@@ -80,9 +82,6 @@ export default function AppointmentDetailModal({
   );
 }
 
-/* =========================
-   SMALL HELPER
-========================= */
 function Detail({ label, children }) {
   return (
     <div style={{ marginBottom: "12px" }}>
