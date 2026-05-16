@@ -298,7 +298,6 @@ export default function CustomerPage({ archiveOnly = false }) {
       params.set("page", "1");
       setSearchParams(params, { replace: true });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [forcedStatus, searchParams, setSearchParams]);
 
   useEffect(() => {
@@ -453,7 +452,7 @@ export default function CustomerPage({ archiveOnly = false }) {
             return clearDbDuplicateMeta(r);
           })
         );
-      } catch (err) {
+      } catch {
         // Ignore transient check errors; user can re-edit to retry.
       }
     }, 500);
@@ -711,6 +710,8 @@ export default function CustomerPage({ archiveOnly = false }) {
           navigate(archiveOnly ? "/customers" : "/customers/archive")
         }
         isAdmin={isAdmin}
+        exportModel="customer"
+        currentUserEmail={user?.email || ""}
         excelUploading={excelUploading}
         selectedCount={selectedIds.length}
         archiveMode={archiveOnly}

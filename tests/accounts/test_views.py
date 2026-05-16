@@ -1,12 +1,17 @@
 import json
+from datetime import timedelta
+
 import pytest
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.middleware.csrf import get_token
+from django.test import override_settings
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, force_authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken
+from rest_framework_simplejwt.utils import datetime_to_epoch
 
 from accounts.views import (
     CookieTokenRefreshView,
@@ -20,6 +25,12 @@ from accounts.views import (
 pytestmark = pytest.mark.django_db
 
 User = get_user_model()
+
+
+def _jwt_settings(**overrides):
+    updated = dict(settings.SIMPLE_JWT)
+    updated.update(overrides)
+    return updated
 
 
 def _csrf_request(factory, data):
@@ -87,6 +98,48 @@ def test_cookie_token_refresh_view_sets_access_cookie():
 
     assert response.status_code == status.HTTP_200_OK
     assert settings.SIMPLE_JWT["AUTH_COOKIE"] in response.cookies
+
+
+@override_settings(
+    SIMPLE_JWT=_jwt_settings(
+        ACCESS_TOKEN_LIFETIME=timedelta(minutes=30),
+        REFRESH_TOKEN_LIFETIME=timedelta(days=1),
+    )
+)
+def test_refresh_allows_active_user_within_refresh_lifetime():
+    user = User.objects.create_user(username="active", password="pass")
+    refresh = RefreshToken.for_user(user)
+    refresh["exp"] = datetime_to_epoch(timezone.now() + timedelta(days=1))
+    token = str(refresh)
+
+    factory = APIRequestFactory()
+    for _ in range(2):
+        request = factory.post("/token/refresh/")
+        request.COOKIES[settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"]] = token
+        response = CookieTokenRefreshView.as_view()(request)
+        assert response.status_code == status.HTTP_200_OK
+        assert settings.SIMPLE_JWT["AUTH_COOKIE"] in response.cookies
+
+
+@override_settings(
+    SIMPLE_JWT=_jwt_settings(
+        ACCESS_TOKEN_LIFETIME=timedelta(minutes=30),
+        REFRESH_TOKEN_LIFETIME=timedelta(days=1),
+    )
+)
+def test_refresh_rejects_inactive_user_after_refresh_expiry():
+    user = User.objects.create_user(username="inactive", password="pass")
+    refresh = RefreshToken.for_user(user)
+    refresh["exp"] = datetime_to_epoch(timezone.now() - timedelta(seconds=1))
+    factory = APIRequestFactory()
+    request = factory.post("/token/refresh/")
+    request.COOKIES[settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"]] = str(refresh)
+    response = CookieTokenRefreshView.as_view()(request)
+
+    assert response.status_code in {
+        status.HTTP_401_UNAUTHORIZED,
+        status.HTTP_403_FORBIDDEN,
+    }
 
 
 def test_profile_view_returns_user_data():

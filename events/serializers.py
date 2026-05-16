@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 from rest_framework import serializers
@@ -138,6 +139,7 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
             "remaining_amount",
         ]
 
+    @transaction.atomic
     def create(self, validated_data):
         request = self.context.get("request")
         user = getattr(request, "user", None)

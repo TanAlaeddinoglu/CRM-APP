@@ -7,10 +7,13 @@ import {
 } from "../services/events";
 import PaymentCustomerRow from "../components/payment/PaymentCustomerRow.jsx";
 import AddPaymentModal from "../components/payment/AddPaymentModal.jsx";
+import ExportActionButton from "../components/export/ExportActionButton.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 export default function PaymentPage() {
+  const { user } = useAuth();
   const [payments, setPayments] = useState([]);
   const [appointments, setAppointments] = useState({});
   const [loading, setLoading] = useState(true);
@@ -157,6 +160,12 @@ export default function PaymentPage() {
         <h1 className="h1">Ödemeler</h1>
 
         <div className="page-header-actions">
+          <ExportActionButton
+            model="payments"
+            initialRecipientEmail={user?.email || ""}
+            buttonClassName="btn-secondary"
+            buttonLabel="Export"
+          />
           <button
             className="btn-secondary"
             onClick={() => navigate("/payments/history")}

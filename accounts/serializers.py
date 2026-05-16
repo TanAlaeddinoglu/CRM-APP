@@ -51,7 +51,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 class UserLoginSerializer(serializers.Serializer):
     """
-    Serializer class to authenticate users with email and password.
+    Serializer class to authenticate users with username and password.
     """
 
     username = serializers.CharField(required=True)

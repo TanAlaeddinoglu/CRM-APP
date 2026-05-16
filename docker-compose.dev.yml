@@ -16,6 +16,60 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: crm_dev_rabbitmq
+    restart: unless-stopped
+    env_file:
+      - .env.dev
+    volumes:
+      - crm_dev_rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - crm_dev_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  redis:
+    image: redis:7.4-alpine
+    container_name: crm_dev_redis
+    restart: unless-stopped
+    env_file:
+      - .env.dev
+    command:
+      - /bin/sh
+      - -c
+      - exec redis-server --appendonly yes --save 60 1000 --requirepass "$$REDIS_PASSWORD"
+    volumes:
+      - crm_dev_redis_data:/data
+    networks:
+      - crm_dev_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", 'redis-cli -a "$$REDIS_PASSWORD" ping | grep PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   backend:
     build:
@@ -26,9 +80,15 @@ services:
     env_file:
       - .env.dev
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - crm_dev_backend_static:/app/staticfiles
+      - crm_dev_backend_media:/app/media
     networks:
       - crm_dev_net
     logging:
@@ -39,6 +99,62 @@ services:
     # IMPORTANT:
     # Gunicorn is started via entrypoint.dev.sh
     # DO NOT override command here
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: crm_dev_celery_worker
+    restart: unless-stopped
+    env_file:
+      - .env.dev
+    command:
+      - /bin/sh
+      - -c
+      - exec celery -A djangoCRM worker --loglevel=info --concurrency="$${CELERY_WORKER_CONCURRENCY:-1}"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - crm_dev_backend_media:/app/media
+    networks:
+      - crm_dev_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: crm_dev_flower
+    restart: unless-stopped
+    env_file:
+      - .env.dev
+    command:
+      - /bin/sh
+      - -c
+      - exec celery -A djangoCRM flower --address=0.0.0.0 --port="$${FLOWER_PORT:-5555}" --basic_auth="$${FLOWER_BASIC_AUTH}"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - crm_dev_net
+    ports:
+      - "127.0.0.1:5555:5555"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "5m"
+        max-file: "3"
 
   frontend:
     build:
@@ -68,6 +184,7 @@ services:
       - ./nginx/default-dev.conf:/etc/nginx/conf.d/default.conf:ro
       - crm_dev_frontend_dist:/usr/share/nginx/html:ro
       - crm_dev_backend_static:/static:ro
+      - crm_dev_backend_media:/media:ro
 
     depends_on:
       - backend
@@ -88,3 +205,6 @@ volumes:
   crm_dev_postgres_data:
   crm_dev_frontend_dist:
   crm_dev_backend_static:
+  crm_dev_backend_media:
+  crm_dev_rabbitmq_data:
+  crm_dev_redis_data:

@@ -28,6 +28,9 @@ const PaymentHistoryPage = lazy(() =>
   import("../components/payment/PaymentHistoryPage.jsx")
 );
 const ReportsPage = lazy(() => import("../pages/ReportsPage.jsx"));
+const ExportHistoryPage = lazy(() =>
+  import("../pages/ExportHistoryPage.jsx")
+);
 
 /* =========================
    LOADER
@@ -205,6 +208,20 @@ export default function AppRouter() {
             <MainLayout>
               <Suspense fallback={<PageLoader />}>
                 <ReportsPage />
+              </Suspense>
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ================= EXPORTS (ADMIN) ================= */}
+      <Route
+        path="/exports/history"
+        element={
+          <ProtectedRoute staffOnly>
+            <MainLayout>
+              <Suspense fallback={<PageLoader />}>
+                <ExportHistoryPage />
               </Suspense>
             </MainLayout>
           </ProtectedRoute>

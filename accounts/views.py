@@ -49,9 +49,9 @@ class UserLoginView(APIView):
     def post(self, request, format=None):
         enforce_csrf(request)
 
-        identifier = request.data.get("email") or request.data.get("username")
+        identifier = request.data.get("username")
         if not identifier:
-            raise AuthenticationFailed("Email or username is required.")
+            raise AuthenticationFailed("Username is required.")
 
         check_login_throttle(identifier)
 
@@ -103,7 +103,7 @@ class UserLoginView(APIView):
 @method_decorator(csrf_exempt, name="dispatch")
 class LogoutView(APIView):
     def post(self, request, format=None):
-        # enforce_csrf(request)
+        enforce_csrf(request)
         refresh_cookie_name = settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"]
         refresh_token = request.COOKIES.get(refresh_cookie_name)
 

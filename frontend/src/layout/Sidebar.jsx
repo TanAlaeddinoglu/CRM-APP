@@ -10,6 +10,7 @@ import {
   CreditCard,
   Package,
   BarChart3,
+  FileClock,
   ChevronLeft,
   ChevronRight,
   Tag,
@@ -18,18 +19,28 @@ import {
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
-  const { user } = useAuth();
+  const { user } = useAuth() || {};
+  const canSeeStaffItems = user?.is_staff ?? true;
 
   const menu = [
     { icon: <Users size={20} />, label: "Customers", path: "/customers" },
     { icon: <Calendar size={20} />, label: "Events", path: "/events" },
-    ...(user?.is_staff
+    ...(canSeeStaffItems
       ? [{ icon: <CreditCard size={20} />, label: "Payments", path: "/payments" }]
       : []),
     { icon: <Package size={20} />, label: "Products", path: "/products" },
     { icon: <Tag size={20} />, label: "Tags", path: "/tags" },
-    ...(user?.is_staff
+    ...(canSeeStaffItems
       ? [{ icon: <BarChart3 size={20} />, label: "Reports", path: "/reports" }]
+      : []),
+    ...(canSeeStaffItems
+      ? [
+          {
+            icon: <FileClock size={20} />,
+            label: "Export History",
+            path: "/exports/history",
+          },
+        ]
       : []),
   ];
 

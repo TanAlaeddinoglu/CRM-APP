@@ -1,8 +1,12 @@
 #!/usr/bin/env sh
 set -e
 
-mkdir -p /app/staticfiles
-chown -R appuser:appuser /app/staticfiles
+mkdir -p /app/staticfiles /app/media /app/media/exports
+chown -R appuser:appuser /app/staticfiles /app/media
+
+if [ "$#" -gt 0 ]; then
+    exec gosu appuser "$@"
+fi
 
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
