@@ -245,19 +245,16 @@ CACHES = {
 }
 
 EMAIL_BACKEND = _env_str("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
-EMAIL_HOST = _env_str("EMAIL_HOST")
-EMAIL_PORT = int(_env_str("EMAIL_PORT", "587") or "587")
-EMAIL_HOST_USER = _env_str("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = _env_str("EMAIL_HOST_PASSWORD")
-EMAIL_USE_TLS = _env_bool("EMAIL_USE_TLS", False)
-EMAIL_USE_SSL = _env_bool("EMAIL_USE_SSL", False)
 EMAIL_TIMEOUT = int(_env_str("EMAIL_TIMEOUT", "10") or "10")
-SERVER_EMAIL = _env_str("DEFAULT_FROM_EMAIL", required=True)
+MAIL_CONFIG_TEST_SESSION_TTL_SECONDS = int(_env_str("EMAIL_TIMEOUT", "600") or "600")
+SERVER_EMAIL = _env_str("DEFAULT_FROM_EMAIL")
+DEFAULT_FROM_EMAIL = SERVER_EMAIL
 
-if EMAIL_USE_TLS and EMAIL_USE_SSL:
-    raise ImproperlyConfigured(
-        "EMAIL_USE_TLS and EMAIL_USE_SSL cannot both be enabled."
-    )
+# AZURE CONFIG
+SECRET_STORE_BACKEND = _env_str("SECRET_STORE_BACKEND", "azure_key_vault")
+AZURE_KEY_VAULT_URL = _env_str("AZURE_KEY_VAULT_URL")
+AZURE_MANAGED_IDENTITY_CLIENT_ID = _env_str("AZURE_MANAGED_IDENTITY_CLIENT_ID")
+
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),

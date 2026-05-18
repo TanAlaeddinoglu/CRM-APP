@@ -3,7 +3,6 @@ from rest_framework import serializers
 from exporter.exportFactory.factory import ExporterFactory
 from exporter.registry.base_registry import ExportRegistry
 from exporter.models import ExportJob
-from notifications.serializers import EmailLogSerializer
 
 
 class ExportRequestSerializer(serializers.Serializer):
@@ -83,7 +82,6 @@ class ExportHistoryQuerySerializer(serializers.Serializer):
 
 class ExportHistorySerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source="created_by.username", read_only=True)
-    email_log = EmailLogSerializer(read_only=True)
 
     class Meta:
         model = ExportJob
@@ -104,9 +102,7 @@ class ExportHistorySerializer(serializers.ModelSerializer):
             "relative_path",
             "absolute_path",
             "workflow_task_id",
-            "email_log",
-            "metadata",
-            "error_message",
             "created_at",
             "updated_at",
         ]
+        read_only_fields = fields

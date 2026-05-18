@@ -45,7 +45,6 @@ const USER_FIELDS = [
   { value: "date_joined", label: "Kayıt Tarihi" },
 ];
 
-// TODO fieldlari duzelt
 const PAYMENT_FIELDS = [
   { value: "appointment", label: "Randevu" },
   { value: "total_amount", label: "Toplam Tutar" },

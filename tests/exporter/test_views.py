@@ -119,8 +119,10 @@ def test_export_history_view_returns_export_jobs_with_email_logs(
     assert len(response.data) == 1
     assert response.data[0]["id"] == job.id
     assert response.data[0]["created_by"] == admin_user.username
-    assert response.data[0]["email_log"]["id"] == email_log.id
-    assert response.data[0]["email_log"]["status"] == EmailLog.Status.SENT
+    assert response.data[0]["recipient_email"] == "admin@example.com"
+    assert "metadata" not in response.data[0]
+    assert "error_message" not in response.data[0]
+    assert "email_log" not in response.data[0]
 
 
 def test_export_history_view_filters_by_model_and_date(admin_client, admin_user):

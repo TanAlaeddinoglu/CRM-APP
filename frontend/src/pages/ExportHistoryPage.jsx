@@ -62,6 +62,21 @@ function formatLabel(value) {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function getEmailStatusMessage(emailStatus) {
+  switch (emailStatus) {
+    case "sent":
+      return "Email basariyla gonderildi.";
+    case "failed":
+      return "Email gonderilemedi. Mail ayarlarinizi kontrol edip tekrar deneyin.";
+    case "pending":
+      return "Email gonderimi sirada bekliyor.";
+    case "skipped":
+      return "Bu export icin email gonderimi yapilmadi.";
+    default:
+      return "Bu export icin email kaydi olusturulmadi.";
+  }
+}
+
 function deriveMetaFromJobs(items) {
   const latestUpdatedAt = items.reduce((latest, job) => {
     if (!job?.updated_at) return latest;
@@ -126,8 +141,6 @@ function StatusPill({ value }) {
 
 function ExportDetailModal({ job, onClose }) {
   if (!job) return null;
-
-  const emailLog = job.email_log;
 
   return (
     <div className="modal-background" onClick={onClose}>
@@ -207,60 +220,35 @@ function ExportDetailModal({ job, onClose }) {
           <section className="export-detail-section">
             <div className="export-detail-section-title">
               <Mail size={16} />
-              <span>Email Log</span>
+              <span>Email Bilgisi</span>
             </div>
 
-            {emailLog ? (
-              <>
-                <div className="export-detail-grid">
-                  <div className="export-detail-item export-detail-item-wide">
-                    <span>Konu</span>
-                    <strong>{emailLog.subject || "-"}</strong>
-                  </div>
-                  <div className="export-detail-item">
-                    <span>Gonderen</span>
-                    <strong>{emailLog.from_email || "-"}</strong>
-                  </div>
-                  <div className="export-detail-item">
-                    <span>Durum</span>
-                    <StatusPill value={emailLog.status} />
-                  </div>
-                  <div className="export-detail-item export-detail-item-wide">
-                    <span>Alicilar</span>
-                    <strong>{emailLog.to_emails?.join(", ") || "-"}</strong>
-                  </div>
-                  <div className="export-detail-item">
-                    <span>Gonderim Zamani</span>
-                    <strong>{formatDateTime(emailLog.sent_at)}</strong>
-                  </div>
-                  <div className="export-detail-item">
-                    <span>Log ID</span>
-                    <strong>#{emailLog.id}</strong>
-                  </div>
-                </div>
-
-                <div className="export-detail-stack">
-                  <div className="export-detail-text-block">
-                    <span>Email Govdesi</span>
-                    <p>{emailLog.body || "-"}</p>
-                  </div>
-
-                  <div className="export-detail-text-block">
-                    <span>Hata Mesaji</span>
-                    <p>{emailLog.error_message || "-"}</p>
-                  </div>
-
-                  <div className="export-detail-text-block">
-                    <span>Metadata</span>
-                    <pre>{JSON.stringify(emailLog.metadata || {}, null, 2)}</pre>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="export-empty-inline">
-                Bu export icin bagli email log kaydi yok.
+            <div className="export-detail-grid">
+              <div className="export-detail-item export-detail-item-wide">
+                <span>Konu</span>
+                <strong>{job.email_subject || "-"}</strong>
               </div>
-            )}
+              <div className="export-detail-item export-detail-item-wide">
+                <span>Alici</span>
+                <strong>{job.recipient_email || "-"}</strong>
+              </div>
+              <div className="export-detail-item">
+                <span>Durum</span>
+                <StatusPill value={job.email_status} />
+              </div>
+            </div>
+
+            <div className="export-detail-stack">
+              <div className="export-detail-text-block">
+                <span>Email Govdesi</span>
+                <p>{job.email_body || "-"}</p>
+              </div>
+
+              <div className="export-detail-text-block">
+                <span>Durum Notu</span>
+                <p>{getEmailStatusMessage(job.email_status)}</p>
+              </div>
+            </div>
           </section>
         </div>
       </div>

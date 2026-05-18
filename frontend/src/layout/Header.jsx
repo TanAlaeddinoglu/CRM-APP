@@ -27,6 +27,11 @@ export default function Header() {
     setUserMenuOpen(false);
   };
 
+  const goToSettings = () => {
+    navigate("/settings");
+    setUserMenuOpen(false);
+  };
+
   const handleLogout = async () => {
     await logout();
     clearExportHistoryCache();
@@ -74,6 +79,9 @@ export default function Header() {
             <div className="dropdown-menu">
               <button className="dropdown-item" onClick={goToProfile}>
                 Profile
+              </button>
+              <button className="dropdown-item" onClick={goToSettings}>
+                Settings
               </button>
               {user?.is_staff && (
                 <button className="dropdown-item" onClick={goToExportHistory}>
