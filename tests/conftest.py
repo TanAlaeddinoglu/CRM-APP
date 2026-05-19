@@ -5,6 +5,9 @@ from django.middleware.csrf import get_token
 from django.test.client import RequestFactory
 from rest_framework.test import APIClient
 
+from common.secrets.factory import get_secret_store
+from notifications.models import MailConfiguration
+
 User = get_user_model()
 
 
@@ -81,3 +84,25 @@ def csrf_post(api_client, csrf_tokens):
         )
 
     return _post
+
+
+@pytest.fixture
+def active_mail_configuration(admin_user):
+    get_secret_store.cache_clear()
+    store = get_secret_store()
+    username_secret_name = store.set_secret("test-mail-user", "mailer@example.com")
+    password_secret_name = store.set_secret("test-mail-password", "super-secret")
+    return MailConfiguration.objects.create(
+        name="Primary SMTP",
+        host="smtp.example.com",
+        port=587,
+        use_tls=True,
+        use_ssl=False,
+        default_from_email="crm@example.com",
+        username_secret_name=username_secret_name,
+        password_secret_name=password_secret_name,
+        is_active=True,
+        last_test_status=MailConfiguration.TestStatus.PASSED,
+        created_by=admin_user,
+        updated_by=admin_user,
+    )

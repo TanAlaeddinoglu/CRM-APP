@@ -97,8 +97,6 @@ class ExportView(APIView):
 
     def delete(self, request, *args, **kwargs):
         payload = {
-            "absolute_path": request.data.get("absolute_path")
-            or request.query_params.get("absolute_path"),
             "relative_path": request.data.get("relative_path")
             or request.query_params.get("relative_path"),
         }
@@ -106,7 +104,6 @@ class ExportView(APIView):
         serializer.is_valid(raise_exception=True)
 
         deleted = ExportService().delete_export(
-            absolute_path=serializer.validated_data.get("absolute_path"),
             relative_path=serializer.validated_data.get("relative_path"),
         )
 

@@ -31,6 +31,7 @@ const ReportsPage = lazy(() => import("../pages/reports/ReportsPage.jsx"));
 const ExportHistoryPage = lazy(() =>
   import("../pages/ExportHistoryPage.jsx")
 );
+const SettingsPage = lazy(() => import("../pages/SettingsPage.jsx"));
 
 /* =========================
    LOADER
@@ -71,6 +72,19 @@ export default function AppRouter() {
             <MainLayout>
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
+              </Suspense>
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Suspense fallback={<PageLoader />}>
+                <SettingsPage />
               </Suspense>
             </MainLayout>
           </ProtectedRoute>

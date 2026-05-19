@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -42,9 +42,6 @@ function buildJob(id, overrides = {}) {
     relative_path: "",
     absolute_path: "",
     workflow_task_id: "",
-    email_log: null,
-    metadata: {},
-    error_message: "",
     created_at: `2026-05-${String((id % 28) + 1).padStart(2, "0")}T10:00:00Z`,
     updated_at: `2026-05-${String((id % 28) + 1).padStart(2, "0")}T10:05:00Z`,
     ...overrides,
@@ -207,5 +204,40 @@ describe("ExportHistoryPage", () => {
     });
     expect(getExportHistory).toHaveBeenCalledTimes(2);
     expect(getExportHistoryMeta).toHaveBeenCalledTimes(2);
+  });
+
+  it("shows a user-friendly email status note without rendering metadata", async () => {
+    const jobs = [
+      buildJob(1, {
+        recipient_email: "admin@example.com",
+        email_subject: "Customer export ready",
+        email_body: "The export file is attached.",
+        email_status: "failed",
+      }),
+    ];
+
+    getExportHistory.mockResolvedValue({ data: jobs });
+    getExportHistoryMeta.mockResolvedValue({
+      data: { count: 1, latest_updated_at: jobs[0].updated_at },
+    });
+
+    const user = userEvent.setup();
+    render(<ExportHistoryPage />);
+
+    await screen.findByText("1 kayit gosteriliyor");
+    await user.click(screen.getByRole("button", { name: /detay/i }));
+
+    const modal = screen.getByText("Export Detayi").closest(".modal-box");
+
+    expect(screen.getByText("Email Bilgisi")).toBeInTheDocument();
+    expect(screen.getByText("Durum Notu")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Email gonderilemedi. Mail ayarlarinizi kontrol edip tekrar deneyin."
+      )
+    ).toBeInTheDocument();
+    expect(within(modal).getByText("Customer export ready")).toBeInTheDocument();
+    expect(within(modal).getByText("admin@example.com")).toBeInTheDocument();
+    expect(screen.queryByText("Metadata")).not.toBeInTheDocument();
   });
 });
