@@ -27,6 +27,11 @@ const PaymentPage = lazy(() => import("../pages/PaymentPage.jsx"));
 const PaymentHistoryPage = lazy(() =>
   import("../components/payment/PaymentHistoryPage.jsx")
 );
+const ReportsPage = lazy(() => import("../pages/reports/ReportsPage.jsx"));
+const ExportHistoryPage = lazy(() =>
+  import("../pages/ExportHistoryPage.jsx")
+);
+const SettingsPage = lazy(() => import("../pages/SettingsPage.jsx"));
 
 /* =========================
    LOADER
@@ -45,7 +50,7 @@ export default function AppRouter() {
       {/* ================= LOGIN ================= */}
       <Route path="/login" element={<LoginPage />} />
 
-       ================= DASHBOARD =================
+      {/* ================= DASHBOARD ================= */}
       <Route
         path="/"
         element={
@@ -59,7 +64,7 @@ export default function AppRouter() {
         }
       />
 
-       ================= PROFILE =================
+      {/* ================= PROFILE ================= */}
       <Route
         path="/profile"
         element={
@@ -67,6 +72,19 @@ export default function AppRouter() {
             <MainLayout>
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
+              </Suspense>
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <MainLayout>
+              <Suspense fallback={<PageLoader />}>
+                <SettingsPage />
               </Suspense>
             </MainLayout>
           </ProtectedRoute>
@@ -190,6 +208,34 @@ export default function AppRouter() {
             <MainLayout>
               <Suspense fallback={<PageLoader />}>
                 <PaymentHistoryPage />
+              </Suspense>
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ================= REPORTS (ADMIN) ================= */}
+      <Route
+        path="/reports"
+        element={
+          <ProtectedRoute staffOnly>
+            <MainLayout>
+              <Suspense fallback={<PageLoader />}>
+                <ReportsPage />
+              </Suspense>
+            </MainLayout>
+          </ProtectedRoute>
+        }
+      />
+
+      {/* ================= EXPORTS (ADMIN) ================= */}
+      <Route
+        path="/exports/history"
+        element={
+          <ProtectedRoute staffOnly>
+            <MainLayout>
+              <Suspense fallback={<PageLoader />}>
+                <ExportHistoryPage />
               </Suspense>
             </MainLayout>
           </ProtectedRoute>

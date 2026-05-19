@@ -1,3 +1,5 @@
+name: CRM-local
+
 x-backend-common: &backend-common
   build:
     context: ..
@@ -12,7 +14,10 @@ x-backend-common: &backend-common
 
 x-celery-worker-common: &celery-worker-common
   <<: *backend-common
-  command: celery -A djangoCRM worker --loglevel=info --concurrency=${CELERY_WORKER_CONCURRENCY:-4}
+  command:
+    - /bin/sh
+    - -c
+    - exec celery -A djangoCRM worker --loglevel=info --concurrency="$${CELERY_WORKER_CONCURRENCY:-1}"
   profiles: ["celery"]
   depends_on:
     rabbitmq:
@@ -28,13 +33,13 @@ services:
     container_name: crm_db
     restart: unless-stopped
     env_file:
-      - ../db.env
+      - ../.env
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      test: ["CMD-SHELL", 'pg_isready -U "$$DB_USER" -d "$$DB_NAME"']
       interval: 10s
       timeout: 5s
       retries: 5

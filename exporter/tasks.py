@@ -6,7 +6,7 @@ from django.db import OperationalError
 from exporter.task_helpers import ExportTaskHelper
 from exporter.services.export_service import ExportService
 from notifications.exceptions import EmailDeliveryError
-from notifications.services import send_email_notification
+from notifications.mail.services import send_email_notification
 
 MAX_RETRIES = 3
 

@@ -3,19 +3,19 @@ import { api } from "./api";
 
 /* ================================
    APPOINTMENT PAYMENTS
-   ================================ */
+================================ */
 
 /**
  * GET /events/appointment-payments/
- * Tüm appointment ödemelerini getirir
+ * page, page_size, search gibi parametreleri alabilir
  */
-export const getAppointmentPayments = () => {
-  return api.get("/events/appointment-payments/");
+export const getAppointmentPayments = (params = {}) => {
+  return api.get("/events/appointment-payments/", { params });
 };
 
 /**
  * GET /events/appointment-payments/?customer=<id>
- * Customer bazlı filtre (backend destekliyorsa)
+ * Customer bazlı filtre
  */
 export const getAppointmentPaymentsByCustomer = (customerId) => {
   return api.get("/events/appointment-payments/", {
@@ -39,13 +39,24 @@ export const updateAppointmentPayment = (id, payload) => {
   return api.patch(`/events/appointment-payments/${id}/`, payload);
 };
 
+/**
+ * DELETE /events/appointment-payments/:id/
+ * Ödeme sil
+ */
+export const deleteAppointmentPayment = (id) => {
+  return api.delete(`/events/appointment-payments/${id}/`);
+};
+
+/* ================================
+   APPOINTMENTS
+================================ */
 
 /**
  * GET /events/appointments/
- * Tüm appointment’ları getirir
+ * search, page, page_size gibi parametre alabilir
  */
-export const getAppointments = () => {
-  return api.get("/events/appointments/");
+export const getAppointments = (params = {}) => {
+  return api.get("/events/appointments/", { params });
 };
 
 /**
@@ -54,12 +65,4 @@ export const getAppointments = () => {
  */
 export const getAppointmentById = (id) => {
   return api.get(`/events/appointments/${id}/`);
-};
-
-/**
- * DELETE /events/appointment-payments/:id/
- * Ödeme sil
- */
-export const deleteAppointmentPayment = (id) => {
-  return api.delete(`/events/appointment-payments/${id}/`);
 };

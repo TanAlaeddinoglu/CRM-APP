@@ -31,7 +31,7 @@ export default function ProtectedRoute({
     // ❗ URL değişmez, history bozulmaz
     return (
       <Navigate
-        to={location.state?.from || "/"}
+        to={location.state?.from || "/customers"}
         replace
       />
     );

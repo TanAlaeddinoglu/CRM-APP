@@ -2,17 +2,23 @@ import pytest
 from django.core import mail
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.test import override_settings
 
+from common.secrets.factory import get_secret_store
 from notifications.exceptions import EmailDeliveryError
-from notifications.models import EmailLog
-from notifications.services import send_email_notification
+from notifications.models import EmailLog, MailConfiguration
+from notifications.mail.services import send_email_notification
 
 
 pytestmark = pytest.mark.django_db
 
 
-def test_send_email_notification_sends_and_persists_metadata(regular_user):
+def teardown_function():
+    get_secret_store.cache_clear()
+
+
+def test_send_email_notification_sends_and_persists_metadata(
+    regular_user, active_mail_configuration
+):
     email_log = send_email_notification(
         subject="Welcome",
         body="Hello from CRM",
@@ -39,6 +45,7 @@ def test_send_email_notification_sends_and_persists_metadata(regular_user):
 
 def test_send_email_notification_with_attachments_tracks_attachment_metadata(
     regular_user,
+    active_mail_configuration,
 ):
     attachment = SimpleUploadedFile(
         "invoice.txt",
@@ -66,6 +73,7 @@ def test_send_email_notification_with_attachments_tracks_attachment_metadata(
 
 def test_send_email_notification_with_multiple_attachments_tracks_all_metadata(
     regular_user,
+    active_mail_configuration,
 ):
     attachments = [
         SimpleUploadedFile("first.txt", b"first", content_type="text/plain"),
@@ -87,7 +95,9 @@ def test_send_email_notification_with_multiple_attachments_tracks_all_metadata(
     assert email_log.metadata["attachments"][1]["content_type"] == "text/csv"
 
 
-def test_send_email_notification_uses_explicit_from_email_when_provided(regular_user):
+def test_send_email_notification_uses_explicit_from_email_when_provided(
+    regular_user, active_mail_configuration
+):
     email_log = send_email_notification(
         subject="Custom sender",
         body="Hello",
@@ -103,8 +113,9 @@ def test_send_email_notification_uses_explicit_from_email_when_provided(regular_
     assert email_log.metadata["resolved_from_email"] == "support@example.com"
 
 
-@override_settings(DEFAULT_FROM_EMAIL="default-sender@example.com")
-def test_send_email_notification_uses_default_sender_and_supports_no_creator():
+def test_send_email_notification_uses_default_sender_and_supports_no_creator(
+    active_mail_configuration,
+):
     email_log = send_email_notification(
         subject="Default sender",
         body="Hello",
@@ -112,8 +123,8 @@ def test_send_email_notification_uses_default_sender_and_supports_no_creator():
     )
 
     assert len(mail.outbox) == 1
-    assert mail.outbox[0].from_email == "default-sender@example.com"
-    assert email_log.from_email == "default-sender@example.com"
+    assert mail.outbox[0].from_email == "crm@example.com"
+    assert email_log.from_email == "crm@example.com"
     assert email_log.created_by is None
     assert email_log.metadata["sender_source"] == "default"
     assert email_log.metadata["created_by_id"] is None
@@ -121,7 +132,7 @@ def test_send_email_notification_uses_default_sender_and_supports_no_creator():
 
 
 def test_send_email_notification_marks_failed_delivery_without_losing_log(
-    regular_user, monkeypatch
+    regular_user, active_mail_configuration, monkeypatch
 ):
     def _fail_send(self, fail_silently=False):
         raise ImproperlyConfigured("SMTP credentials rejected")
@@ -147,3 +158,103 @@ def test_send_email_notification_marks_failed_delivery_without_losing_log(
     assert (
         email_log.metadata["delivery_error"]["message"] == "SMTP credentials rejected"
     )
+
+
+def test_send_email_notification_uses_active_mail_configuration_from_database(
+    regular_user,
+):
+    store = get_secret_store()
+    username_secret_name = store.set_secret("mail-user", "db-user@example.com")
+    password_secret_name = store.set_secret("mail-password", "db-password")
+    mail_configuration = MailConfiguration.objects.create(
+        name="Primary SMTP",
+        host="smtp.db.example.com",
+        port=2525,
+        use_tls=True,
+        use_ssl=False,
+        default_from_email="db-default@example.com",
+        username_secret_name=username_secret_name,
+        password_secret_name=password_secret_name,
+        is_active=True,
+        last_test_status=MailConfiguration.TestStatus.PASSED,
+        created_by=regular_user,
+        updated_by=regular_user,
+    )
+
+    email_log = send_email_notification(
+        subject="Configured sender",
+        body="Hello",
+        to_emails=["customer@example.com"],
+        created_by=regular_user,
+    )
+
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].from_email == "db-default@example.com"
+    assert email_log.mail_configuration == mail_configuration
+    assert email_log.metadata["mail_configuration"]["source"] == "database"
+    assert email_log.metadata["mail_configuration"]["host"] == "smtp.db.example.com"
+
+
+def test_send_email_notification_respects_manual_delivery_type(
+    regular_user, active_mail_configuration
+):
+    email_log = send_email_notification(
+        subject="Manual",
+        body="Hello",
+        to_emails=["customer@example.com"],
+        created_by=regular_user,
+        delivery_type=EmailLog.DeliveryType.MANUAL,
+    )
+
+    assert email_log.delivery_type == EmailLog.DeliveryType.MANUAL
+
+
+def test_send_email_notification_logs_configuration_resolution_failures(regular_user):
+    MailConfiguration.objects.create(
+        name="Broken SMTP",
+        host="smtp.db.example.com",
+        port=2525,
+        use_tls=True,
+        use_ssl=False,
+        default_from_email="db-default@example.com",
+        username_secret_name="missing-user",
+        password_secret_name="missing-password",
+        is_active=True,
+        last_test_status=MailConfiguration.TestStatus.PASSED,
+        created_by=regular_user,
+        updated_by=regular_user,
+    )
+
+    with pytest.raises(EmailDeliveryError) as exc_info:
+        send_email_notification(
+            subject="Broken config",
+            body="Hello",
+            to_emails=["customer@example.com"],
+            created_by=regular_user,
+        )
+
+    email_log = exc_info.value.email_log
+    assert email_log.status == EmailLog.Status.FAILED
+    assert email_log.mail_configuration is not None
+    assert email_log.metadata["mail_configuration_resolution"]["source"] == "database"
+    assert email_log.metadata["mail_configuration_resolution"]["error_type"]
+
+
+def test_send_email_notification_fails_without_active_mail_configuration(
+    regular_user,
+):
+    with pytest.raises(EmailDeliveryError) as exc_info:
+        send_email_notification(
+            subject="Missing config",
+            body="Hello",
+            to_emails=["customer@example.com"],
+            created_by=regular_user,
+        )
+
+    email_log = exc_info.value.email_log
+    assert email_log.status == EmailLog.Status.FAILED
+    assert email_log.mail_configuration is None
+    assert email_log.metadata["mail_configuration_resolution"]["source"] == (
+        "missing_configuration"
+    )
+    assert "No active mail configuration found" in email_log.error_message

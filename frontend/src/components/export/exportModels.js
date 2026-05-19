@@ -1,5 +1,4 @@
 const CUSTOMER_FIELDS = [
-  { value: "id", label: "ID" },
   { value: "customer_name", label: "Ad" },
   { value: "customer_surname", label: "Soyad" },
   { value: "customer_email", label: "E-posta" },
@@ -46,20 +45,20 @@ const USER_FIELDS = [
   { value: "date_joined", label: "Kayıt Tarihi" },
 ];
 
-// TODO fieldlari duzelt
 const PAYMENT_FIELDS = [
   { value: "appointment", label: "Randevu" },
-  { value: "amount", label: "Tutar" },
-  { value: "currency", label: "Para Birimi" },
-  { value: "payment_method", label: "Ödeme Yöntemi" },
-  { value: "status", label: "Durum" },
+  { value: "total_amount", label: "Toplam Tutar" },
   { value: "payment_date", label: "Ödeme Tarihi" },
-  { value: "note", label: "Not" },
+  { value: "paid_amount", label: "Ödenen Tutar" },
+  { value: "remaining_amount", label: "Kalan Tutar" },
+  { value: "payment_status", label: "Ödeme Durumu" },
   { value: "created_at", label: "Oluşturulma Tarihi" },
+  { value: "updated_at", label: "Güncellenme Tarihi" },
+  { value: "created_by", label: "Oluşturan Kişi" },
+  { value: "updated_by", label: "Güncelleyen Kişi" },
 ];
 
 const TAG_FIELDS = [
-  { value: "id", label: "ID" },
   { value: "tag_name", label: "Tag Adı" },
   { value: "slug", label: "Slug" },
   { value: "description", label: "Açıklama" },
@@ -76,7 +75,6 @@ export const EXPORT_MODEL_CONFIGS = {
     defaultFileType: "excel",
     fields: CUSTOMER_FIELDS,
     defaultFields: [
-      "id",
       "customer_name",
       "customer_surname",
       "customer_email",
@@ -96,7 +94,7 @@ export const EXPORT_MODEL_CONFIGS = {
     ],
     defaultFileType: "excel",
     fields: PRODUCT_FIELDS,
-    defaultFields: ["id", "name", "slug", "description", "created_at"],
+    defaultFields: ["name", "slug", "description", "created_at"],
   },
   events: {
     model: "events",
@@ -107,14 +105,7 @@ export const EXPORT_MODEL_CONFIGS = {
     ],
     defaultFileType: "excel",
     fields: EVENT_FIELDS,
-    defaultFields: [
-      "id",
-      "customer",
-      "name",
-      "appointment_type",
-      "status",
-      "scheduled_for",
-    ],
+    defaultFields: ["customer", "name", "appointment_type", "status", "scheduled_for"],
   },
   user: {
     model: "user",
@@ -125,15 +116,7 @@ export const EXPORT_MODEL_CONFIGS = {
     ],
     defaultFileType: "excel",
     fields: USER_FIELDS,
-    defaultFields: [
-      "id",
-      "username",
-      "first_name",
-      "last_name",
-      "email",
-      "role",
-      "is_active",
-    ],
+    defaultFields: ["username", "first_name", "last_name", "email", "role", "is_active"],
   },
   payments: {
     model: "payments",
@@ -145,12 +128,16 @@ export const EXPORT_MODEL_CONFIGS = {
     defaultFileType: "excel",
     fields: PAYMENT_FIELDS,
     defaultFields: [
-      "id",
-      "appointment",
-      "amount",
-      "payment_method",
-      "status",
+      "total_amount",
       "payment_date",
+      "paid_amount",
+      "remaining_amount",
+      "payment_status",
+      "created_at",
+      "updated_at",
+      "appointment",
+      "created_by",
+      "updated_by",
     ],
   },
   tag: {
@@ -162,7 +149,7 @@ export const EXPORT_MODEL_CONFIGS = {
     ],
     defaultFileType: "excel",
     fields: TAG_FIELDS,
-    defaultFields: ["id", "tag_name", "slug", "description"],
+    defaultFields: ["tag_name", "slug", "description"],
   },
 };
 

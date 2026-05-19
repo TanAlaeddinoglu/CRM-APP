@@ -34,12 +34,15 @@ export default function PaymentDetailsTable({ payments, onRefresh }) {
       <tbody>
         {payments.map((p) => (
           <tr key={p.id}>
-            <td>
-              {new Date(p.payment_date).toLocaleDateString()}
-            </td>
+            <td>{new Date(p.payment_date).toLocaleDateString()}</td>
             <td>{p.paid_amount} ₺</td>
             <td>{p.remaining_amount} ₺</td>
-            <td>{p.payment_status}</td>
+            <td>
+              <PaymentStatusBadge
+                status={p.payment_status}
+                paidAmount={p.paid_amount}
+              />
+            </td>
             <td>
               <button
                 className="delete-payment-btn"
@@ -54,4 +57,36 @@ export default function PaymentDetailsTable({ payments, onRefresh }) {
       </tbody>
     </table>
   );
+}
+
+function PaymentStatusBadge({ status, paidAmount }) {
+  const normalized = String(status || "").toLowerCase();
+  const isPaymentNotStarted =
+    normalized === "kismi" && Number(paidAmount || 0) === 0;
+  const statusClass = isPaymentNotStarted
+    ? "not-started"
+    : getPaymentStatusClass(normalized);
+  const statusLabel = isPaymentNotStarted
+    ? "Ödemeye başlanmadı"
+    : getPaymentStatusLabel(normalized);
+
+  return (
+    <span className={`payment-status-badge ${statusClass}`}>
+      {statusLabel}
+    </span>
+  );
+}
+
+function getPaymentStatusClass(status) {
+  if (status === "tamamlandi") return "completed";
+  if (status === "kismi") return "partial";
+  if (status === "iptal") return "cancelled";
+  return "default";
+}
+
+function getPaymentStatusLabel(status) {
+  if (status === "tamamlandi") return "Tamamlandı";
+  if (status === "kismi") return "Kısmi";
+  if (status === "iptal") return "İptal";
+  return status || "-";
 }

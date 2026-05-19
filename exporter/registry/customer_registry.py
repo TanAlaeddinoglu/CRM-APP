@@ -34,7 +34,7 @@ class CustomerExportRegistry(BaseExportRegistry):
     }
 
     def get_queryset(self, user):
-        queryset = Customer.objects.all().order_by("-created_at")
+        queryset = Customer.objects.all().order_by("customer_name")
         if user.is_staff or user.is_superuser:
             return queryset
         return queryset.filter(assigned_to=user)

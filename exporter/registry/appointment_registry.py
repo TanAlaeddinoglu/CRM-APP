@@ -32,4 +32,4 @@ class AppointmentExportRegistry(BaseExportRegistry):
     }
 
     def get_queryset(self, user):
-        return Appointment.objects.all().order_by("-scheduled_for")
+        return Appointment.objects.all().order_by("scheduled_for")

@@ -92,6 +92,11 @@ class Customer(models.Model):
         indexes = [
             models.Index(fields=("customer_phone",)),
             models.Index(fields=("status",)),
+            models.Index(fields=("assigned_to",)),
+            models.Index(fields=("created_at",)),
+            models.Index(fields=("tag",)),
+            models.Index(fields=("assigned_to", "status")),
+            models.Index(fields=("assigned_to", "created_at")),
         ]
 
     def __str__(self):

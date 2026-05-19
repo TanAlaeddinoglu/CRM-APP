@@ -1,3 +1,4 @@
+from django.db.models import Count, Max
 from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -6,7 +7,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.authenticate import CustomAuthentication
-from exporter.api.serializers import ExportDeleteSerializer, ExportRequestSerializer
+from exporter.api.serializers import (
+    ExportDeleteSerializer,
+    ExportHistoryQuerySerializer,
+    ExportHistorySerializer,
+    ExportRequestSerializer,
+)
 from exporter.models import ExportJob
 from exporter.services.export_service import ExportService
 from exporter.tasks import queue_export_delivery
@@ -16,8 +22,29 @@ class ExportView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     authentication_classes = [CustomAuthentication]
 
-    # TODO: file created ve email sent leri listelemek icin endpoint yazilacak
-    # def get(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
+        serializer = ExportHistoryQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        queryset = ExportJob.objects.select_related(
+            "created_by",
+            "email_log",
+            "email_log__created_by",
+        ).order_by("-created_at")
+
+        model_name = serializer.validated_data.get("model")
+        date_from = serializer.validated_data.get("date_from")
+        date_to = serializer.validated_data.get("date_to")
+
+        if model_name:
+            queryset = queryset.filter(model_name=model_name)
+        if date_from:
+            queryset = queryset.filter(created_at__date__gte=date_from)
+        if date_to:
+            queryset = queryset.filter(created_at__date__lte=date_to)
+
+        response_payload = ExportHistorySerializer(queryset, many=True).data
+        return Response(response_payload, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         serializer = ExportRequestSerializer(data=request.data)
@@ -70,8 +97,6 @@ class ExportView(APIView):
 
     def delete(self, request, *args, **kwargs):
         payload = {
-            "absolute_path": request.data.get("absolute_path")
-            or request.query_params.get("absolute_path"),
             "relative_path": request.data.get("relative_path")
             or request.query_params.get("relative_path"),
         }
@@ -79,7 +104,6 @@ class ExportView(APIView):
         serializer.is_valid(raise_exception=True)
 
         deleted = ExportService().delete_export(
-            absolute_path=serializer.validated_data.get("absolute_path"),
             relative_path=serializer.validated_data.get("relative_path"),
         )
 
@@ -88,5 +112,27 @@ class ExportView(APIView):
 
         return Response(
             {"message": "Export file deleted successfully."},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ExportHistoryMetaView(APIView):
+    permission_classes = [IsAuthenticated, IsAdminUser]
+    authentication_classes = [CustomAuthentication]
+
+    def get(self, request, *args, **kwargs):
+        aggregates = ExportJob.objects.aggregate(
+            count=Count("id"),
+            latest_updated_at=Max("updated_at"),
+        )
+        latest_updated_at = aggregates["latest_updated_at"]
+
+        return Response(
+            {
+                "count": aggregates["count"] or 0,
+                "latest_updated_at": (
+                    latest_updated_at.isoformat() if latest_updated_at else None
+                ),
+            },
             status=status.HTTP_200_OK,
         )

@@ -1,6 +1,7 @@
 import pytest
 from datetime import datetime, timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.utils import timezone
 from rest_framework import serializers
@@ -244,6 +245,39 @@ def test_payment_serializer_rejects_overpayment_across_payments():
     assert serializer.is_valid(), serializer.errors
     with pytest.raises(serializers.ValidationError):
         serializer.save()
+
+
+def test_payment_serializer_locks_appointment_row_before_total_calculation():
+    user = User.objects.create_user(username="lock", password="pass")
+    customer = _make_customer(user, "1300000099")
+    product = _make_product(user, "Lock")
+    appointment = Appointment.objects.create(
+        name="Lock",
+        scheduled_for=timezone.now() + timedelta(days=2),
+        appointment_type=APPOINTMENT_TYPES[0][0],
+        customer=customer,
+        product=product,
+        created_by=user,
+    )
+
+    with patch.object(
+        Appointment.objects,
+        "select_for_update",
+        wraps=Appointment.objects.select_for_update,
+    ) as select_for_update_mock:
+        serializer = AppointmentPaymentSerializer(
+            data={
+                "appointment": appointment.pk,
+                "total_amount": "100.00",
+                "paid_amount": "25.00",
+                "payment_date": timezone.now(),
+            }
+        )
+        assert serializer.is_valid(), serializer.errors
+        payment = serializer.save()
+
+    select_for_update_mock.assert_called_once()
+    assert payment.remaining_amount == Decimal("75.00")
 
 
 def test_payment_serializer_validates_negative_values():

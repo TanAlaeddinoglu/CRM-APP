@@ -8,6 +8,7 @@ class ProductExportRegistry(BaseExportRegistry):
         "name",
         "description",
         "created_by",
+        "created_at",
         "slug",
     ]
     field_map = {
@@ -15,7 +16,8 @@ class ProductExportRegistry(BaseExportRegistry):
         "description": "description",
         "created_by": "created_by.username",
         "slug": "slug",
+        "created_at": "created_at",
     }
 
     def get_queryset(self, user):
-        return Product.objects.all().order_by("-created_at")
+        return Product.objects.all().order_by("name")

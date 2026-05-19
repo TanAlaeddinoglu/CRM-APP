@@ -1,6 +1,71 @@
 from rest_framework import serializers
 
-from .models import EmailLog
+from notifications.models import EmailLog, MailConfiguration
+
+from .contracts import MailConfigurationInput
+
+
+class MailConfigurationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MailConfiguration
+        fields = [
+            "id",
+            "name",
+            "backend_type",
+            "host",
+            "port",
+            "use_tls",
+            "use_ssl",
+            "default_from_email",
+            "is_active",
+            "last_test_status",
+            "last_test_at",
+            "last_test_recipient",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+
+class BaseMailConfigurationInputSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=120, required=False, default="Default SMTP")
+    host = serializers.CharField(max_length=255)
+    port = serializers.IntegerField(min_value=1, max_value=65535)
+    host_user = serializers.CharField(max_length=255)
+    host_password = serializers.CharField(max_length=255, write_only=True)
+    default_from_email = serializers.EmailField()
+    use_tls = serializers.BooleanField(default=True)
+    use_ssl = serializers.BooleanField(default=False)
+
+    def validate(self, attrs):
+        if attrs["use_tls"] and attrs["use_ssl"]:
+            raise serializers.ValidationError(
+                {"use_ssl": ["TLS ve SSL aynı anda aktif olamaz."]}
+            )
+        return attrs
+
+    def to_configuration_input(self) -> MailConfigurationInput:
+        if not hasattr(self, "validated_data"):
+            raise AssertionError("Serializer must be validated before building input.")
+
+        return MailConfigurationInput(
+            host=self.validated_data["host"],
+            port=self.validated_data["port"],
+            host_user=self.validated_data["host_user"],
+            host_password=self.validated_data["host_password"],
+            default_from_email=self.validated_data["default_from_email"],
+            use_tls=self.validated_data["use_tls"],
+            use_ssl=self.validated_data["use_ssl"],
+            name=self.validated_data["name"],
+        )
+
+
+class MailConfigurationTestSerializer(BaseMailConfigurationInputSerializer):
+    test_recipient_email = serializers.EmailField(required=False)
+
+
+class MailConfigurationSaveSerializer(BaseMailConfigurationInputSerializer):
+    test_session_id = serializers.IntegerField(min_value=1)
 
 
 class SendEmailSerializer(serializers.Serializer):
@@ -61,6 +126,10 @@ class SendEmailSerializer(serializers.Serializer):
 
 class EmailLogSerializer(serializers.ModelSerializer):
     created_by = serializers.CharField(source="created_by.username", read_only=True)
+    mail_configuration = serializers.CharField(
+        source="mail_configuration.name",
+        read_only=True,
+    )
 
     class Meta:
         model = EmailLog
@@ -73,9 +142,11 @@ class EmailLogSerializer(serializers.ModelSerializer):
             "cc_emails",
             "bcc_emails",
             "status",
+            "delivery_type",
             "metadata",
             "error_message",
             "sent_at",
+            "mail_configuration",
             "created_by",
             "created_at",
             "updated_at",
