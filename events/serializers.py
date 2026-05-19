@@ -145,6 +145,13 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
         user = getattr(request, "user", None)
 
         appointment = validated_data.get("appointment")
+        if appointment is None:
+            raise serializers.ValidationError(
+                {"appointment": ["Appointment is required."]}
+            )
+
+        appointment = Appointment.objects.select_for_update().get(pk=appointment.pk)
+        validated_data["appointment"] = appointment
         paid_amount = validated_data.get("paid_amount", Decimal("0.00"))
 
         if user and user.is_authenticated:

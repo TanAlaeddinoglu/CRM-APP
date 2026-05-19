@@ -34,21 +34,14 @@ class ExportRequestSerializer(serializers.Serializer):
 
 
 class ExportDeleteSerializer(serializers.Serializer):
-    absolute_path = serializers.CharField(required=False)
-    relative_path = serializers.CharField(required=False)
+    relative_path = serializers.CharField()
 
     def validate(self, attrs):
-        absolute_path = attrs.get("absolute_path")
         relative_path = attrs.get("relative_path")
 
-        if not absolute_path and not relative_path:
+        if not relative_path:
             raise serializers.ValidationError(
-                "absolute_path or relative_path is required."
-            )
-
-        if absolute_path and relative_path:
-            raise serializers.ValidationError(
-                "Use either absolute_path or relative_path, not both."
+                {"relative_path": ["relative_path is required."]}
             )
 
         return attrs
@@ -93,15 +86,12 @@ class ExportHistorySerializer(serializers.ModelSerializer):
             "selected_fields",
             "recipient_email",
             "email_subject",
-            "email_body",
             "status",
             "file_status",
             "email_status",
             "row_count",
             "file_name",
             "relative_path",
-            "absolute_path",
-            "workflow_task_id",
             "created_at",
             "updated_at",
         ]

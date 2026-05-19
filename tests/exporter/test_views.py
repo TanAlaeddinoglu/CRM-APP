@@ -123,6 +123,9 @@ def test_export_history_view_returns_export_jobs_with_email_logs(
     assert "metadata" not in response.data[0]
     assert "error_message" not in response.data[0]
     assert "email_log" not in response.data[0]
+    assert "email_body" not in response.data[0]
+    assert "absolute_path" not in response.data[0]
+    assert "workflow_task_id" not in response.data[0]
 
 
 def test_export_history_view_filters_by_model_and_date(admin_client, admin_user):
@@ -203,3 +206,46 @@ def test_export_history_meta_view_returns_count_and_latest_timestamp(
     assert response.status_code == status.HTTP_200_OK
     assert response.data["count"] == 1
     assert response.data["latest_updated_at"] is not None
+
+
+def test_export_delete_view_rejects_absolute_path_input(admin_client):
+    response = admin_client.delete(
+        "/api/exports/",
+        {"absolute_path": "/tmp/export.csv"},
+        format="json",
+    )
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert "relative_path" in response.data
+
+
+def test_export_delete_view_deletes_by_relative_path(
+    admin_client,
+    admin_user,
+    tmp_path,
+):
+    export_dir = tmp_path / "exports" / "customer"
+    export_dir.mkdir(parents=True)
+    export_file = export_dir / "customers.csv"
+    export_file.write_text("header\nvalue\n")
+
+    relative_path = "exports/customer/customers.csv"
+    ExportJob.objects.create(
+        created_by=admin_user,
+        model_name="customer",
+        file_type="csv",
+        selected_fields=["customer_name"],
+        recipient_email="admin@example.com",
+        relative_path=relative_path,
+        absolute_path=str(export_file),
+    )
+
+    with override_settings(MEDIA_ROOT=tmp_path, EXPORT_FILES_ROOT=tmp_path / "exports"):
+        response = admin_client.delete(
+            "/api/exports/",
+            {"relative_path": relative_path},
+            format="json",
+        )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert export_file.exists() is False
