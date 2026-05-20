@@ -42,7 +42,7 @@ def get_tokens_for_user(user):
     }
 
 
-# @method_decorator(csrf_exempt, name="dispatch")
+@method_decorator(csrf_exempt, name="dispatch")
 class UserLoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -100,7 +100,7 @@ class UserLoginView(APIView):
         return response
 
 
-@method_decorator(csrf_exempt, name="dispatch")
+# @method_decorator(csrf_exempt, name="dispatch")
 class LogoutView(APIView):
     def post(self, request, format=None):
         enforce_csrf(request)
