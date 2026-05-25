@@ -11,78 +11,56 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from datetime import timedelta
-from importlib.util import find_spec
 from pathlib import Path
 
-from django.core.exceptions import ImproperlyConfigured
 from drf_spectacular.contrib import rest_framework_simplejwt
+
+from .helpers import SettingsSecretResolver, env_bool, env_list, env_str, load_env_file
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-def _load_env_file(path: Path) -> None:
-    if not path.exists():
-        return
+load_env_file(BASE_DIR / ".env")
 
-    for raw_line in path.read_text().splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip().strip("\"'")
-
-        if key and key not in os.environ:
-            os.environ[key] = value
-
-
-_load_env_file(BASE_DIR / ".env")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+SECRET_STORE_BACKEND = env_str("SECRET_STORE_BACKEND", "env") or "env"
+AZURE_KEY_VAULT_URL = env_str("AZURE_KEY_VAULT_URL")
+AZURE_MANAGED_IDENTITY_CLIENT_ID = env_str("AZURE_MANAGED_IDENTITY_CLIENT_ID")
+
+_SETTINGS_SECRET_NAMES = {
+    "DJANGO_SECRET_KEY": "django-secret-key",
+    "DJANGO_CACHE_URL": "django-cache-url",
+    "FLOWER_BASIC_AUTH": "flower-basic-auth",
+    "CELERY_RESULT_BACKEND": "celery-result-backend",
+    "REDIS_PASSWORD": "redis-password",
+    "CELERY_BROKER_URL": "celery-broker-url",
+    "RABBITMQ_DEFAULT_PASS": "rabbitmq-default-pass",
+    "RABBITMQ_DEFAULT_USER": "rabbitmq-default-user",
+    "POSTGRES_PASSWORD": "postgres-password",
+    "POSTGRES_USER": "postgres-user",
+}
+
+SETTINGS_SECRET_RESOLVER = SettingsSecretResolver(
+    backend=SECRET_STORE_BACKEND,
+    vault_url=AZURE_KEY_VAULT_URL,
+    managed_identity_client_id=AZURE_MANAGED_IDENTITY_CLIENT_ID,
+    secret_names=_SETTINGS_SECRET_NAMES,
+)
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = "django-insecure-=97im^5wzw-z%*k+v*=dn%4yyk^7ssd#g@$)unpbel5eg^1aa+"
-# SECRET_KEY = "9e2cf01e74eb5f1269a65eda81dea8a6325aa709a9fdb2eb01d5642fcdf0bf57"
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
-
-
-def _env_bool(name: str, default: bool = False) -> bool:
-    value = os.getenv(name, str(default))
-    return value.strip().lower() in {"1", "true", "yes", "on"}
-
-
-def _env_str(
-    name: str, default: str | None = None, *, required: bool = False
-) -> str | None:
-    value = os.getenv(name, default)
-    if value is None:
-        if required:
-            raise ImproperlyConfigured(f"{name} environment variable must be set.")
-        return None
-
-    value = value.strip()
-    if required and not value:
-        raise ImproperlyConfigured(f"{name} environment variable must not be empty.")
-    return value or default
-
-
-def _module_exists(name: str) -> bool:
-    try:
-        return find_spec(name) is not None
-    except ModuleNotFoundError:
-        return False
-
+SECRET_KEY = SETTINGS_SECRET_RESOLVER.get_secret("DJANGO_SECRET_KEY", required=True)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = _env_bool("DJANGO_DEBUG", False)
+DEBUG = env_bool("DJANGO_DEBUG", False)
 # DEBUG = True
 
 # ALLOWED_HOSTS = ["*"]
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
-
+ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS")
 
 # Application definition
 
@@ -161,21 +139,21 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
-
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("DB_NAME"),
-        "USER": os.getenv("DB_USER"),
-        "PASSWORD": os.getenv("DB_PASSWORD"),
-        "HOST": os.getenv("DB_HOST"),
-        "PORT": os.getenv("DB_PORT"),
+        "NAME": os.getenv("POSTGRES_DB"),
+        "USER": SETTINGS_SECRET_RESOLVER.get_secret("POSTGRES_USER", required=True),
+        "PASSWORD": SETTINGS_SECRET_RESOLVER.get_secret(
+            "POSTGRES_PASSWORD", required=True
+        ),
+        "HOST": os.getenv("POSTGRES_HOST"),
+        "PORT": os.getenv("POSTGRES_PORT"),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -225,7 +203,7 @@ EXPORT_FILES_ROOT = MEDIA_ROOT / "exports"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-DJANGO_CACHE_URL = _env_str("DJANGO_CACHE_URL")
+DJANGO_CACHE_URL = SETTINGS_SECRET_RESOLVER.get_secret("DJANGO_CACHE_URL")
 
 CACHES = {
     "default": (
@@ -244,17 +222,18 @@ CACHES = {
     )
 }
 
-EMAIL_BACKEND = _env_str("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
-EMAIL_TIMEOUT = int(_env_str("EMAIL_TIMEOUT", "10") or "10")
-MAIL_CONFIG_TEST_SESSION_TTL_SECONDS = int(_env_str("EMAIL_TIMEOUT", "600") or "600")
-SERVER_EMAIL = _env_str("DEFAULT_FROM_EMAIL")
+EMAIL_BACKEND = env_str("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_TIMEOUT = int(env_str("EMAIL_TIMEOUT", "10") or "10")
+MAIL_CONFIG_TEST_SESSION_TTL_SECONDS = int(
+    env_str("MAIL_CONFIG_TEST_SESSION_TTL_SECONDS", "600") or "600"
+)
+SERVER_EMAIL = env_str("DEFAULT_FROM_EMAIL")
 DEFAULT_FROM_EMAIL = SERVER_EMAIL
 
-# AZURE CONFIG
-SECRET_STORE_BACKEND = _env_str("SECRET_STORE_BACKEND", "azure_key_vault")
-AZURE_KEY_VAULT_URL = _env_str("AZURE_KEY_VAULT_URL")
-AZURE_MANAGED_IDENTITY_CLIENT_ID = _env_str("AZURE_MANAGED_IDENTITY_CLIENT_ID")
-
+FLOWER_BASIC_AUTH = SETTINGS_SECRET_RESOLVER.get_secret("FLOWER_BASIC_AUTH")
+REDIS_PASSWORD = SETTINGS_SECRET_RESOLVER.get_secret("REDIS_PASSWORD")
+RABBITMQ_DEFAULT_USER = SETTINGS_SECRET_RESOLVER.get_secret("RABBITMQ_DEFAULT_USER")
+RABBITMQ_DEFAULT_PASS = SETTINGS_SECRET_RESOLVER.get_secret("RABBITMQ_DEFAULT_PASS")
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
@@ -280,13 +259,17 @@ SIMPLE_JWT = {
 # CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS")
 
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 
 # CELERY
-CELERY_BROKER_URL = _env_str("CELERY_BROKER_URL", required=True)
-CELERY_RESULT_BACKEND = _env_str("CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL)
+CELERY_BROKER_URL = SETTINGS_SECRET_RESOLVER.get_secret(
+    "CELERY_BROKER_URL", required=True
+)
+CELERY_RESULT_BACKEND = SETTINGS_SECRET_RESOLVER.get_secret(
+    "CELERY_RESULT_BACKEND", default=CELERY_BROKER_URL, required=True
+)
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -299,11 +282,10 @@ CELERY_RESULT_EXPIRES = 60 * 60 * 24 * 15  # CELERY RESULTLARIN RAM DEN SILINECE
 
 # LOCAL de calisirken commente al HTTP ve HSTS yi
 # HTTP SETTINGS
-SESSION_COOKIE_SECURE = _env_bool("DJANGO_SESSION_COOKIE_SECURE", True)
-CSRF_COOKIE_SECURE = _env_bool("DJANGO_CSRF_COOKIE_SECURE", True)
-SECURE_SSL_REDIRECT = _env_bool("DJANGO_SECURE_SSL_REDIRECT", False)
+SESSION_COOKIE_SECURE = env_bool("DJANGO_SESSION_COOKIE_SECURE", True)
+CSRF_COOKIE_SECURE = env_bool("DJANGO_CSRF_COOKIE_SECURE", True)
+SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", False)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-
 
 # HSTS SETTINGS
 SECURE_HSTS_SECONDS = 31536000
