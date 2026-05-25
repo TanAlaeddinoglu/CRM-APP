@@ -39,7 +39,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", 'pg_isready -U "$$DB_USER" -d "$$DB_NAME"']
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -49,9 +49,8 @@ services:
     image: rabbitmq:3.13-management-alpine
     container_name: crm_rabbitmq
     restart: unless-stopped
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:-crm_user}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:-crm_password}
+    env_file:
+      - ../.env
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     ports:
@@ -68,8 +67,8 @@ services:
     image: redis:7.4-alpine
     container_name: crm_redis
     restart: unless-stopped
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me}
+    env_file:
+      - ../.env
     command:
       - /bin/sh
       - -c
@@ -103,7 +102,7 @@ services:
     command:
       - /bin/sh
       - -c
-      - exec celery -A djangoCRM flower --address=0.0.0.0 --port="$${FLOWER_PORT:-5555}" --basic_auth="$${FLOWER_BASIC_AUTH}"
+      - exec celery -A djangoCRM flower --address=0.0.0.0 --port=5555 --basic_auth="$${FLOWER_BASIC_AUTH}"
     profiles: ["celery"]
     depends_on:
       rabbitmq:
@@ -111,7 +110,7 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "127.0.0.1:${FLOWER_PORT:-5555}:5555"
+      - "127.0.0.1:5555:5555"
 
   frontend:
     build:

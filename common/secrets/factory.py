@@ -6,7 +6,7 @@ from django.conf import settings
 
 from .azure_key_vault import AzureKeyVaultSecretStore
 from .exceptions import SecretStoreConfigurationError
-from .secret_store import InMemorySecretStore
+from .secret_store import EnvironmentSecretStore, InMemorySecretStore
 
 
 @lru_cache(maxsize=1)
@@ -15,6 +15,9 @@ def get_secret_store():
 
     if backend == "memory":
         return InMemorySecretStore()
+
+    if backend == "env":
+        return EnvironmentSecretStore()
 
     if backend == "azure_key_vault":
         return AzureKeyVaultSecretStore(

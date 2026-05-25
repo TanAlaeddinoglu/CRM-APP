@@ -1,14 +1,21 @@
 import os
 from pathlib import Path
 from typing import Any, Dict
-
 from . import settings as base_settings
+
+os.environ["SECRET_STORE_BACKEND"] = "env"
+os.environ.setdefault("DJANGO_SECRET_KEY", "test-secret-key")
+os.environ.setdefault("POSTGRES_USER", "test-db-user")
+os.environ.setdefault("POSTGRES_PASSWORD", "test-db-password")
+os.environ.setdefault("CELERY_BROKER_URL", "memory://")
+os.environ.setdefault("CELERY_RESULT_BACKEND", "cache+memory://")
+os.environ.setdefault("DEFAULT_FROM_EMAIL", "default-sender@example.com")
+
 
 for name in dir(base_settings):
     if name.isupper():
         globals()[name] = getattr(base_settings, name)
 
-os.environ.setdefault("DEFAULT_FROM_EMAIL", "default-sender@example.com")
 os.environ.setdefault("CELERY_BROKER_URL", "memory://")
 os.environ.setdefault("CELERY_RESULT_BACKEND", "cache+memory://")
 
