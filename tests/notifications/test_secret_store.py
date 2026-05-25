@@ -6,7 +6,7 @@ from common.secrets.exceptions import (
     SecretStoreConfigurationError,
 )
 from common.secrets.factory import get_secret_store
-from common.secrets.secret_store import InMemorySecretStore
+from common.secrets.secret_store import EnvironmentSecretStore, InMemorySecretStore
 
 
 def teardown_function():
@@ -32,6 +32,16 @@ def test_get_secret_store_returns_memory_backend():
     store = get_secret_store()
 
     assert isinstance(store, InMemorySecretStore)
+
+
+@override_settings(SECRET_STORE_BACKEND="env")
+def test_get_secret_store_returns_env_backend(monkeypatch):
+    monkeypatch.setenv("smtp-password", "super-secret")
+
+    store = get_secret_store()
+
+    assert isinstance(store, EnvironmentSecretStore)
+    assert store.get_secret("smtp-password") == "super-secret"
 
 
 @override_settings(SECRET_STORE_BACKEND="unsupported-backend")
