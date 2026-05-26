@@ -97,6 +97,7 @@ services:
       - crm_dev_backend_media:/app/media
     networks:
       - crm_dev_private
+      - crm_dev_public
     logging:
       driver: "json-file"
       options:
@@ -129,6 +130,7 @@ services:
       - crm_dev_backend_media:/app/media
     networks:
       - crm_dev_private
+      - crm_dev_public
     logging:
       driver: "json-file"
       options:
@@ -154,6 +156,7 @@ services:
         condition: service_healthy
     networks:
       - crm_dev_private
+      - crm_dev_public
     logging:
       driver: "json-file"
       options:
