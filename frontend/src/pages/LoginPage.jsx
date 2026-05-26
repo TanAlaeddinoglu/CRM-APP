@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import {useState, useEffect, useRef} from "react";
 import {login, me, getCSRF} from "../services/auth";
 import {useAuth} from "../context/AuthContext";
 import {useNavigate} from "react-router-dom";
@@ -14,6 +14,8 @@ export default function LoginPage() {
     const [error, setError] = useState("");
     const [banUntil, setBanUntil] = useState(null);
     const [remaining, setRemaining] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const submitLockRef = useRef(false);
 
     const formatRemaining = (totalSeconds) => {
         const minutes = Math.floor(totalSeconds / 60);
@@ -89,7 +91,13 @@ export default function LoginPage() {
             return;
         }
 
+        if (submitLockRef.current) {
+            return;
+        }
+
         try {
+            submitLockRef.current = true;
+            setIsSubmitting(true);
             await login({username, password});
 
             const response = await me();
@@ -128,10 +136,14 @@ export default function LoginPage() {
 
             setError(detail);
             toast.error(detail);
+        } finally {
+            submitLockRef.current = false;
+            setIsSubmitting(false);
         }
     };
 
     const isBanned = remaining > 0;
+    const isDisabled = isBanned || isSubmitting;
 
     return (
         <div className="login-container">
@@ -146,7 +158,7 @@ export default function LoginPage() {
                         placeholder="Username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        disabled={isBanned}
+                        disabled={isDisabled}
                     />
 
                     <input
@@ -155,7 +167,7 @@ export default function LoginPage() {
                         placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        disabled={isBanned}
+                        disabled={isDisabled}
                     />
 
                     {error && (
@@ -164,8 +176,8 @@ export default function LoginPage() {
                         </p>
                     )}
 
-                    <button type="submit" className="login-button" disabled={isBanned}>
-                        Login
+                    <button type="submit" className="login-button" disabled={isDisabled}>
+                        {isSubmitting ? "Logging in..." : "Login"}
                     </button>
                 </form>
             </div>
