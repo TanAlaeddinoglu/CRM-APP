@@ -10,7 +10,7 @@ services:
     volumes:
       - crm_dev_postgres_data:/var/lib/postgresql/data
     networks:
-      - crm_dev_net
+      - crm_dev_private
     logging:
       driver: "json-file"
       options:
@@ -29,10 +29,16 @@ services:
     restart: unless-stopped
     env_file:
       - .env.dev
+    command:
+      - /bin/sh
+      - -c
+      - |
+        printf '%s\n' 'management.path_prefix = /rabbitmq' > /etc/rabbitmq/rabbitmq.conf
+        exec docker-entrypoint.sh rabbitmq-server
     volumes:
       - crm_dev_rabbitmq_data:/var/lib/rabbitmq
     networks:
-      - crm_dev_net
+      - crm_dev_private
     logging:
       driver: "json-file"
       options:
@@ -58,7 +64,7 @@ services:
     volumes:
       - crm_dev_redis_data:/data
     networks:
-      - crm_dev_net
+      - crm_dev_private
     logging:
       driver: "json-file"
       options:
@@ -90,7 +96,7 @@ services:
       - crm_dev_backend_static:/app/staticfiles
       - crm_dev_backend_media:/app/media
     networks:
-      - crm_dev_net
+      - crm_dev_private
     logging:
       driver: "json-file"
       options:
@@ -122,7 +128,7 @@ services:
     volumes:
       - crm_dev_backend_media:/app/media
     networks:
-      - crm_dev_net
+      - crm_dev_private
     logging:
       driver: "json-file"
       options:
@@ -140,16 +146,14 @@ services:
     command:
       - /bin/sh
       - -c
-      - exec celery -A djangoCRM flower --address=0.0.0.0 --port=5555 --basic_auth="$${FLOWER_BASIC_AUTH}"
+      - exec celery -A djangoCRM flower --address=0.0.0.0 --port=5555 --url_prefix=flower --basic_auth="$${FLOWER_BASIC_AUTH}"
     depends_on:
       rabbitmq:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - crm_dev_net
-    ports:
-      - "127.0.0.1:5555:5555"
+      - crm_dev_private
     logging:
       driver: "json-file"
       options:
@@ -167,7 +171,7 @@ services:
     volumes:
       - crm_dev_frontend_dist:/usr/share/nginx/html
     networks:
-      - crm_dev_net
+      - crm_dev_private
     logging:
       driver: "json-file"
       options:
@@ -190,7 +194,8 @@ services:
       - backend
       - frontend
     networks:
-      - crm_dev_net
+      - crm_dev_private
+      - crm_dev_public
     logging:
       driver: "json-file"
       options:
@@ -198,7 +203,10 @@ services:
         max-file: "3"
 
 networks:
-  crm_dev_net:
+  crm_dev_private:
+    driver: bridge
+    internal: true
+  crm_dev_public:
     driver: bridge
 
 volumes:
