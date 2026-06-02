@@ -1,8 +1,11 @@
 import pytest
+from datetime import timedelta
 from decimal import Decimal
 
+from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from rest_framework.test import APIClient
 
 from common.utils import APPOINTMENT_TYPES, PAYMENT_STATUS
 from customer.models import Customer
@@ -55,3 +58,51 @@ def test_appointment_payments_viewset_perform_destroy_updates_last_payment():
     payment1.refresh_from_db()
     assert payment1.remaining_amount == Decimal("60.00")
     assert payment1.payment_status == PAYMENT_STATUS[0][0]
+
+
+def test_appointment_payments_can_filter_by_preset():
+    admin = User.objects.create_user(
+        username="payment-admin",
+        password="pass",
+        role=User.Role.ADMIN,
+    )
+    customer = Customer.objects.create(
+        customer_name="Preset",
+        customer_surname="Filter",
+        customer_phone="1500000000",
+        created_by=admin,
+    )
+    product = Product.objects.create(name="Preset Product", created_by=admin)
+    appointment = Appointment.objects.create(
+        name="Preset Visit",
+        scheduled_for=timezone.now(),
+        appointment_type=APPOINTMENT_TYPES[0][0],
+        customer=customer,
+        product=product,
+        created_by=admin,
+    )
+    recent_payment = AppointmentPayment.objects.create(
+        appointment=appointment,
+        total_amount=Decimal("100.00"),
+        paid_amount=Decimal("40.00"),
+        remaining_amount=Decimal("60.00"),
+        payment_status=PAYMENT_STATUS[0][0],
+        payment_date=timezone.now() - timedelta(days=2),
+    )
+    old_payment = AppointmentPayment.objects.create(
+        appointment=appointment,
+        total_amount=Decimal("100.00"),
+        paid_amount=Decimal("20.00"),
+        remaining_amount=Decimal("80.00"),
+        payment_status=PAYMENT_STATUS[0][0],
+        payment_date=timezone.now() - timedelta(days=20),
+    )
+
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.get(reverse("appointment-payments"), {"preset": "7"})
+
+    assert response.status_code == 200
+    ids = [row["id"] for row in response.data["results"]]
+    assert recent_payment.id in ids
+    assert old_payment.id not in ids

@@ -18,6 +18,7 @@ import {
 } from "recharts";
 
 import {
+  ChartAxisTick,
   EmptyReportState,
   FilterGrid,
   FilterPanel,
@@ -30,6 +31,7 @@ import {
 
 const MAIN_CHART_HEIGHT = 300;
 const SIDE_CHART_HEIGHT = 280;
+const TAG_CHANGE_COLOR = "#f59e0b";
 
 const SEMANTIC_STYLES = {
   success: {
@@ -88,21 +90,9 @@ export default function UserReportSection({
     });
   };
 
-  const tagDistributionData = (report?.charts?.tag_distribution || []).map((item) => ({
-    ...item,
-    short_name:
-      item.tag_name && item.tag_name.length > 14
-        ? `${item.tag_name.slice(0, 14)}...`
-        : item.tag_name,
-  }));
+  const tagDistributionData = report?.charts?.tag_distribution || [];
 
-  const salesByProductData = (report?.charts?.sales_by_product || []).map((item) => ({
-    ...item,
-    short_name:
-      item.product_name && item.product_name.length > 14
-        ? `${item.product_name.slice(0, 14)}...`
-        : item.product_name,
-  }));
+  const salesByProductData = report?.charts?.sales_by_product || [];
 
   const appointmentsTrendData = (report?.charts?.appointments_trend || []).map((item) => ({
     ...item,
@@ -250,12 +240,11 @@ export default function UserReportSection({
                         stroke="#e5e7eb"
                       />
                       <XAxis
-                        dataKey="short_name"
-                        tick={{ fontSize: 12, fill: "#64748b" }}
+                        dataKey="tag_name"
+                        tick={<ChartAxisTick />}
+                        tickMargin={10}
                         interval={0}
-                        angle={-15}
-                        textAnchor="end"
-                        height={60}
+                        height={52}
                         axisLine={{ stroke: "#cbd5e1" }}
                         tickLine={false}
                       />
@@ -269,7 +258,7 @@ export default function UserReportSection({
                       <Tooltip content={<TagTooltip />} />
                       <Bar
                         dataKey="count"
-                        fill={SEMANTIC_STYLES.info.fill}
+                        fill={TAG_CHANGE_COLOR}
                         radius={[8, 8, 0, 0]}
                         barSize={34}
                       />
@@ -295,12 +284,11 @@ export default function UserReportSection({
                         stroke="#e5e7eb"
                       />
                       <XAxis
-                        dataKey="short_name"
-                        tick={{ fontSize: 12, fill: "#64748b" }}
+                        dataKey="product_name"
+                        tick={<ChartAxisTick />}
+                        tickMargin={10}
                         interval={0}
-                        angle={-15}
-                        textAnchor="end"
-                        height={60}
+                        height={52}
                         axisLine={{ stroke: "#cbd5e1" }}
                         tickLine={false}
                       />

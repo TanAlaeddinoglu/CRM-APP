@@ -29,6 +29,7 @@ import {
   KpiGrid,
   ReportCard,
   SelectField,
+  SortableReportTable,
   TwoColumnGrid,
 } from "./ReportUI";
 
@@ -75,6 +76,42 @@ const STATUS_META = {
     fill: SEMANTIC_STYLES.danger.fill,
   },
 };
+
+const USER_PERFORMANCE_COLUMNS = [
+  { key: "username", label: "User", type: "text", width: "24%", truncate: true },
+  { key: "total", label: "Toplam Randevu", type: "number", width: "19%" },
+  { key: "pending", label: "Beklemede", type: "number", width: "16%" },
+  { key: "sales", label: "Satış", type: "number", width: "12%" },
+  { key: "negative", label: "Olumsuz", type: "number", width: "13%" },
+  {
+    key: "sales_rate",
+    label: "Satış %",
+    type: "number",
+    width: "16%",
+    render: (row) => <RateBadge value={row.sales_rate} />,
+  },
+];
+
+const PRODUCT_BREAKDOWN_COLUMNS = [
+  {
+    key: "product_name",
+    label: "Ürün",
+    type: "text",
+    width: "24%",
+    truncate: true,
+  },
+  { key: "total", label: "Toplam", type: "number", width: "14%" },
+  { key: "pending", label: "Beklemede", type: "number", width: "16%" },
+  { key: "sales", label: "Satış", type: "number", width: "12%" },
+  { key: "negative", label: "Olumsuz", type: "number", width: "14%" },
+  {
+    key: "sales_rate",
+    label: "Satış %",
+    type: "number",
+    width: "20%",
+    render: (row) => <RateProgress value={row.sales_rate} />,
+  },
+];
 
 export default function AppointmentsReportSection({
   filters,
@@ -410,76 +447,24 @@ function SectionTitle({ icon: Icon, title }) {
 }
 
 function AppointmentsBreakdownTable({ rows, emptyText }) {
-  if (!rows.length) {
-    return <EmptyTableLike text={emptyText} />;
-  }
-
   return (
-    <TableShell>
-      <table style={tableStyle}>
-        <thead>
-          <tr style={theadRowStyle}>
-            <th style={thStyle}>Ürün</th>
-            <th style={thStyle}>Toplam</th>
-            <th style={thStyle}>Beklemede</th>
-            <th style={thStyle}>Satış</th>
-            <th style={thStyle}>Olumsuz</th>
-            <th style={thStyle}>Satış %</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <tr key={`${row.product_name}-${index}`}>
-              <td style={tdStyle(index, rows.length)}>{row.product_name ?? "-"}</td>
-              <td style={tdStyle(index, rows.length)}>{row.total ?? "-"}</td>
-              <td style={tdStyle(index, rows.length)}>{row.pending ?? "-"}</td>
-              <td style={tdStyle(index, rows.length)}>{row.sales ?? "-"}</td>
-              <td style={tdStyle(index, rows.length)}>{row.negative ?? "-"}</td>
-              <td style={tdStyle(index, rows.length)}>
-                <RateProgress value={row.sales_rate} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableShell>
+    <SortableReportTable
+      columns={PRODUCT_BREAKDOWN_COLUMNS}
+      rows={rows}
+      emptyText={emptyText}
+      defaultSort={{ key: "total", direction: "desc" }}
+    />
   );
 }
 
 function UserPerformanceTable({ rows, emptyText }) {
-  if (!rows.length) {
-    return <EmptyTableLike text={emptyText} />;
-  }
-
   return (
-    <TableShell>
-      <table style={tableStyle}>
-        <thead>
-          <tr style={theadRowStyle}>
-            <th style={thStyle}>User</th>
-            <th style={thStyle}>Toplam Randevu</th>
-            <th style={thStyle}>Beklemede</th>
-            <th style={thStyle}>Satış</th>
-            <th style={thStyle}>Olumsuz</th>
-            <th style={thStyle}>Satış %</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, index) => (
-            <tr key={`${row.username}-${index}`}>
-              <td style={tdStyle(index, rows.length)}>{row.username ?? "-"}</td>
-              <td style={tdStyle(index, rows.length)}>{row.total ?? "-"}</td>
-              <td style={tdStyle(index, rows.length)}>{row.pending ?? "-"}</td>
-              <td style={tdStyle(index, rows.length)}>{row.sales ?? "-"}</td>
-              <td style={tdStyle(index, rows.length)}>{row.negative ?? "-"}</td>
-              <td style={tdStyle(index, rows.length)}>
-                <RateBadge value={row.sales_rate} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </TableShell>
+    <SortableReportTable
+      columns={USER_PERFORMANCE_COLUMNS}
+      rows={rows}
+      emptyText={emptyText}
+      defaultSort={{ key: "total", direction: "desc" }}
+    />
   );
 }
 
@@ -690,20 +675,6 @@ function EmptyTableLike({ text }) {
   );
 }
 
-function TableShell({ children }) {
-  return (
-    <div
-      style={{
-        overflowX: "auto",
-        border: "1px solid #eef2f7",
-        borderRadius: "16px",
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
 function formatShortDate(dateString) {
   if (!dateString) return "-";
 
@@ -712,34 +683,6 @@ function formatShortDate(dateString) {
 
   return `${parts[2]}.${parts[1]}`;
 }
-
-const tableStyle = {
-  width: "100%",
-  borderCollapse: "separate",
-  borderSpacing: 0,
-};
-
-const theadRowStyle = {
-  background: "#f8fafc",
-};
-
-const thStyle = {
-  textAlign: "left",
-  padding: "14px",
-  borderBottom: "1px solid #e6edf5",
-  color: "#475569",
-  fontSize: "13px",
-  fontWeight: 700,
-  whiteSpace: "nowrap",
-};
-
-const tdStyle = (index, length) => ({
-  padding: "14px",
-  borderBottom: index === length - 1 ? "none" : "1px solid #f1f5f9",
-  color: "#0f172a",
-  fontSize: "14px",
-  whiteSpace: "nowrap",
-});
 
 const tooltipLabelStyle = {
   fontSize: "13px",

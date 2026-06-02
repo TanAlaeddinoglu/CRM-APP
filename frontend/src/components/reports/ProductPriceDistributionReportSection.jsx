@@ -1,5 +1,71 @@
 import React from "react";
 import { BarChart3, CalendarDays, Filter, RotateCcw } from "lucide-react";
+import { SortableReportTable } from "./ReportUI";
+
+const PRICE_DISTRIBUTION_COLUMNS = [
+  {
+    key: "product_name",
+    label: "Ürün",
+    type: "text",
+    width: "16%",
+    truncate: true,
+  },
+  {
+    key: "sale_price",
+    label: "Satış Fiyatı",
+    type: "number",
+    width: "12%",
+    align: "right",
+    render: (row) => formatMoney(row.sale_price),
+  },
+  {
+    key: "sale_count",
+    label: "Satış Adedi",
+    type: "number",
+    width: "11%",
+    align: "right",
+  },
+  {
+    key: "not_started_count",
+    label: "Ödemeye Başlanmadı",
+    type: "number",
+    width: "16%",
+    align: "right",
+    render: (row) => row.not_started_count ?? 0,
+  },
+  {
+    key: "expected_total",
+    label: "Beklenen Tutar",
+    type: "number",
+    width: "13%",
+    align: "right",
+    render: (row) => formatMoney(row.expected_total),
+  },
+  {
+    key: "collected_total",
+    label: "Tahsil Edilen",
+    type: "number",
+    width: "13%",
+    align: "right",
+    render: (row) => formatMoney(row.collected_total),
+  },
+  {
+    key: "remaining_total",
+    label: "Kalan Tutar",
+    type: "number",
+    width: "13%",
+    align: "right",
+    render: (row) => formatMoney(row.remaining_total),
+  },
+  {
+    key: "collection_rate",
+    label: "Tahsilat %",
+    type: "number",
+    width: "11%",
+    align: "right",
+    render: (row) => <CollectionRateCell value={row.collection_rate} />,
+  },
+];
 
 export default function ProductPriceDistributionReportSection({
   filters,
@@ -24,7 +90,6 @@ export default function ProductPriceDistributionReportSection({
   };
 
   const hasReport = !!report;
-  const hasRows = rows.length > 0;
 
   return (
     <div className="reports-section-stack reports-section-stack--loose">
@@ -145,6 +210,10 @@ export default function ProductPriceDistributionReportSection({
               value={summary.total_sales_count ?? 0}
             />
             <SummaryCard
+              title="Toplam Ödemeye Başlanmadı"
+              value={summary.total_not_started_sales_count ?? 0}
+            />
+            <SummaryCard
               title="Toplam Beklenen Tutar"
               value={formatMoney(summary.total_expected_amount)}
             />
@@ -173,55 +242,13 @@ export default function ProductPriceDistributionReportSection({
               </h3>
             </div>
 
-            {hasRows ? (
-              <div className="reports-price-table-wrap">
-                <table className="reports-price-table">
-                  <thead>
-                    <tr>
-                      <Th>Ürün</Th>
-                      <Th align="right">Satış Fiyatı</Th>
-                      <Th align="right">Satış Adedi</Th>
-                      <Th align="right">Beklenen Tutar</Th>
-                      <Th align="right">Tahsil Edilen</Th>
-                      <Th align="right">Kalan Tutar</Th>
-                      <Th align="right">Tahsilat %</Th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {rows.map((row, index) => (
-                      <tr
-                        key={`${row.product_id}-${row.sale_price}-${index}`}
-                      >
-                        <Td>{row.product_name}</Td>
-                        <Td align="right">{formatMoney(row.sale_price)}</Td>
-                        <Td align="right">{row.sale_count}</Td>
-                        <Td align="right">{formatMoney(row.expected_total)}</Td>
-                        <Td align="right">{formatMoney(row.collected_total)}</Td>
-                        <Td align="right">{formatMoney(row.remaining_total)}</Td>
-                        <Td align="right">
-                          <CollectionRateCell value={row.collection_rate} />
-                        </Td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="reports-inline-empty">
-                <div className="reports-inline-empty__icon">
-                  <BarChart3 size={24} />
-                </div>
-
-                <h3 className="reports-inline-empty__title">
-                  Kayıt bulunamadı
-                </h3>
-
-                <p className="reports-inline-empty__text">
-                  Seçilen filtrelere uygun veri yok.
-                </p>
-              </div>
-            )}
+            <SortableReportTable
+              columns={PRICE_DISTRIBUTION_COLUMNS}
+              rows={rows}
+              emptyText="Seçilen filtrelere uygun veri yok."
+              defaultSort={{ key: "sale_count", direction: "desc" }}
+              minWidth="980px"
+            />
           </div>
         </>
       )}
@@ -270,22 +297,6 @@ function EmptyState({ icon, title, text }) {
         </p>
       </div>
     </div>
-  );
-}
-
-function Th({ children, align = "left" }) {
-  return (
-    <th className={align === "right" ? "reports-cell--right" : undefined}>
-      {children}
-    </th>
-  );
-}
-
-function Td({ children, align = "left" }) {
-  return (
-    <td className={align === "right" ? "reports-cell--right" : undefined}>
-      {children}
-    </td>
   );
 }
 

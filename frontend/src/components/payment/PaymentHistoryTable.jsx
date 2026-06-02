@@ -64,7 +64,7 @@ function PaymentStatusBadge({ status, paidAmount }) {
 
   if (isPaymentNotStarted) {
     return (
-      <span className="payment-status-badge not-started">
+      <span className="payment-status not-started">
         Ödemeye başlanmadı
       </span>
     );

@@ -145,6 +145,24 @@ class ReportEndpointTests(APITestCase):
             status="satis",
             created_by=cls.admin_user,
         )
+        cls.appointment_5 = Appointment.objects.create(
+            name="Appointment 5",
+            scheduled_for=now + timedelta(days=5),
+            appointment_type="tedavi",
+            customer=cls.customer_2,
+            product=cls.product_b,
+            status="satis",
+            created_by=cls.admin_user,
+        )
+        cls.appointment_6 = Appointment.objects.create(
+            name="Appointment 6",
+            scheduled_for=now + timedelta(days=6),
+            appointment_type="tedavi",
+            customer=cls.customer_2,
+            product=cls.product_b,
+            status="satis",
+            created_by=cls.admin_user,
+        )
 
         AppointmentPayment.objects.create(
             appointment=cls.appointment_1,
@@ -171,6 +189,15 @@ class ReportEndpointTests(APITestCase):
             paid_amount=Decimal("50.00"),
             remaining_amount=Decimal("100.00"),
             payment_status="iptal",
+            created_by=cls.admin_user,
+        )
+        AppointmentPayment.objects.create(
+            appointment=cls.appointment_6,
+            total_amount=Decimal("500.00"),
+            payment_date=now,
+            paid_amount=Decimal("0.00"),
+            remaining_amount=Decimal("500.00"),
+            payment_status="kismi",
             created_by=cls.admin_user,
         )
 
@@ -207,15 +234,73 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.data["target_user"]["id"], self.sales_user.id)
         self.assertEqual(response.data["summary"]["active_customer_count"], 2)
         self.assertEqual(response.data["summary"]["tag_change_count"], 2)
-        self.assertEqual(response.data["summary"]["total_appointments"], 3)
+        self.assertEqual(response.data["summary"]["total_appointments"], 5)
         self.assertEqual(response.data["summary"]["pending_appointments"], 1)
-        self.assertEqual(response.data["summary"]["sales_appointments"], 2)
+        self.assertEqual(response.data["summary"]["sales_appointments"], 4)
         self.assertEqual(response.data["summary"]["negative_appointments"], 0)
-        self.assertEqual(response.data["summary"]["conversion_rate"], 66.67)
+        self.assertEqual(response.data["summary"]["conversion_rate"], 80.0)
         self.assertEqual(response.data["summary"]["rejection_rate"], 0.0)
         self.assertEqual(
-            response.data["summary"]["top_product"]["product_name"], "Sertlesme"
+            response.data["summary"]["top_product"]["product_name"], "Kalinlastirma"
         )
+
+    def test_my_performance_requires_authentication(self):
+        url = reverse("my-performance")
+        response = self.client.get(url)
+        self.assertIn(response.status_code, {401, 403})
+
+    def test_my_performance_uses_request_user_without_user_filter(self):
+        self.client.force_authenticate(user=self.sales_user)
+        url = reverse("my-performance")
+        response = self.client.get(url, {"preset": "7"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["summary"]["active_data"], 2)
+        self.assertEqual(response.data["summary"]["total_appointments"], 5)
+        self.assertEqual(response.data["summary"]["pending"], 1)
+        self.assertEqual(response.data["summary"]["sales"], 4)
+        self.assertEqual(response.data["summary"]["negative"], 0)
+        self.assertEqual(response.data["summary"]["conversion_rate"], 80.0)
+        self.assertEqual(response.data["summary"]["rejection_rate"], 0.0)
+        self.assertEqual(response.data["top_product"]["product_name"], "Kalinlastirma")
+        self.assertEqual(response.data["top_product"]["count"], 2)
+        self.assertEqual(
+            response.data["appointment_status_distribution"],
+            [
+                {"status": "Beklemede", "count": 1},
+                {"status": "Satış", "count": 4},
+            ],
+        )
+
+    def test_my_performance_rejects_user_id_filter(self):
+        self.client.force_authenticate(user=self.sales_user)
+        url = reverse("my-performance")
+        response = self.client.get(
+            url,
+            {
+                "user_id": self.other_user.id,
+                "preset": "7",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("user_id", response.data)
+
+    def test_my_performance_supports_custom_date_range(self):
+        self.client.force_authenticate(user=self.sales_user)
+        url = reverse("my-performance")
+        today = timezone.localdate()
+        response = self.client.get(
+            url,
+            {
+                "date_from": (today - timedelta(days=1)).isoformat(),
+                "date_to": today.isoformat(),
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["summary"]["total_appointments"], 5)
+        self.assertTrue(response.data["appointment_by_day"])
 
     def test_appointments_summary_can_filter_by_user_and_product(self):
         self.client.force_authenticate(user=self.admin_user)
@@ -243,13 +328,70 @@ class ReportEndpointTests(APITestCase):
         response = self.client.get(url, {"preset": "7"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["summary"]["total_sales_appointments"], 2)
+        self.assertEqual(response.data["summary"]["total_sales_appointments"], 4)
         self.assertEqual(response.data["summary"]["total_payment_rows"], 3)
         self.assertEqual(response.data["summary"]["completed_appointments"], 1)
-        self.assertEqual(response.data["summary"]["partial_appointments"], 0)
-        self.assertEqual(response.data["summary"]["cancelled_appointments"], 1)
-        self.assertEqual(response.data["summary"]["completed_rate"], 50.0)
-        self.assertEqual(response.data["summary"]["cancelled_rate"], 50.0)
+        self.assertEqual(response.data["summary"]["partial_appointments"], 1)
+        self.assertEqual(response.data["summary"]["not_started_appointments"], 2)
+        self.assertEqual(response.data["summary"]["cancelled_appointments"], 0)
+        self.assertEqual(response.data["summary"]["completed_rate"], 25.0)
+        self.assertEqual(response.data["summary"]["partial_rate"], 25.0)
+        self.assertEqual(response.data["summary"]["not_started_rate"], 50.0)
         self.assertEqual(response.data["summary"]["total_paid_amount"], 350.0)
         self.assertEqual(response.data["summary"]["completed_paid_amount"], 300.0)
-        self.assertEqual(response.data["summary"]["cancelled_paid_amount"], 50.0)
+        self.assertEqual(response.data["summary"]["partial_paid_amount"], 50.0)
+        self.assertEqual(response.data["summary"]["total_remaining_amount"], 600.0)
+
+        product_rows = {
+            row["product_name"]: row for row in response.data["tables"]["product_breakdown"]
+        }
+        self.assertEqual(product_rows["Sertlesme"]["total_sales_appointments"], 2)
+        self.assertEqual(product_rows["Sertlesme"]["completed_appointments"], 1)
+        self.assertEqual(product_rows["Sertlesme"]["partial_appointments"], 1)
+        self.assertEqual(product_rows["Sertlesme"]["not_started_appointments"], 0)
+        self.assertEqual(product_rows["Kalinlastirma"]["total_sales_appointments"], 2)
+        self.assertEqual(product_rows["Kalinlastirma"]["completed_appointments"], 0)
+        self.assertEqual(product_rows["Kalinlastirma"]["partial_appointments"], 0)
+        self.assertEqual(product_rows["Kalinlastirma"]["not_started_appointments"], 2)
+
+    def test_payment_summary_trend_uses_selected_date_range(self):
+        old_payment_date = timezone.now() - timedelta(days=90)
+        AppointmentPayment.objects.create(
+            appointment=self.appointment_1,
+            total_amount=Decimal("300.00"),
+            payment_date=old_payment_date,
+            paid_amount=Decimal("25.00"),
+            remaining_amount=Decimal("275.00"),
+            payment_status="kismi",
+            created_by=self.admin_user,
+        )
+
+        self.client.force_authenticate(user=self.admin_user)
+        url = reverse("payment-summary")
+        response = self.client.get(url, {"preset": "7"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["summary"]["total_payment_rows"], 3)
+        self.assertEqual(response.data["summary"]["total_paid_amount"], 350.0)
+
+        trend_days = {
+            row["day"] for row in response.data["charts"]["payment_trend"]
+        }
+        self.assertNotIn(old_payment_date.date().isoformat(), trend_days)
+
+    def test_product_price_distribution_includes_not_started_sales(self):
+        self.client.force_authenticate(user=self.admin_user)
+        url = reverse("product-price-distribution-summary")
+        response = self.client.get(url, {"preset": "7"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["summary"]["total_sales_count"], 4)
+        self.assertEqual(response.data["summary"]["total_completed_sales_count"], 1)
+        self.assertEqual(response.data["summary"]["total_partial_sales_count"], 1)
+        self.assertEqual(response.data["summary"]["total_not_started_sales_count"], 2)
+        self.assertTrue(
+            any(
+                row["not_started_count"] > 0
+                for row in response.data["tables"]["price_distribution"]
+            )
+        )

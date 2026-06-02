@@ -302,6 +302,11 @@ body {
   color: #92400e;
 }
 
+.payment-status.not-started {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 /* ================================
    EMPTY STATE
 ================================ */
@@ -508,6 +513,75 @@ body {
   outline: none;
   border-color: #c7d2e3;
   box-shadow: 0 0 0 3px rgba(15, 37, 79, 0.06);
+}
+
+.payment-preset-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+}
+
+.payment-preset-filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: 8px;
+}
+
+.payment-preset-filter__button {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid #dbe3ef;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.payment-preset-filter__button:hover {
+  border-color: #c7d2e3;
+  background: #ffffff;
+  color: #0f254f;
+}
+
+.payment-preset-filter__button--active {
+  border-color: #0f254f;
+  background: #0f254f;
+  color: #ffffff;
+  box-shadow: 0 6px 14px rgba(15, 37, 79, 0.14);
+}
+
+.payment-preset-filter__button--active:hover {
+  background: #0f254f;
+  color: #ffffff;
+}
+
+.payment-preset-filter__clear {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.payment-preset-filter__clear:hover {
+  border-color: #fca5a5;
+  background: #fff1f2;
+  color: #b91c1c;
 }
 
 .payment-history-date {

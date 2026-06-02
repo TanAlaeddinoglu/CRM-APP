@@ -1,6 +1,7 @@
 from collections import defaultdict
 from datetime import datetime, time, timedelta
 from decimal import Decimal
+from math import ceil
 
 from django.db.models import Count, OuterRef, Q, Subquery, Sum
 from django.db.models.functions import TruncDate
@@ -13,8 +14,6 @@ from reports.constants import (
     APPOINTMENT_STATUS_PENDING,
     APPOINTMENT_STATUS_SALES,
     DEFAULT_REPORT_PRESET,
-    PAYMENT_STATUS_CANCELLED,
-    PAYMENT_STATUS_COMPLETED,
 )
 
 
@@ -215,6 +214,111 @@ def build_user_dashboard_summary(*, target_user, start_dt, end_dt):
     }
 
 
+def build_my_performance_summary(*, target_user, start_dt, end_dt):
+    user_dashboard = build_user_dashboard_summary(
+        target_user=target_user,
+        start_dt=start_dt,
+        end_dt=end_dt,
+    )
+
+    summary = user_dashboard["summary"]
+    charts = user_dashboard["charts"]
+    total_appointments = summary["total_appointments"] or 0
+    day_count = max(1, ceil((end_dt - start_dt).total_seconds() / 86400))
+
+    status_rows = [
+        {
+            "status": "Beklemede",
+            "count": summary["pending_appointments"] or 0,
+        },
+        {
+            "status": "Satış",
+            "count": summary["sales_appointments"] or 0,
+        },
+        {
+            "status": "Olumsuz",
+            "count": summary["negative_appointments"] or 0,
+        },
+    ]
+
+    return {
+        "date_range": user_dashboard["date_range"],
+        "summary": {
+            "active_data": summary["active_customer_count"],
+            "total_appointments": total_appointments,
+            "daily_average_appointments": round(total_appointments / day_count, 2),
+            "pending": summary["pending_appointments"],
+            "sales": summary["sales_appointments"],
+            "negative": summary["negative_appointments"],
+            "conversion_rate": summary["conversion_rate"],
+            "rejection_rate": summary["rejection_rate"],
+        },
+        "appointment_by_day": [
+            {
+                "date": row["day"],
+                "count": row["total"],
+            }
+            for row in charts["appointments_trend"]
+        ],
+        "sales_by_product": charts["sales_by_product"],
+        "top_product": summary["top_product"],
+        "appointment_status_distribution": [
+            row for row in status_rows if row["count"] > 0
+        ],
+    }
+
+
+def _sales_appointment_queryset(*, target_user=None, target_product=None):
+    qs = Appointment.objects.filter(
+        status=APPOINTMENT_STATUS_SALES,
+        product__isnull=False,
+    )
+
+    if target_user is not None:
+        qs = qs.filter(customer__assigned_to=target_user)
+
+    if target_product is not None:
+        qs = qs.filter(product=target_product)
+
+    return qs
+
+
+def _get_payment_report_appointment_ids(*, start_dt, end_dt, target_user=None, target_product=None):
+    paid_scope = AppointmentPayment.objects.filter(
+        appointment__status=APPOINTMENT_STATUS_SALES,
+        payment_date__gte=start_dt,
+        payment_date__lt=end_dt,
+    )
+
+    if target_user is not None:
+        paid_scope = paid_scope.filter(appointment__customer__assigned_to=target_user)
+
+    if target_product is not None:
+        paid_scope = paid_scope.filter(appointment__product=target_product)
+
+    appointment_ids = set(
+        paid_scope.values_list("appointment_id", flat=True).distinct()
+    )
+
+    not_started_scope = _sales_appointment_queryset(
+        target_user=target_user,
+        target_product=target_product,
+    ).filter(
+        created_at__gte=start_dt,
+        created_at__lt=end_dt,
+    ).annotate(
+        paid_total=Sum("payments__paid_amount")
+    ).filter(
+        Q(paid_total__isnull=True) | Q(paid_total=Decimal("0.00"))
+    )
+
+    appointment_ids.update(
+        not_started_scope.values_list("id", flat=True).distinct()
+    )
+
+    return appointment_ids
+
+
 def build_appointments_summary(*, start_dt, end_dt, target_user=None, target_product=None):
     appointments = Appointment.objects.filter(
         created_at__gte=start_dt,
@@ -377,24 +481,51 @@ def build_appointments_summary(*, start_dt, end_dt, target_user=None, target_pro
 
 
 def build_payment_summary(*, start_dt, end_dt, target_user=None, target_product=None):
-    payments = AppointmentPayment.objects.filter(
-        appointment__status=APPOINTMENT_STATUS_SALES,
-        payment_date__gte=start_dt,
-        payment_date__lt=end_dt,
+    appointment_ids = _get_payment_report_appointment_ids(
+        start_dt=start_dt,
+        end_dt=end_dt,
+        target_user=target_user,
+        target_product=target_product,
     )
 
-    if target_user is not None:
-        payments = payments.filter(appointment__customer__assigned_to=target_user)
+    latest_payment_qs = AppointmentPayment.objects.filter(
+        appointment_id=OuterRef("pk")
+    ).order_by("-payment_date", "-created_at", "-id")
 
-    if target_product is not None:
-        payments = payments.filter(appointment__product=target_product)
+    sales_appointments = _sales_appointment_queryset(
+        target_user=target_user,
+        target_product=target_product,
+    ).filter(
+        id__in=appointment_ids,
+    ).annotate(
+        latest_total_amount=Subquery(latest_payment_qs.values("total_amount")[:1]),
+    ).select_related("product", "customer__assigned_to")
 
-    payments = payments.select_related(
+    appointment_rows = list(
+        sales_appointments.values(
+            "id",
+            "product_id",
+            "product__name",
+            "product__slug",
+            "latest_total_amount",
+        )
+    )
+
+    appointment_ids = [row["id"] for row in appointment_rows]
+
+    payments = AppointmentPayment.objects.filter(
+        appointment_id__in=appointment_ids
+    ).select_related(
         "appointment__product",
         "appointment__customer__assigned_to",
     ).order_by("appointment_id", "-payment_date", "-created_at", "-id")
 
-    payment_totals = payments.aggregate(
+    scoped_payments = payments.filter(
+        payment_date__gte=start_dt,
+        payment_date__lt=end_dt,
+    )
+    positive_payments = scoped_payments.filter(paid_amount__gt=Decimal("0.00"))
+    payment_totals = positive_payments.aggregate(
         total_paid_amount=Sum("paid_amount"),
         total_payment_rows=Count("id"),
     )
@@ -402,77 +533,112 @@ def build_payment_summary(*, start_dt, end_dt, target_user=None, target_product=
     total_paid_amount = payment_totals["total_paid_amount"] or Decimal("0.00")
     total_payment_rows = payment_totals["total_payment_rows"] or 0
 
-    latest_payment_by_appointment = {}
-    paid_amount_by_appointment = defaultdict(lambda: Decimal("0.00"))
+    payment_totals_by_appointment = defaultdict(
+        lambda: {
+            "paid_total": Decimal("0.00"),
+            "scoped_paid_total": Decimal("0.00"),
+            "latest_remaining_amount": None,
+            "latest_total_amount": None,
+        }
+    )
 
     for payment in payments:
         appointment_id = payment.appointment_id
-        paid_amount_by_appointment[appointment_id] += (
+        payment_totals_by_appointment[appointment_id]["paid_total"] += (
             payment.paid_amount or Decimal("0.00")
         )
 
-        if appointment_id not in latest_payment_by_appointment:
-            latest_payment_by_appointment[appointment_id] = payment
+        if start_dt <= payment.payment_date < end_dt:
+            payment_totals_by_appointment[appointment_id]["scoped_paid_total"] += (
+                payment.paid_amount or Decimal("0.00")
+            )
 
-    total_sales_appointments = len(latest_payment_by_appointment)
+        if payment_totals_by_appointment[appointment_id]["latest_remaining_amount"] is None:
+            payment_totals_by_appointment[appointment_id]["latest_remaining_amount"] = (
+                payment.remaining_amount
+            )
+            payment_totals_by_appointment[appointment_id]["latest_total_amount"] = (
+                payment.total_amount
+            )
+
+    total_sales_appointments = len(appointment_rows)
 
     completed_appointments = 0
     partial_appointments = 0
+    not_started_appointments = 0
     cancelled_appointments = 0
 
     completed_paid_amount = Decimal("0.00")
     partial_paid_amount = Decimal("0.00")
+    not_started_paid_amount = Decimal("0.00")
     cancelled_paid_amount = Decimal("0.00")
     total_remaining_amount = Decimal("0.00")
 
     product_breakdown_map = {}
 
-    for appointment_id, latest_payment in latest_payment_by_appointment.items():
-        appointment_paid_amount = paid_amount_by_appointment[appointment_id]
-        latest_remaining_amount = latest_payment.remaining_amount or Decimal("0.00")
-        total_remaining_amount += latest_remaining_amount
+    for appointment in appointment_rows:
+        appointment_id = appointment["id"]
+        product_id = appointment["product_id"]
+        product_name = appointment["product__name"]
+        product_slug = appointment["product__slug"]
+        totals = payment_totals_by_appointment[appointment_id]
+        appointment_paid_amount = totals["paid_total"]
+        appointment_scoped_paid_amount = totals["scoped_paid_total"]
+        appointment_total_amount = (
+            totals["latest_total_amount"]
+            or appointment["latest_total_amount"]
+            or Decimal("0.00")
+        )
+        latest_remaining_amount = totals["latest_remaining_amount"]
 
-        product = latest_payment.appointment.product
-        product_id = product.id
+        if latest_remaining_amount is None:
+            latest_remaining_amount = max(
+                appointment_total_amount - appointment_paid_amount,
+                Decimal("0.00"),
+            )
+
+        total_remaining_amount += latest_remaining_amount
 
         if product_id not in product_breakdown_map:
             product_breakdown_map[product_id] = {
-                "product_id": product.id,
-                "product_name": product.name,
-                "product_slug": product.slug,
+                "product_id": product_id,
+                "product_name": product_name,
+                "product_slug": product_slug,
                 "total_sales_appointments": 0,
                 "completed_appointments": 0,
                 "partial_appointments": 0,
+                "not_started_appointments": 0,
                 "cancelled_appointments": 0,
                 "total_paid_amount": Decimal("0.00"),
                 "completed_paid_amount": Decimal("0.00"),
                 "partial_paid_amount": Decimal("0.00"),
+                "not_started_paid_amount": Decimal("0.00"),
                 "cancelled_paid_amount": Decimal("0.00"),
                 "total_remaining_amount": Decimal("0.00"),
             }
 
         row = product_breakdown_map[product_id]
         row["total_sales_appointments"] += 1
-        row["total_paid_amount"] += appointment_paid_amount
+        row["total_paid_amount"] += appointment_scoped_paid_amount
         row["total_remaining_amount"] += latest_remaining_amount
 
-        if latest_payment.payment_status == PAYMENT_STATUS_COMPLETED:
-            completed_appointments += 1
-            completed_paid_amount += appointment_paid_amount
-            row["completed_appointments"] += 1
-            row["completed_paid_amount"] += appointment_paid_amount
+        if appointment_paid_amount == Decimal("0.00"):
+            not_started_appointments += 1
+            not_started_paid_amount += appointment_scoped_paid_amount
+            row["not_started_appointments"] += 1
+            row["not_started_paid_amount"] += appointment_scoped_paid_amount
 
-        elif latest_payment.payment_status == PAYMENT_STATUS_CANCELLED:
-            cancelled_appointments += 1
-            cancelled_paid_amount += appointment_paid_amount
-            row["cancelled_appointments"] += 1
-            row["cancelled_paid_amount"] += appointment_paid_amount
+        elif appointment_paid_amount >= appointment_total_amount:
+            completed_appointments += 1
+            completed_paid_amount += appointment_scoped_paid_amount
+            row["completed_appointments"] += 1
+            row["completed_paid_amount"] += appointment_scoped_paid_amount
 
         else:
             partial_appointments += 1
-            partial_paid_amount += appointment_paid_amount
+            partial_paid_amount += appointment_scoped_paid_amount
             row["partial_appointments"] += 1
-            row["partial_paid_amount"] += appointment_paid_amount
+            row["partial_paid_amount"] += appointment_scoped_paid_amount
 
     completed_rate = (
         round((completed_appointments / total_sales_appointments) * 100, 2)
@@ -486,6 +652,11 @@ def build_payment_summary(*, start_dt, end_dt, target_user=None, target_product=
     )
     cancelled_rate = (
         round((cancelled_appointments / total_sales_appointments) * 100, 2)
+        if total_sales_appointments
+        else 0.0
+    )
+    not_started_rate = (
+        round((not_started_appointments / total_sales_appointments) * 100, 2)
         if total_sales_appointments
         else 0.0
     )
@@ -506,6 +677,7 @@ def build_payment_summary(*, start_dt, end_dt, target_user=None, target_product=
             "total_sales_appointments": total_for_product,
             "completed_appointments": row["completed_appointments"],
             "partial_appointments": row["partial_appointments"],
+            "not_started_appointments": row["not_started_appointments"],
             "cancelled_appointments": row["cancelled_appointments"],
             "completed_rate": round(
                 (row["completed_appointments"] / total_for_product) * 100, 2
@@ -522,9 +694,15 @@ def build_payment_summary(*, start_dt, end_dt, target_user=None, target_product=
             )
             if total_for_product
             else 0.0,
+            "not_started_rate": round(
+                (row["not_started_appointments"] / total_for_product) * 100, 2
+            )
+            if total_for_product
+            else 0.0,
             "total_paid_amount": _money(row["total_paid_amount"]),
             "completed_paid_amount": _money(row["completed_paid_amount"]),
             "partial_paid_amount": _money(row["partial_paid_amount"]),
+            "not_started_paid_amount": _money(row["not_started_paid_amount"]),
             "cancelled_paid_amount": _money(row["cancelled_paid_amount"]),
             "total_remaining_amount": _money(row["total_remaining_amount"]),
         }
@@ -540,7 +718,7 @@ def build_payment_summary(*, start_dt, end_dt, target_user=None, target_product=
         )
 
     payment_trend_qs = (
-        payments.annotate(day=TruncDate("payment_date"))
+        positive_payments.annotate(day=TruncDate("payment_date"))
         .values("day")
         .annotate(
             total_payment_rows=Count("id"),
@@ -572,13 +750,16 @@ def build_payment_summary(*, start_dt, end_dt, target_user=None, target_product=
             "total_payment_rows": total_payment_rows,
             "completed_appointments": completed_appointments,
             "partial_appointments": partial_appointments,
+            "not_started_appointments": not_started_appointments,
             "cancelled_appointments": cancelled_appointments,
             "completed_rate": completed_rate,
             "partial_rate": partial_rate,
+            "not_started_rate": not_started_rate,
             "cancelled_rate": cancelled_rate,
             "total_paid_amount": _money(total_paid_amount),
             "completed_paid_amount": _money(completed_paid_amount),
             "partial_paid_amount": _money(partial_paid_amount),
+            "not_started_paid_amount": _money(not_started_paid_amount),
             "cancelled_paid_amount": _money(cancelled_paid_amount),
             "total_remaining_amount": _money(total_remaining_amount),
         },
@@ -598,32 +779,24 @@ def build_product_price_distribution_summary(
     target_user=None,
     target_product=None,
 ):
-    first_payment_qs = AppointmentPayment.objects.filter(
-        appointment_id=OuterRef("pk")
-    ).order_by("payment_date", "created_at", "id")
+    appointment_ids = _get_payment_report_appointment_ids(
+        start_dt=start_dt,
+        end_dt=end_dt,
+        target_user=target_user,
+        target_product=target_product,
+    )
 
     latest_payment_qs = AppointmentPayment.objects.filter(
         appointment_id=OuterRef("pk")
     ).order_by("-payment_date", "-created_at", "-id")
 
-    appointments = Appointment.objects.filter(
-        status=APPOINTMENT_STATUS_SALES,
-        product__isnull=False,
-    )
-
-    if target_user is not None:
-        appointments = appointments.filter(customer__assigned_to=target_user)
-
-    if target_product is not None:
-        appointments = appointments.filter(product=target_product)
-
-    appointments = appointments.annotate(
-        first_payment_date=Subquery(first_payment_qs.values("payment_date")[:1]),
-        latest_total_amount=Subquery(latest_payment_qs.values("total_amount")[:1]),
+    appointments = _sales_appointment_queryset(
+        target_user=target_user,
+        target_product=target_product,
     ).filter(
-        first_payment_date__isnull=False,
-        first_payment_date__gte=start_dt,
-        first_payment_date__lt=end_dt,
+        id__in=appointment_ids,
+    ).annotate(
+        latest_total_amount=Subquery(latest_payment_qs.values("total_amount")[:1])
     )
 
     appointment_rows = list(
@@ -648,6 +821,9 @@ def build_product_price_distribution_summary(
             },
             "summary": {
                 "total_sales_count": 0,
+                "total_completed_sales_count": 0,
+                "total_partial_sales_count": 0,
+                "total_not_started_sales_count": 0,
                 "total_expected_amount": 0.0,
                 "total_collected_amount": 0.0,
                 "total_remaining_amount": 0.0,
@@ -708,12 +884,22 @@ def build_product_price_distribution_summary(
                 "product_slug": product_slug,
                 "sale_price": sale_price,
                 "sale_count": 0,
+                "completed_count": 0,
+                "partial_count": 0,
+                "not_started_count": 0,
                 "expected_total": Decimal("0.00"),
                 "collected_total": Decimal("0.00"),
                 "remaining_total": Decimal("0.00"),
             }
 
         grouped_rows[key]["sale_count"] += 1
+        if collected_total == Decimal("0.00"):
+            grouped_rows[key]["not_started_count"] += 1
+        elif collected_total >= sale_price:
+            grouped_rows[key]["completed_count"] += 1
+        else:
+            grouped_rows[key]["partial_count"] += 1
+
         grouped_rows[key]["expected_total"] += sale_price
         grouped_rows[key]["collected_total"] += collected_total
         grouped_rows[key]["remaining_total"] += remaining_total
@@ -721,6 +907,9 @@ def build_product_price_distribution_summary(
     price_distribution = []
 
     total_sales_count = 0
+    total_completed_sales_count = 0
+    total_partial_sales_count = 0
+    total_not_started_sales_count = 0
     total_expected_amount = Decimal("0.00")
     total_collected_amount = Decimal("0.00")
     total_remaining_amount = Decimal("0.00")
@@ -747,6 +936,9 @@ def build_product_price_distribution_summary(
                 "product_slug": row["product_slug"],
                 "sale_price": _money(row["sale_price"]),
                 "sale_count": sale_count,
+                "completed_count": row["completed_count"] or 0,
+                "partial_count": row["partial_count"] or 0,
+                "not_started_count": row["not_started_count"] or 0,
                 "expected_total": _money(expected_total),
                 "collected_total": _money(collected_total),
                 "remaining_total": _money(remaining_total),
@@ -755,6 +947,9 @@ def build_product_price_distribution_summary(
         )
 
         total_sales_count += sale_count
+        total_completed_sales_count += row["completed_count"] or 0
+        total_partial_sales_count += row["partial_count"] or 0
+        total_not_started_sales_count += row["not_started_count"] or 0
         total_expected_amount += expected_total
         total_collected_amount += collected_total
         total_remaining_amount += remaining_total
@@ -776,6 +971,9 @@ def build_product_price_distribution_summary(
         },
         "summary": {
             "total_sales_count": total_sales_count,
+            "total_completed_sales_count": total_completed_sales_count,
+            "total_partial_sales_count": total_partial_sales_count,
+            "total_not_started_sales_count": total_not_started_sales_count,
             "total_expected_amount": _money(total_expected_amount),
             "total_collected_amount": _money(total_collected_amount),
             "total_remaining_amount": _money(total_remaining_amount),

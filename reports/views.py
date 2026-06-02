@@ -1,15 +1,18 @@
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.authenticate import CustomAuthentication
 from reports.permissions import IsReportAdmin
 from reports.serializers import (
     AppointmentsSummaryQuerySerializer,
+    MyPerformanceQuerySerializer,
     PaymentSummaryQuerySerializer,
     UserDashboardSummaryQuerySerializer,
 )
 from reports.services import (
     build_appointments_summary,
+    build_my_performance_summary,
     build_payment_summary,
     build_product_price_distribution_summary,
     build_user_dashboard_summary,
@@ -31,6 +34,23 @@ class UserDashboardSummaryViewSet(viewsets.ViewSet):
 
         payload = build_user_dashboard_summary(
             target_user=target_user,
+            start_dt=start_dt,
+            end_dt=end_dt,
+        )
+        return Response(payload)
+
+
+class MyPerformanceViewSet(viewsets.ViewSet):
+    authentication_classes = [CustomAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def list(self, request):
+        serializer = MyPerformanceQuerySerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+
+        start_dt, end_dt = resolve_date_range(serializer.validated_data)
+        payload = build_my_performance_summary(
+            target_user=request.user,
             start_dt=start_dt,
             end_dt=end_dt,
         )

@@ -2,6 +2,7 @@ from django.urls import path
 
 from reports.views import (
     AppointmentsSummaryViewSet,
+    MyPerformanceViewSet,
     PaymentSummaryViewSet,
     ProductPriceDistributionSummaryViewSet,
     UserDashboardSummaryViewSet,
@@ -12,6 +13,11 @@ urlpatterns = [
         "user-dashboard-summary/",
         UserDashboardSummaryViewSet.as_view({"get": "list"}),
         name="user-dashboard-summary",
+    ),
+    path(
+        "my-performance/",
+        MyPerformanceViewSet.as_view({"get": "list"}),
+        name="my-performance",
     ),
     path(
         "appointments-summary/",
