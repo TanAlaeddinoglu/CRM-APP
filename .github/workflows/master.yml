@@ -40,5 +40,8 @@ jobs:
             docker compose -f docker-compose.prod.yml exec -T backend sh -lc 'pwd && ls -la && echo DJANGO_SETTINGS_MODULE="$DJANGO_SETTINGS_MODULE" && python manage.py help' &&
             docker compose -f docker-compose.prod.yml exec -T backend python manage.py collectstatic --settings=djangoCRM.settings --noinput &&
             docker compose -f docker-compose.prod.yml exec -T backend python manage.py migrate --settings=djangoCRM.settings --noinput &&
+            docker compose -f docker-compose.prod.yml stop nginx frontend &&
+            docker volume rm -f djangocrm_frontend_dist || true &&
+            docker compose -f docker-compose.prod.yml up -d --build frontend &&
             docker compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans backend celery_worker flower frontend nginx
           "
