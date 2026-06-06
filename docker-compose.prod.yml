@@ -13,6 +13,7 @@ x-backend-common: &backend-common
     - crm_media_volume:/app/media
   networks:
     - crm_private
+    - crm_public
   logging:
     driver: "json-file"
     options:
