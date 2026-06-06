@@ -1,11 +1,12 @@
 import pytest
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.test import APIRequestFactory
 
 from customer.models import Customer
 from products.models import CustomerProduct, Product
-from products.views import CustomerProductsViewSet
+from products.views import CustomerProductsViewSet, ProductsViewSet
 
 pytestmark = pytest.mark.django_db
 
@@ -64,6 +65,15 @@ def test_products_create_requires_admin(regular_client):
     assert response.status_code == 403
 
 
+def test_products_list_allows_authenticated_user(regular_client, admin_user):
+    Product.objects.create(name="Readable Product", created_by=admin_user)
+
+    response = regular_client.get("/api/products/")
+
+    assert response.status_code == 200
+    assert response.data[0]["name"] == "Readable Product"
+
+
 def test_products_create_allows_admin(admin_client):
     response = admin_client.post(
         "/api/products/",
@@ -73,6 +83,22 @@ def test_products_create_allows_admin(admin_client):
 
     assert response.status_code == 201
     assert Product.objects.filter(name="Authorized Product").exists()
+
+
+def test_products_viewset_permissions_by_method():
+    factory = APIRequestFactory()
+    viewset = ProductsViewSet()
+
+    viewset.request = factory.get("/products/")
+    perms = viewset.get_permissions()
+    assert len(perms) == 1
+    assert isinstance(perms[0], IsAuthenticated)
+
+    viewset.request = factory.post("/products/")
+    perms = viewset.get_permissions()
+    assert len(perms) == 2
+    assert any(isinstance(p, IsAuthenticated) for p in perms)
+    assert any(isinstance(p, IsAdminUser) for p in perms)
 
 
 def test_customer_products_create_rejects_regular_user_for_other_users_customer(

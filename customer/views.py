@@ -192,11 +192,15 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
         if not incoming_fields:
             raise ValidationError({"non_field_errors": ["No data provided."]})
 
-        # User tarafında sadece tag + note
-        allowed_fields = {"tag", "note"}
+        # User tarafında sadece kendi customer'i için tag, note ve products güncellenebilir.
+        allowed_fields = {"tag", "note", "products"}
         if not incoming_fields.issubset(allowed_fields):
             raise ValidationError(
-                {"non_field_errors": ["Only the tag and note fields can be updated."]}
+                {
+                    "non_field_errors": [
+                        "Only the tag, note, and products fields can be updated."
+                    ]
+                }
             )
 
         if "tag" in request.data:
@@ -229,6 +233,15 @@ class UserCustomerViewSet(viewsets.ModelViewSet):
             ns = NotesSerializer(data=payload, context={"request": request})
             ns.is_valid(raise_exception=True)
             ns.save()
+
+        if "products" in request.data:
+            products_value = request.data.get("products")
+            if _nullish(products_value):
+                raise ValidationError({"products": ["Products value is required."]})
+            try:
+                _set_customer_products(customer, str(products_value), by_user=user)
+            except Exception as ex:
+                raise ValidationError({"products": [f"Products update failed: {ex}"]})
 
         return Response(self.get_serializer(customer).data, status=status.HTTP_200_OK)
 
@@ -386,9 +399,7 @@ class CustomerTagStatsMeView(APIView):
         total = qs.count()
 
         by_tag = (
-            qs.values("tag__tag_name")
-            .annotate(count=Count("id"))
-            .order_by("-count")
+            qs.values("tag__tag_name").annotate(count=Count("id")).order_by("-count")
         )
 
         return Response({"total": total, "by_tag": list(by_tag)})
