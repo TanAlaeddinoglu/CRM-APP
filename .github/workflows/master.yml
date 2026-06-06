@@ -36,7 +36,8 @@ jobs:
             git pull origin main &&
             docker compose -f docker-compose.prod.yml build backend celery_worker flower frontend &&
             docker compose -f docker-compose.prod.yml up -d db rabbitmq redis &&
-            docker compose -f docker-compose.prod.yml run --rm backend python manage.py collectstatic --noinput &&
-            docker compose -f docker-compose.prod.yml run --rm backend python manage.py migrate --noinput &&
+            docker compose -f docker-compose.prod.yml up -d backend &&
+            docker compose -f docker-compose.prod.yml exec -T backend python manage.py collectstatic --noinput &&
+            docker compose -f docker-compose.prod.yml exec -T backend python manage.py migrate --noinput &&
             docker compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans backend celery_worker flower frontend nginx
           "
