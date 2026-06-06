@@ -34,7 +34,9 @@ jobs:
           ssh target "
             cd /opt/apps/djangoCRM &&
             git pull origin main &&
-            docker compose -f docker-compose.prod.yml down &&
-            docker volume rm djangocrm_frontend_dist &&
-            docker compose -f docker-compose.prod.yml up -d --build --force-recreate
+            docker compose -f docker-compose.prod.yml build backend celery_worker flower frontend &&
+            docker compose -f docker-compose.prod.yml up -d db rabbitmq redis &&
+            docker compose -f docker-compose.prod.yml run --rm collectstatic &&
+            docker compose -f docker-compose.prod.yml run --rm migrate &&
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans backend celery_worker flower frontend nginx
           "

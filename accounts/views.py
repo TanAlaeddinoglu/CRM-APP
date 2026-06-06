@@ -29,8 +29,17 @@ from .throttling import (
 
 from django.core.cache import cache
 import logging
+from typing import cast
 
 logger = logging.getLogger(__name__)
+
+
+def _get_client_ip(request) -> str | None:
+    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip() or None
+    remote_addr = cast(str | None, request.META.get("REMOTE_ADDR"))
+    return remote_addr
 
 
 def get_tokens_for_user(user):
@@ -49,11 +58,12 @@ class UserLoginView(APIView):
     def post(self, request, format=None):
         enforce_csrf(request)
 
-        identifier = request.data.get("email") or request.data.get("username")
+        identifier = request.data.get("username")
         if not identifier:
-            raise AuthenticationFailed("Email or username is required.")
+            raise AuthenticationFailed("Username is required.")
+        client_ip = _get_client_ip(request)
 
-        check_login_throttle(identifier)
+        check_login_throttle(identifier, client_ip)
 
         serializer = UserLoginSerializer(data=request.data)
 
@@ -61,16 +71,16 @@ class UserLoginView(APIView):
             serializer.is_valid(raise_exception=True)
             user = serializer.validated_data
         except (ValidationError, AuthenticationFailed):
-            increase_login_attempt(identifier)
-            attempts = cache.get(f"login_attempts:{identifier}")
+            increase_login_attempt(identifier, client_ip)
+            attempts = cache.get(f"login_attempts:user:{identifier}")
             logger.warning(f"LOGIN ATTEMPTS [{identifier}]: {attempts}")
             raise AuthenticationFailed("Incorrect credentials.")
 
         if not user:
-            increase_login_attempt(identifier)
+            increase_login_attempt(identifier, client_ip)
             raise AuthenticationFailed("Incorrect credentials.")
 
-        reset_login_attempts(identifier)
+        reset_login_attempts(identifier, client_ip)
 
         user.last_login = timezone.now()
         user.save(update_fields=["last_login"])
@@ -100,10 +110,10 @@ class UserLoginView(APIView):
         return response
 
 
-@method_decorator(csrf_exempt, name="dispatch")
+# @method_decorator(csrf_exempt, name="dispatch")
 class LogoutView(APIView):
     def post(self, request, format=None):
-        # enforce_csrf(request)
+        enforce_csrf(request)
         refresh_cookie_name = settings.SIMPLE_JWT["AUTH_COOKIE_REFRESH_TOKEN"]
         refresh_token = request.COOKIES.get(refresh_cookie_name)
 

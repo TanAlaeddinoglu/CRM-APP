@@ -1,6 +1,7 @@
 // src/components/AppointmentCalendar.jsx
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -17,11 +18,13 @@ import {
 
 import AppointmentDetailModal from "./AppointmentDetailModal";
 import EventModal from "../components/customer/events/EventModal.jsx";
+import ExportActionButton from "./export/ExportActionButton.jsx";
 
 import "../assets/css/AppointmentCalendar.css";
 
 export default function AppointmentCalendar() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,6 +37,8 @@ export default function AppointmentCalendar() {
   const lastViewRef = useRef("timeGridWeek");
   const lastDateRef = useRef(null);
   const viewRangeRef = useRef({ start: null, end: null });
+  const loadRequestRef = useRef(0);
+  const [viewRange, setViewRange] = useState({ start: null, end: null });
   const [timeBounds, setTimeBounds] = useState({
     min: "06:00:00",
     max: "21:00:00",
@@ -68,15 +73,69 @@ export default function AppointmentCalendar() {
     );
   }, []);
 
+  const formatDateParam = (date) => {
+    if (!date) return undefined;
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  };
+
+  const fetchAppointmentsForRange = async (params) => {
+    const pageSize = 100;
+    const firstRes = await getAppointments({
+      ...params,
+      page: 1,
+      page_size: pageSize,
+    });
+    const firstData = firstRes.data;
+
+    if (!firstData?.results) {
+      return Array.isArray(firstData) ? firstData : [];
+    }
+
+    const items = [...firstData.results];
+    const totalCount = Number(firstData.count || items.length);
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    for (let page = 2; page <= totalPages; page += 1) {
+      const res = await getAppointments({
+        ...params,
+        page,
+        page_size: pageSize,
+      });
+      const pageItems = res.data?.results || [];
+      items.push(...pageItems);
+    }
+
+    return items;
+  };
+
   const loadAppointments = useCallback(async () => {
+    if (!viewRange.start || !viewRange.end) return;
+
+    const requestId = loadRequestRef.current + 1;
+    loadRequestRef.current = requestId;
     setLoading(true);
     try {
-      const params = showReminders
-        ? { appointmentType: "hatirlatma", page_size: 1000 }
-        : { page_size: 1000 };
+      const inclusiveEnd = new Date(viewRange.end);
+      inclusiveEnd.setMilliseconds(inclusiveEnd.getMilliseconds() - 1);
 
-      const res = await getAppointments(params);
-      const items = res.data?.results || res.data || [];
+      const params = showReminders
+        ? {
+            appointmentType: "hatirlatma",
+            dateFrom: formatDateParam(viewRange.start),
+            dateTo: formatDateParam(inclusiveEnd),
+          }
+        : {
+            dateFrom: formatDateParam(viewRange.start),
+            dateTo: formatDateParam(inclusiveEnd),
+          };
+
+      const items = await fetchAppointmentsForRange(params);
+      if (requestId !== loadRequestRef.current) return;
 
       const list = items.map((a) => {
         const isReminder = a.appointment_type === "hatirlatma";
@@ -113,11 +172,14 @@ export default function AppointmentCalendar() {
       setEvents(filtered);
       updateTimeBounds(filtered, viewRangeRef.current);
     } catch (err) {
+      if (requestId !== loadRequestRef.current) return;
       console.error("Load appointments error:", err);
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) {
+        setLoading(false);
+      }
     }
-  }, [showReminders, updateTimeBounds]);
+  }, [showReminders, updateTimeBounds, viewRange]);
 
   useEffect(() => {
     loadAppointments();
@@ -158,6 +220,12 @@ export default function AppointmentCalendar() {
         </h1>
 
         <div style={{ display: "flex", gap: "8px" }}>
+          <ExportActionButton
+            model="events"
+            initialRecipientEmail={user?.email || ""}
+            buttonClassName="btn-secondary"
+            buttonLabel="Export"
+          />
           <button
             className={showReminders ? "btn-primary" : "btn-secondary"}
             onClick={() => setShowReminders((prev) => !prev)}
@@ -227,10 +295,23 @@ export default function AppointmentCalendar() {
           datesSet={(info) => {
             lastViewRef.current = info.view.type;
             lastDateRef.current = info.view.calendar.getDate();
-            viewRangeRef.current = {
+            const nextRange = {
               start: info.view.activeStart,
               end: info.view.activeEnd,
             };
+            viewRangeRef.current = nextRange;
+            setViewRange((prev) => {
+              const prevStart = prev.start?.getTime?.();
+              const prevEnd = prev.end?.getTime?.();
+              const nextStart = nextRange.start?.getTime?.();
+              const nextEnd = nextRange.end?.getTime?.();
+
+              if (prevStart === nextStart && prevEnd === nextEnd) {
+                return prev;
+              }
+
+              return nextRange;
+            });
             updateTimeBounds(events, viewRangeRef.current);
           }}
           headerToolbar={{

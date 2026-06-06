@@ -25,16 +25,24 @@ const roundToNext5 = (d = new Date()) => {
 };
 
 const normalizeScheduledForToLocalInput = (value) => {
-  // Beklenen: "YYYY-MM-DDTHH:mm" (datetime-local formatı)
-  // Backend bazen "YYYY-MM-DDTHH:mm:ssZ" vs döndürebilir, ilk 16 karakter yeterli.
   if (!value) return "";
-  const s = String(value).replace(" ", "T");
-  return s.slice(0, 16);
+  const raw = String(value).replace(" ", "T");
+  const parsed = new Date(raw);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return raw.slice(0, 16);
+  }
+
+  const year = parsed.getFullYear();
+  const month = String(parsed.getMonth() + 1).padStart(2, "0");
+  const day = String(parsed.getDate()).padStart(2, "0");
+  const hour = String(parsed.getHours()).padStart(2, "0");
+  const minute = String(parsed.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hour}:${minute}`;
 };
 
 const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) => {
-  if (!isOpen) return null;
-
   const isEdit = Boolean(event);
 
   const [products, setProducts] = useState([]);
@@ -51,6 +59,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) =>
   const [datePart, setDatePart] = useState(""); // "YYYY-MM-DD"
   const [hourPart, setHourPart] = useState(() => roundToNext5().hh); // "HH"
   const [minutePart, setMinutePart] = useState(() => roundToNext5().mm); // "00..55"
+  const [isScheduleDirty, setIsScheduleDirty] = useState(false);
 
   const minutes5 = useMemo(
     () => Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, "0")),
@@ -70,10 +79,12 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) =>
 
   /* ---------------- LOAD PRODUCTS ---------------- */
   useEffect(() => {
+    if (!isOpen) return;
+
     getProducts()
       .then((res) => setProducts(res.data))
       .catch(() => toast.error("Ürünler yüklenemedi"));
-  }, []);
+  }, [isOpen]);
 
   /* ---------------- scheduled_for sync ---------------- */
   useEffect(() => {
@@ -89,6 +100,8 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) =>
 
   /* ---------------- FILL FORM (EDIT) ---------------- */
   useEffect(() => {
+    if (!isOpen) return;
+
     if (isEdit && event && products.length > 0) {
       const productObj = products.find((p) => p.name === event.product);
 
@@ -119,6 +132,8 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) =>
         const next = Math.ceil(mNum / 5) * 5;
         setMinutePart(String(next === 60 ? 0 : next).padStart(2, "0"));
       }
+
+      setIsScheduleDirty(false);
     }
 
     if (!isEdit) {
@@ -134,13 +149,20 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) =>
       setDatePart("");
       setHourPart(hh);
       setMinutePart(mm);
+      setIsScheduleDirty(false);
     }
-  }, [isEdit, event, products, minutes5]);
+  }, [isOpen, isEdit, event, products, minutes5]);
 
   /* ---------------- CHANGE ---------------- */
   const handleChange = (field, value) => {
     setForm((p) => ({ ...p, [field]: value }));
     setErrors((e) => ({ ...e, [field]: null }));
+  };
+
+  const handleScheduleChange = (setter, value) => {
+    setter(value);
+    setIsScheduleDirty(true);
+    setErrors((e) => ({ ...e, scheduled_for: null }));
   };
 
   /* ---------------- REAL SAVE ---------------- */
@@ -155,9 +177,12 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) =>
       name: form.name,
       appointment_type: form.appointment_type,
       status: form.status,
-      scheduled_for: form.scheduled_for, // ✅ "YYYY-MM-DDTHH:mm"
       notes: form.notes,
     };
+
+    if (!isEdit || isScheduleDirty) {
+      payload.scheduled_for = form.scheduled_for; // ✅ "YYYY-MM-DDTHH:mm"
+    }
 
     try {
       await onSave(payload);
@@ -178,6 +203,8 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) =>
   };
 
   /* ---------------- UI ---------------- */
+  if (!isOpen) return null;
+
   return (
     <div className="modal-background">
       <div className="modal-box modal-box-sm">
@@ -259,7 +286,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) =>
               type="date"
               className={`modal-input ${errors.scheduled_for ? "input-error" : ""}`}
               value={datePart}
-              onChange={(e) => setDatePart(e.target.value)}
+              onChange={(e) => handleScheduleChange(setDatePart, e.target.value)}
             />
           </div>
 
@@ -268,7 +295,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) =>
             <select
               className={`modal-input ${errors.scheduled_for ? "input-error" : ""}`}
               value={hourPart}
-              onChange={(e) => setHourPart(e.target.value)}
+              onChange={(e) => handleScheduleChange(setHourPart, e.target.value)}
             >
               {hours24.map((hh) => (
                 <option key={hh} value={hh}>
@@ -283,7 +310,7 @@ const EventModal = ({ isOpen, onClose, onSave, onDelete, event, customerId }) =>
             <select
               className={`modal-input ${errors.scheduled_for ? "input-error" : ""}`}
               value={minutePart}
-              onChange={(e) => setMinutePart(e.target.value)}
+              onChange={(e) => handleScheduleChange(setMinutePart, e.target.value)}
             >
               {minutes5.map((m) => (
                 <option key={m} value={m}>

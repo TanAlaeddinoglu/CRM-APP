@@ -1,68 +1,87 @@
-import {useState} from "react";
+import { useState } from "react";
 import "../assets/css/sidebar.css";
-import {Link, useLocation} from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import Logo from "../assets/melagrana-logo.png";
-
+import { useAuth } from "../context/AuthContext";
 
 import {
-    Users,
-    Calendar,
-    CreditCard,
-    Package,
-    BarChart3,
-    ChevronLeft,
-    ChevronRight,
-    Tag
+  Users,
+  Calendar,
+  CreditCard,
+  Package,
+  BarChart3,
+  Activity,
+  FileClock,
+  ChevronLeft,
+  ChevronRight,
+  Tag,
 } from "lucide-react";
 
 export default function Sidebar() {
-    const [collapsed, setCollapsed] = useState(false);
-    const location = useLocation();
+  const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+  const { user } = useAuth() || {};
+  const canSeeStaffItems = user?.is_staff ?? true;
 
-    const menu = [
-        {icon: <Users size={20}/>, label: "Customers", path: "/customers"},
-        {icon: <Calendar size={20}/>, label: "Events", path: "/events"},
-        {icon: <CreditCard size={20}/>, label: "Payments", path: "/payments"},
-        {icon: <Package size={20}/>, label: "Products", path: "/products"},
-        {icon: <Tag size={20}/>, label: "Tags", path: "/tags"},
-        // {icon: <BarChart3 size={20}/>, label: "Reports", path: "/reports"},
-    ];
+  const menu = [
+    { icon: <Users size={20} />, label: "Customers", path: "/customers" },
+    { icon: <Calendar size={20} />, label: "Events", path: "/events" },
+    ...(!canSeeStaffItems
+      ? [{ icon: <Activity size={20} />, label: "Performansım", path: "/performance" }]
+      : []),
+    ...(canSeeStaffItems
+      ? [{ icon: <CreditCard size={20} />, label: "Payments", path: "/payments" }]
+      : []),
+    { icon: <Package size={20} />, label: "Products", path: "/products" },
+    { icon: <Tag size={20} />, label: "Tags", path: "/tags" },
+    ...(canSeeStaffItems
+      ? [{ icon: <BarChart3 size={20} />, label: "Reports", path: "/reports" }]
+      : []),
+    ...(canSeeStaffItems
+      ? [
+          {
+            icon: <FileClock size={20} />,
+            label: "Export History",
+            path: "/exports/history",
+          },
+        ]
+      : []),
+  ];
 
-    return (
-        <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
-            {/* TOP */}
-            <div className="sidebar-top">
-                {!collapsed && (
-                    <Link to="/customers" className="sidebar-logo">
-                        <img src={Logo} alt="CRM Logo" className="sidebar-logo-img"/>
-                    </Link>
-                )}
+  return (
+    <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
+      {/* TOP */}
+      <div className="sidebar-top">
+        {!collapsed && (
+          <Link to="/customers" className="sidebar-logo">
+            <img src={Logo} alt="CRM Logo" className="sidebar-logo-img" />
+          </Link>
+        )}
 
+        <button
+          className="collapse-btn"
+          onClick={() => setCollapsed((prev) => !prev)}
+        >
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </button>
+      </div>
 
-                <button
-                    className="collapse-btn"
-                    onClick={() => setCollapsed((prev) => !prev)}
-                >
-                    {collapsed ? <ChevronRight size={18}/> : <ChevronLeft size={18}/>}
-                </button>
-            </div>
-
-            {/* NAVIGATION */}
-            <nav className="sidebar-nav">
-                {menu.map((item) => (
-                    <Link
-                        key={item.path}
-                        to={item.path}
-                        className={
-                            "nav-item " +
-                            (location.pathname.startsWith(item.path) ? "active" : "")
-                        }
-                    >
-                        {item.icon}
-                        {!collapsed && <span>{item.label}</span>}
-                    </Link>
-                ))}
-            </nav>
-        </div>
-    );
+      {/* NAVIGATION */}
+      <nav className="sidebar-nav">
+        {menu.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={
+              "nav-item " +
+              (location.pathname.startsWith(item.path) ? "active" : "")
+            }
+          >
+            {item.icon}
+            {!collapsed && <span>{item.label}</span>}
+          </Link>
+        ))}
+      </nav>
+    </div>
+  );
 }

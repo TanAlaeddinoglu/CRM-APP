@@ -1,0 +1,236 @@
+.tag-catalog-card {
+  margin-top: 12px;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e6edf5;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.tag-catalog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.tag-catalog-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.tag-catalog-title {
+  margin: 0;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.tag-catalog-count {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tag-catalog-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+}
+
+.tag-catalog-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+  padding: 10px;
+  border: 1px solid #eef2f7;
+  border-radius: 16px;
+  background: #f8fafc;
+}
+
+.tag-catalog-toolbar .btn-secondary {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.tag-catalog-search-field {
+  width: 260px;
+  flex: 0 0 260px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid #d9e2ec;
+  background: #ffffff;
+  color: #64748b;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tag-catalog-checkbox {
+  margin-left: auto;
+}
+
+.tag-catalog-search-field:focus-within {
+  border-color: #c7d2e3;
+  box-shadow: 0 0 0 3px rgba(15, 37, 79, 0.06);
+}
+
+.tag-catalog-search {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #0f172a;
+  font-size: 15px;
+}
+
+.tag-catalog-search::placeholder {
+  color: #9aa4b2;
+}
+
+.tag-catalog-search:focus {
+  outline: none;
+}
+
+.tag-catalog-checkbox {
+  min-height: 38px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tag-catalog-checkbox input {
+  width: 15px;
+  height: 15px;
+  accent-color: #0f254f;
+}
+
+.tag-catalog-export-action {
+  margin-left: 0;
+}
+
+.tag-catalog-table-wrap {
+  max-height: calc(100vh - 250px);
+  overflow: auto;
+  border: 1px solid #eef2f7;
+  border-radius: 14px;
+}
+
+.tag-catalog-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 780px;
+}
+
+.tag-catalog-table thead tr {
+  background: #f8fafc;
+}
+
+.tag-catalog-table th {
+  text-align: left;
+  padding: 11px 14px;
+  border-bottom: 1px solid #e6edf5;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.tag-catalog-table th.sortable {
+  cursor: pointer;
+}
+
+.tag-catalog-table td {
+  padding: 11px 14px;
+  color: #0f172a;
+  font-size: 14px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.tag-catalog-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.tag-catalog-table tbody tr:hover {
+  background: #fbfdff;
+}
+
+.tag-catalog-description-cell {
+  max-width: 340px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #334155;
+}
+
+.tag-catalog-edit-btn {
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 9px;
+  border: 1px solid #0f254f;
+  background: #0f254f;
+  color: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tag-catalog-edit-btn:hover {
+  background: #142f62;
+}
+
+.tag-catalog-state {
+  padding: 18px;
+  color: #64748b;
+  font-size: 14px;
+  background: #f8fafc;
+}
+
+@media (max-width: 760px) {
+  .tag-catalog-card {
+    padding: 16px;
+  }
+
+  .tag-catalog-actions,
+  .tag-catalog-toolbar,
+  .tag-catalog-search-field,
+  .tag-catalog-search {
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  .tag-catalog-checkbox {
+    margin-left: 0;
+  }
+
+  .tag-catalog-export-action {
+    margin-left: 0;
+  }
+}

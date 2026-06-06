@@ -1,5 +1,5 @@
 import { useState } from "react";
-import EditUserModal from "../components/EditUserModal";
+import EditProfileModal from "../components/EditProfileModal";
 import { updateUser } from "../services/user";
 
 export default function UserListPage() {
@@ -22,7 +22,7 @@ export default function UserListPage() {
       {/* user list burada olacak */}
 
       {selectedUser && (
-        <EditUserModal
+        <EditProfileModal
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
           onSave={handleSave}

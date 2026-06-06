@@ -1,10 +1,12 @@
 // src/components/ProductList.jsx
 import {useEffect, useMemo, useState} from "react";
 import "../assets/css/ProductList.css";
+import { Plus, Search } from "lucide-react";
 import {getProducts, createProduct, updateProduct} from "../services/product";
 import {useAuth} from "../context/AuthContext";
 import AddProductModal from "./AddProductModal.jsx";
 import EditProductModal from "./EditProductModal.jsx";
+import ExportActionButton from "./export/ExportActionButton.jsx";
 
 export default function ProductList() {
     const {user} = useAuth();
@@ -101,7 +103,7 @@ export default function ProductList() {
             setAddModalOpen(false);
         } catch (err) {
             console.error("Create product error:", err);
-            alert("Failed to create product.");
+            alert("Ürün oluşturulamadı.");
         }
     };
 
@@ -112,73 +114,89 @@ export default function ProductList() {
             setEditProduct(null);
         } catch (err) {
             console.error("Update product error:", err);
-            alert("Failed to update product.");
+            alert("Ürün güncellenemedi.");
         }
     };
 
     return (
         <div className="product-list-container">
             <div className="product-list-header">
-                <div>
-                    <h2 className="product-list-title">Product Catalog</h2>
-                    <p className="product-list-subtitle">
-                        Manage products that can be assigned to customers.
-                    </p>
+                <div className="product-list-heading">
+                    <h2 className="product-list-title">Ürün Kataloğu</h2>
+                    <span className="product-list-count">
+                        {filteredProducts.length} ürün
+                    </span>
                 </div>
 
-                <div className="product-list-actions">
+            </div>
+
+            <div className="product-list-toolbar">
+                <div className="product-search-field">
+                    <Search size={18} />
                     <input
                         type="text"
                         className="product-search-input"
-                        placeholder="Search products..."
+                        placeholder="Ürün ara..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
-
-                    <label style={{display: "flex", alignItems: "center", gap: "6px"}}>
-                        <input
-                            type="checkbox"
-                            checked={showOnlyWithDescription}
-                            onChange={(e) => setShowOnlyWithDescription(e.target.checked)}
-                        />
-                        <span style={{fontSize: "13px"}}>Has description</span>
-                    </label>
-
-                    {isAdmin && (
-                        <button
-                            className="btn-primary"
-                            onClick={() => setAddModalOpen(true)}
-                        >
-                            + Add Product
-                        </button>
-                    )}
                 </div>
+
+                <label className="product-list-checkbox">
+                    <input
+                        type="checkbox"
+                        checked={showOnlyWithDescription}
+                        onChange={(e) => setShowOnlyWithDescription(e.target.checked)}
+                    />
+                    <span>Açıklaması olanlar</span>
+                </label>
+
+                {isAdmin && (
+                    <div className="product-list-export-action">
+                        <ExportActionButton
+                            model="product"
+                            initialRecipientEmail={user?.email || ""}
+                            buttonClassName="btn-secondary"
+                            buttonLabel="Dışa Aktar"
+                        />
+                    </div>
+                )}
+
+                {isAdmin && (
+                    <button
+                        className="btn-primary product-list-add-btn"
+                        onClick={() => setAddModalOpen(true)}
+                    >
+                        <Plus size={16} />
+                        Ürün Ekle
+                    </button>
+                )}
             </div>
 
             <div className="product-table-wrapper">
                 {loading ? (
-                    <div className="product-loading">Loading products...</div>
+                    <div className="product-loading">Ürünler yükleniyor...</div>
                 ) : filteredProducts.length === 0 ? (
-                    <div className="product-empty">No products found.</div>
+                    <div className="product-empty">Ürün bulunamadı.</div>
                 ) : (
                     <table className="product-table">
                         <thead>
                         <tr>
                             <th onClick={() => handleSort("name")} className="sortable">
-                                Name {sortConfig.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                                Ad {sortConfig.key === "name" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
                             </th>
 
-                            <th>Description</th>
+                            <th>Açıklama</th>
 
                             <th onClick={() => handleSort("slug")} className="sortable">
                                 Slug {sortConfig.key === "slug" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
                             </th>
 
                             <th onClick={() => handleSort("created_at")} className="sortable">
-                                Created At {sortConfig.key === "created_at" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
+                                Oluşturulma {sortConfig.key === "created_at" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
                             </th>
 
-                            {isAdmin && <th>Edit</th>}
+                            {isAdmin && <th>Düzenle</th>}
                         </tr>
                         </thead>
 
@@ -186,7 +204,7 @@ export default function ProductList() {
                         {filteredProducts.map((p) => (
                             <tr key={p.id}>
                                 <td>{p.name}</td>
-                                <td className="product-description-cell">{p.description}</td>
+                                <td className="product-description-cell">{p.description || "-"}</td>
                                 <td>{p.slug}</td>
                                 <td>
                                     {p.created_at
@@ -200,7 +218,7 @@ export default function ProductList() {
                                             className="product-edit-btn"
                                             onClick={() => setEditProduct(p)}
                                         >
-                                            Edit
+                                            Düzenle
                                         </button>
                                     </td>
                                 )}

@@ -3,6 +3,7 @@ __pycache__/
 *.py[codz]
 *$py.class
 **/__pycache__/
+.ai/
 
 # C extensions
 *.so
@@ -66,7 +67,7 @@ static/
 .env
 # .env.*
 *.env
-**/migrations/**
+# **/migrations/**
 
 
 # VS Code / PyCharm / IDEs
@@ -77,6 +78,9 @@ static/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Node
+node_modules/
 
 # Mypy / pylint
 .mypy_cache/

@@ -12,7 +12,6 @@ export default function PaymentCustomerRow({
   const [open, setOpen] = useState(false);
   const [openModal, setOpenModal] = useState(false);
 
-  // EN GÜNCEL PAYMENT
   const latestPayment = useMemo(() => {
     if (!payments || payments.length === 0) return null;
 
@@ -34,8 +33,12 @@ export default function PaymentCustomerRow({
   return (
     <>
       <div className={`customer-row ${open ? "open" : ""}`}>
-        <div className="summary">
-          {/* EXPAND */}
+        <div
+          className={`summary ${getCustomerSummaryStatusClass(
+            latestPayment?.payment_status,
+            paid
+          )}`}
+        >
           <button
             className="expand-btn"
             onClick={() => setOpen(!open)}
@@ -43,7 +46,6 @@ export default function PaymentCustomerRow({
             {open ? "▼" : "▶"}
           </button>
 
-          {/* CUSTOMER + APPOINTMENT */}
           <div className="customer-name">
             <div className="customer-text">
               {appointment?.customer ?? "Unknown customer"}
@@ -61,12 +63,10 @@ export default function PaymentCustomerRow({
             </div>
           </div>
 
-          {/* AMOUNTS */}
-          <span className="amount">Total: {total} ₺</span>
-          <span className="amount">Paid: {paid} ₺</span>
-          <span className="amount">Remaining: {remaining} ₺</span>
+          <span className="amount">Total: {formatAmount(total)} ₺</span>
+          <span className="amount">Paid: {formatAmount(paid)} ₺</span>
+          <span className="amount">Remaining: {formatAmount(remaining)} ₺</span>
 
-          {/* ADD PAYMENT */}
           <button
             className="add-payment-btn"
             onClick={() => setOpenModal(true)}
@@ -85,7 +85,6 @@ export default function PaymentCustomerRow({
         )}
       </div>
 
-      {/* MODAL */}
       <AddPaymentModal
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
@@ -97,4 +96,21 @@ export default function PaymentCustomerRow({
       />
     </>
   );
+}
+
+function getCustomerSummaryStatusClass(status, paidAmount) {
+  const normalized = String(status || "").toLowerCase();
+
+  if (normalized === "tamamlandi") return "payment-summary-completed";
+  if (normalized === "kismi" && Number(paidAmount || 0) === 0) {
+    return "payment-summary-not-started";
+  }
+  if (normalized === "kismi") return "payment-summary-partial";
+  if (normalized === "iptal") return "payment-summary-cancelled";
+
+  return "";
+}
+
+function formatAmount(value) {
+  return Number(value || 0).toFixed(2);
 }

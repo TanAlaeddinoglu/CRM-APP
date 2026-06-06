@@ -2,7 +2,8 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 
 from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.exceptions import PermissionDenied
 
 from accounts.authenticate import CustomAuthentication
 from products.filters import ProductFilter, CustomerProductFilter
@@ -14,7 +15,6 @@ class ProductsViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     authentication_classes = (CustomAuthentication,)
-    permission_classes = [IsAuthenticated]
     filter_backends = (
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -26,6 +26,11 @@ class ProductsViewSet(viewsets.ModelViewSet):
 
     ordering_fields = ["name", "created_at", "created_by"]
     ordering = ["-created_at"]  # varsayılan
+
+    def get_permissions(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminUser()]
 
 
 class CustomerProductsViewSet(viewsets.ModelViewSet):
@@ -65,3 +70,15 @@ class CustomerProductsViewSet(viewsets.ModelViewSet):
         return base_queryset.filter(
             customer__assigned_to=user,
         ).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        customer = serializer.validated_data["customer"]
+        user = self.request.user
+
+        if not (user.is_staff or user.is_superuser):
+            if customer.assigned_to_id != user.id:
+                raise PermissionDenied(
+                    "You cannot assign products to customers you do not own."
+                )
+
+        serializer.save()

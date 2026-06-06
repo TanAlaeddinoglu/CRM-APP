@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 from rest_framework import serializers
@@ -13,6 +14,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source="created_by.username")
     updated_by = serializers.ReadOnlyField(source="updated_by.username")
     customer = serializers.SerializerMethodField(read_only=True)
+    customer_phone = serializers.SerializerMethodField(read_only=True)
     product = serializers.SerializerMethodField(read_only=True)
     customer_id = serializers.PrimaryKeyRelatedField(
         source="customer", queryset=Customer.objects.all(), write_only=True
@@ -34,6 +36,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
     def get_customer(self, obj):
         return obj.customer.full_name() if obj.customer else None
+
+    def get_customer_phone(self, obj):
+        return obj.customer.customer_phone if obj.customer else None
 
     def get_product(self, obj):
         return obj.product.name if obj.product else None
@@ -134,21 +139,27 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
             "remaining_amount",
         ]
 
+    @transaction.atomic
     def create(self, validated_data):
         request = self.context.get("request")
         user = getattr(request, "user", None)
 
         appointment = validated_data.get("appointment")
+        if appointment is None:
+            raise serializers.ValidationError(
+                {"appointment": ["Appointment is required."]}
+            )
+
+        appointment = Appointment.objects.select_for_update().get(pk=appointment.pk)
+        validated_data["appointment"] = appointment
         paid_amount = validated_data.get("paid_amount", Decimal("0.00"))
 
         if user and user.is_authenticated:
             validated_data["created_by"] = user
 
-        # 1️⃣ TOTAL AMOUNT BELİRLE
         total_amount = validated_data.get("total_amount")
 
         if total_amount is None:
-            # Önceki ödemelerden al
             last_payment = (
                 AppointmentPayment.objects.filter(appointment=appointment)
                 .order_by("-created_at")
@@ -184,7 +195,7 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         request = self.context.get("request")
         user = getattr(request, "user", None)
-        validated_data.pop("total_amount", None)  # prevent overwrite
+        validated_data.pop("total_amount", None)
         if user and user.is_authenticated:
             validated_data.setdefault("updated_by", user)
         instance = super().update(instance, validated_data)
