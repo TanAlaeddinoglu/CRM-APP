@@ -15,7 +15,6 @@ class ProductsViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     authentication_classes = (CustomAuthentication,)
-    permission_classes = [IsAuthenticated, IsAdminUser]
     filter_backends = (
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -27,6 +26,11 @@ class ProductsViewSet(viewsets.ModelViewSet):
 
     ordering_fields = ["name", "created_at", "created_by"]
     ordering = ["-created_at"]  # varsayılan
+
+    def get_permissions(self):
+        if self.request.method in ("GET", "HEAD", "OPTIONS"):
+            return [IsAuthenticated()]
+        return [IsAuthenticated(), IsAdminUser()]
 
 
 class CustomerProductsViewSet(viewsets.ModelViewSet):

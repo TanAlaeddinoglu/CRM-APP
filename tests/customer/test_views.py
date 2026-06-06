@@ -14,6 +14,7 @@ from customer.views import (
     TagViewSet,
     UserCustomerViewSet,
 )
+from products.models import CustomerProduct, Product
 
 pytestmark = pytest.mark.django_db
 
@@ -84,6 +85,27 @@ def test_user_partial_update_allows_tag_change(regular_user, admin_user):
     assert response.status_code == status.HTTP_200_OK
     customer.refresh_from_db()
     assert customer.tag_id == tag.id
+
+
+def test_user_partial_update_allows_products_change_for_owned_customer(
+    regular_user, admin_user
+):
+    customer = _make_customer(
+        "Products",
+        "1000000011",
+        assigned_to=regular_user,
+        created_by=admin_user,
+    )
+    product = Product.objects.create(name="Checkup", created_by=admin_user)
+
+    factory = APIRequestFactory()
+    view = UserCustomerViewSet.as_view({"patch": "partial_update"})
+    request = factory.patch("/customers/me/", {"products": product.name}, format="json")
+    force_authenticate(request, user=regular_user)
+    response = view(request, pk=customer.pk)
+
+    assert response.status_code == status.HTTP_200_OK
+    assert CustomerProduct.objects.filter(customer=customer, product=product).exists()
 
 
 def test_user_partial_update_rejects_empty_note(regular_user, admin_user):

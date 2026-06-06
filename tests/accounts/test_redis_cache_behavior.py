@@ -45,18 +45,18 @@ def test_increase_login_attempt_persists_counter_with_expected_key(monkeypatch):
     throttling.increase_login_attempt("cache@example.com")
     throttling.increase_login_attempt("cache@example.com")
 
-    assert cache.get("login_attempts:cache@example.com") == 2
+    assert cache.get(throttling.user_cache_key("cache@example.com")) == 2
 
 
 def test_reset_login_attempts_removes_cached_value(monkeypatch):
     monkeypatch.setattr(throttling, "BLOCK_TIME", 5)
     throttling.increase_login_attempt("reset@example.com")
 
-    assert cache.get("login_attempts:reset@example.com") == 1
+    assert cache.get(throttling.user_cache_key("reset@example.com")) == 1
 
     throttling.reset_login_attempts("reset@example.com")
 
-    assert cache.get("login_attempts:reset@example.com") is None
+    assert cache.get(throttling.user_cache_key("reset@example.com")) is None
 
 
 def test_check_login_throttle_raises_after_limit_reached(monkeypatch):
@@ -82,5 +82,5 @@ def test_login_attempt_counter_expires_after_block_time(monkeypatch):
 
     time.sleep(1.2)
 
-    assert cache.get("login_attempts:expires@example.com") is None
+    assert cache.get(throttling.user_cache_key("expires@example.com")) is None
     throttling.check_login_throttle("expires@example.com")
