@@ -61,6 +61,16 @@ class UserDashboardSummaryQuerySerializer(BaseReportQuerySerializer):
     )
 
 
+class MyPerformanceQuerySerializer(BaseReportQuerySerializer):
+    def validate(self, attrs):
+        if "user_id" in self.initial_data:
+            raise serializers.ValidationError(
+                {"user_id": ["Bu endpoint user_id parametresi kabul etmez."]}
+            )
+
+        return super().validate(attrs)
+
+
 class AppointmentsSummaryQuerySerializer(BaseReportQuerySerializer):
     user_id = serializers.PrimaryKeyRelatedField(
         source="target_user",

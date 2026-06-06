@@ -1,9 +1,11 @@
 // src/components/TagList.jsx
 import { useEffect, useMemo, useState } from "react";
 import "../assets/css/ProductList.css";
+import "../assets/css/TagList.css";
 import { useAuth } from "../context/AuthContext";
 import { getTags, createTag, updateTag, deleteTag } from "../services/tag";
 import { toast } from "react-hot-toast";
+import { Plus, Search } from "lucide-react";
 import ExportActionButton from "./export/ExportActionButton.jsx";
 
 import AddTagModal from "./AddTagModal";
@@ -37,7 +39,7 @@ export default function TagList() {
       setTags(res.data);
     } catch (err) {
       console.error("Tag load error:", err);
-      toast.error("Tagler yüklenirken bir hata oluştu.");
+      toast.error("Etiketler yüklenirken bir hata oluştu.");
     } finally {
       setLoading(false);
     }
@@ -110,10 +112,10 @@ export default function TagList() {
       await createTag(data);
       await loadTags();
       setAddModalOpen(false);
-      toast.success("Tag başarıyla oluşturuldu.");
+      toast.success("Etiket başarıyla oluşturuldu.");
     } catch (err) {
       console.error("Create tag error:", err);
-      toast.error("Tag oluşturulamadı.");
+      toast.error("Etiket oluşturulamadı.");
     }
   };
 
@@ -122,22 +124,22 @@ export default function TagList() {
       await updateTag(editTag.id, data);
       await loadTags();
       setEditTag(null);
-      toast.success("Tag güncellendi.");
+      toast.success("Etiket güncellendi.");
     } catch (err) {
       console.error("Update tag error:", err);
-      toast.error("Tag güncellenemedi.");
+      toast.error("Etiket güncellenemedi.");
     }
   };
 
   const handleDeleteTag = async (id) => {
     try {
       await deleteTag(id);
-      toast.success("Tag silindi.");
+      toast.success("Etiket silindi.");
       setEditTag(null);
       await loadTags();
     } catch (err) {
       console.error("Delete tag error:", err);
-      toast.error("Tag silinemedi.");
+      toast.error("Etiket silinemedi.");
     }
   };
 
@@ -145,83 +147,84 @@ export default function TagList() {
      UI
   ========================= */
   return (
-    <div className="product-list-container">
+    <div className="tag-catalog-card">
       {/* HEADER */}
-      <div className="product-list-header">
-        <div>
-          <h2 className="product-list-title">Tag Catalog</h2>
-          <p className="product-list-subtitle">
-            Manage customer tags.
-          </p>
+      <div className="tag-catalog-header">
+        <div className="tag-catalog-heading">
+          <h2 className="tag-catalog-title">Etiket Kataloğu</h2>
+          <span className="tag-catalog-count">
+            {filteredTags.length} etiket
+          </span>
         </div>
 
-        <div className="product-list-actions">
+      </div>
+
+      <div className="tag-catalog-toolbar">
+        <div className="tag-catalog-search-field">
+          <Search size={18} />
           <input
             type="text"
-            className="product-search-input"
-            placeholder="Search tags..."
+            className="tag-catalog-search"
+            placeholder="Etiket ara..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+        </div>
 
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={showOnlyWithDescription}
-              onChange={(e) =>
-                setShowOnlyWithDescription(e.target.checked)
-              }
-            />
-            <span style={{ fontSize: "13px" }}>
-              Has description
-            </span>
-          </label>
+        <label
+          className="tag-catalog-checkbox"
+        >
+          <input
+            type="checkbox"
+            checked={showOnlyWithDescription}
+            onChange={(e) =>
+              setShowOnlyWithDescription(e.target.checked)
+            }
+          />
+          <span>Açıklaması olanlar</span>
+        </label>
 
-          {isAdmin && (
+        {isAdmin && (
+          <div className="tag-catalog-export-action">
             <ExportActionButton
               model="tag"
               initialRecipientEmail={user?.email || ""}
               buttonClassName="btn-secondary"
-              buttonLabel="Export"
+              buttonLabel="Dışa Aktar"
             />
-          )}
+          </div>
+        )}
 
-          {isAdmin && (
-            <button
-              className="btn-primary"
-              onClick={() => setAddModalOpen(true)}
-            >
-              + Add Tag
-            </button>
-          )}
-        </div>
+        {isAdmin && (
+          <button
+            className="btn-primary tag-catalog-add-btn"
+            onClick={() => setAddModalOpen(true)}
+          >
+            <Plus size={16} />
+            Etiket Ekle
+          </button>
+        )}
       </div>
 
       {/* TABLE */}
-      <div className="product-table-wrapper">
+      <div className="tag-catalog-table-wrap">
         {loading ? (
-          <div className="product-loading">
-            Loading tags...
+          <div className="tag-catalog-state">
+            Etiketler yükleniyor...
           </div>
         ) : filteredTags.length === 0 ? (
-          <div className="product-empty">
-            No tags found.
+          <div className="tag-catalog-state">
+            Etiket bulunamadı.
           </div>
         ) : (
-          <table className="product-table">
+          <table className="tag-catalog-table">
             <thead>
               <tr>
                 <th
                   onClick={() => handleSort("tag_name")}
                   className="sortable"
                 >
-                  Name{" "}
+                  Ad{" "}
                   {sortConfig.key === "tag_name"
                     ? sortConfig.direction === "asc"
                       ? "▲"
@@ -229,7 +232,7 @@ export default function TagList() {
                     : ""}
                 </th>
 
-                <th>Description</th>
+                <th>Açıklama</th>
 
                 <th
                   onClick={() => handleSort("slug")}
@@ -243,7 +246,7 @@ export default function TagList() {
                     : ""}
                 </th>
 
-                {isAdmin && <th>Edit</th>}
+                {isAdmin && <th>Düzenle</th>}
               </tr>
             </thead>
 
@@ -252,8 +255,8 @@ export default function TagList() {
                 <tr key={t.id}>
                   <td>{t.tag_name}</td>
 
-                  <td className="product-description-cell">
-                    {t.description}
+                  <td className="tag-catalog-description-cell">
+                    {t.description || "-"}
                   </td>
 
                   <td>{t.slug}</td>
@@ -261,10 +264,10 @@ export default function TagList() {
                   {isAdmin && (
                     <td>
                       <button
-                        className="product-edit-btn"
+                        className="tag-catalog-edit-btn"
                         onClick={() => setEditTag(t)}
                       >
-                        Edit
+                        Düzenle
                       </button>
                     </td>
                   )}

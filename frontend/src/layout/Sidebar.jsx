@@ -10,6 +10,7 @@ import {
   CreditCard,
   Package,
   BarChart3,
+  Activity,
   FileClock,
   ChevronLeft,
   ChevronRight,
@@ -25,6 +26,9 @@ export default function Sidebar() {
   const menu = [
     { icon: <Users size={20} />, label: "Customers", path: "/customers" },
     { icon: <Calendar size={20} />, label: "Events", path: "/events" },
+    ...(!canSeeStaffItems
+      ? [{ icon: <Activity size={20} />, label: "Performansım", path: "/performance" }]
+      : []),
     ...(canSeeStaffItems
       ? [{ icon: <CreditCard size={20} />, label: "Payments", path: "/payments" }]
       : []),

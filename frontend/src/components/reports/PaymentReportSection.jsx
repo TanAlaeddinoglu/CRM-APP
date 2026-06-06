@@ -23,6 +23,7 @@ import {
 
 import { formatCurrency, formatPercent } from "../../utils/reportUtils";
 import {
+  ChartAxisTick,
   EmptyReportState,
   FilterGrid,
   FilterPanel,
@@ -30,7 +31,7 @@ import {
   KpiGrid,
   ReportCard,
   SelectField,
-  SimpleTable,
+  SortableReportTable,
   TwoColumnGrid,
 } from "./ReportUI";
 
@@ -68,6 +69,60 @@ const PAYMENT_BALANCE_META = {
     ...SEMANTIC_STYLES.warning,
   },
 };
+
+const PRODUCT_BREAKDOWN_COLUMNS = [
+  {
+    key: "product_name",
+    label: "Ürün",
+    type: "text",
+    width: "18%",
+    truncate: true,
+  },
+  {
+    key: "total_sales_appointments",
+    label: "Randevulu Satışlar",
+    type: "number",
+    width: "15%",
+    align: "right",
+  },
+  {
+    key: "completed_appointments",
+    label: "Tamamlanan Satışlar",
+    type: "number",
+    width: "16%",
+    align: "right",
+  },
+  {
+    key: "partial_appointments",
+    label: "Kısmi Satışlar",
+    type: "number",
+    width: "13%",
+    align: "right",
+  },
+  {
+    key: "not_started_appointments",
+    label: "Ödemeye Başlanmadı",
+    type: "number",
+    width: "16%",
+    align: "right",
+  },
+  {
+    key: "total_paid_amount",
+    label: "Toplam Gelir",
+    type: "number",
+    width: "11%",
+    align: "right",
+    render: (row) => formatCurrency(row.total_paid_amount),
+  },
+  {
+    key: "total_remaining_amount",
+    label: "Kalan Tutar",
+    type: "number",
+    width: "11%",
+    align: "right",
+    render: (row) => formatCurrency(row.total_remaining_amount),
+  },
+];
 
 export default function PaymentReportSection({
   filters,
@@ -108,14 +163,7 @@ export default function PaymentReportSection({
     totalExpectedAmount > 0 ? (totalPaidAmount / totalExpectedAmount) * 100 : 0;
 
   const revenueChartData = [...(report?.charts?.revenue_by_product || [])]
-    .sort((a, b) => Number(b.total_paid_amount || 0) - Number(a.total_paid_amount || 0))
-    .map((item) => ({
-      ...item,
-      short_name:
-        item.product_name && item.product_name.length > 14
-          ? `${item.product_name.slice(0, 14)}...`
-          : item.product_name,
-    }));
+    .sort((a, b) => Number(b.total_paid_amount || 0) - Number(a.total_paid_amount || 0));
 
   const paymentTrendData = (report?.charts?.payment_trend || []).map((item) => ({
     ...item,
@@ -206,6 +254,7 @@ export default function PaymentReportSection({
               ["Alınan Ödeme Sayısı", report.summary?.total_payment_rows],
               ["Tamamlanan Satışlar", report.summary?.completed_appointments],
               ["Kısmi Satışlar", report.summary?.partial_appointments],
+              ["Ödemeye Başlanmadı", report.summary?.not_started_appointments],
               ["Tahsilat Oranı %", collectionRate],
               ["Toplam Gelir", totalPaidAmount],
               ["Kalan Tutar", totalRemainingAmount],
@@ -213,17 +262,12 @@ export default function PaymentReportSection({
           />
 
           <ReportCard title={<SectionTitle icon={Package} title="Ürün Kırılımı" />}>
-            <SimpleTable
-              columns={[
-                { key: "product_name", label: "Ürün" },
-                { key: "total_sales_appointments", label: "Randevulu Satışlar" },
-                { key: "completed_appointments", label: "Tamamlanan Satışlar" },
-                { key: "partial_appointments", label: "Kısmi Satışlar" },
-                { key: "total_paid_amount", label: "Toplam Gelir" },
-                { key: "total_remaining_amount", label: "Kalan Tutar" },
-              ]}
+            <SortableReportTable
+              columns={PRODUCT_BREAKDOWN_COLUMNS}
               rows={report.tables?.product_breakdown || []}
               emptyText="Ödeme ürün kırılımı bulunamadı."
+              defaultSort={{ key: "total_sales_appointments", direction: "desc" }}
+              minWidth="980px"
             />
 
             <div
@@ -267,12 +311,11 @@ export default function PaymentReportSection({
                       stroke="#e5e7eb"
                     />
                     <XAxis
-                      dataKey="short_name"
-                      tick={{ fontSize: 12, fill: "#64748b" }}
+                      dataKey="product_name"
+                      tick={<ChartAxisTick />}
+                      tickMargin={10}
                       interval={0}
-                      angle={-15}
-                      textAnchor="end"
-                      height={60}
+                      height={52}
                       axisLine={{ stroke: "#cbd5e1" }}
                       tickLine={false}
                     />

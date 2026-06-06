@@ -12,6 +12,11 @@ import { useAuth } from "../context/AuthContext.jsx";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const MIN_SEARCH_LENGTH = 3;
+const PAYMENT_PRESET_OPTIONS = [
+  { label: "Son 7 gün", value: "7" },
+  { label: "Son 14 gün", value: "14" },
+  { label: "Son 30 gün", value: "30" },
+];
 
 export default function PaymentPage() {
   const { user } = useAuth();
@@ -28,6 +33,7 @@ export default function PaymentPage() {
   const currentPage = Math.max(1, Number(searchParams.get("page") || 1));
   const pageSize = Math.max(1, Number(searchParams.get("page_size") || 10));
   const urlSearch = searchParams.get("search") || "";
+  const activePreset = searchParams.get("preset") || "";
   const searchParamsKey = searchParams.toString();
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
@@ -37,6 +43,7 @@ export default function PaymentPage() {
     page = currentPage,
     nextPageSize = pageSize,
     nextSearch = urlSearch,
+    nextPreset = activePreset,
   } = {}) => {
     const next = new URLSearchParams(searchParams);
     next.set("page", String(page));
@@ -49,8 +56,14 @@ export default function PaymentPage() {
       next.delete("search");
     }
 
+    if (nextPreset) {
+      next.set("preset", nextPreset);
+    } else {
+      next.delete("preset");
+    }
+
     setSearchParams(next);
-  }, [currentPage, pageSize, searchParams, setSearchParams, urlSearch]);
+  }, [activePreset, currentPage, pageSize, searchParams, setSearchParams, urlSearch]);
 
   useEffect(() => {
     setSearch(urlSearch);
@@ -80,6 +93,7 @@ export default function PaymentPage() {
           page: currentPage,
           page_size: pageSize,
           search: urlSearch || undefined,
+          preset: activePreset || undefined,
         });
 
         if (cancelled) return;
@@ -140,7 +154,7 @@ export default function PaymentPage() {
     return () => {
       cancelled = true;
     };
-  }, [currentPage, pageSize, urlSearch, refreshKey]);
+  }, [activePreset, currentPage, pageSize, urlSearch, refreshKey]);
 
   const grouped = useMemo(() => groupByAppointment(payments), [payments]);
   const groupedRows = Object.values(grouped);
@@ -154,6 +168,13 @@ export default function PaymentPage() {
   const handlePageSizeChange = (event) => {
     const nextSize = Number(event.target.value) || 10;
     updateSearchParams({ page: 1, nextPageSize: nextSize });
+  };
+
+  const handlePresetChange = (preset) => {
+    updateSearchParams({
+      page: 1,
+      nextPreset: activePreset === preset ? "" : preset,
+    });
   };
 
   const renderPageNumbers = () => {
@@ -224,6 +245,37 @@ export default function PaymentPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+
+        <div className="payment-preset-filter-group">
+          <div className="payment-preset-filter" aria-label="Hazır ödeme tarih filtreleri">
+            {PAYMENT_PRESET_OPTIONS.map((option) => {
+              const isActive = activePreset === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`payment-preset-filter__button ${
+                    isActive ? "payment-preset-filter__button--active" : ""
+                  }`}
+                  onClick={() => handlePresetChange(option.value)}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
+
+            {activePreset && (
+              <button
+                type="button"
+                className="payment-preset-filter__clear"
+                onClick={() => handlePresetChange(activePreset)}
+              >
+                Temizle
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="payment-list-container">

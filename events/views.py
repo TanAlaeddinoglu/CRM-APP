@@ -1,9 +1,11 @@
 from decimal import Decimal
+from datetime import timedelta
 
 from django.db.models import Sum
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, viewsets
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
@@ -114,6 +116,22 @@ class AppointmentPaymentsViewSet(viewsets.ModelViewSet):
         "appointment__customer__assigned_to__username",
     ]
     ordering = ("-id",)
+    payment_preset_values = {"7", "14", "30"}
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        preset = self.request.query_params.get("preset")
+
+        if not preset:
+            return qs
+
+        if preset not in self.payment_preset_values:
+            raise ValidationError(
+                {"preset": ["Geçerli değerler: 7, 14, 30."]}
+            )
+
+        start_dt = timezone.now() - timedelta(days=int(preset))
+        return qs.filter(payment_date__gte=start_dt)
 
     def perform_destroy(self, instance):
         appointment = instance.appointment
