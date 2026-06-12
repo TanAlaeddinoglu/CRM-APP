@@ -23,6 +23,12 @@ export default defineConfig(({ mode }) => {
       globals: true,
       setupFiles: './tests/setup.js',
       include: ['tests/**/*.test.{js,jsx}'],
+      coverage: {
+        provider: 'v8',
+        reporter: ['text', 'html'],
+        include: ['src/**'],
+        exclude: ['src/main.jsx'],
+      },
     },
   }
 })
