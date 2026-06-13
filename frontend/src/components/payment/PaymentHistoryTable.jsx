@@ -22,12 +22,12 @@ export default function PaymentHistoryTable({ rows }) {
     <table className="payment-table">
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Customer</th>
-          <th>Appointment</th>
-          <th>Paid</th>
-          <th>Remaining</th>
-          <th>Status</th>
+          <th>Tarih</th>
+          <th>Müşteri</th>
+          <th>Randevu</th>
+          <th>Ödenen</th>
+          <th>Kalan</th>
+          <th>Durum</th>
         </tr>
       </thead>
 

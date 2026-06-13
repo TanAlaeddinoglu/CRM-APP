@@ -160,7 +160,7 @@ export default function UserReportSection({
         <div className="reports-section-stack">
           <KpiGrid
             items={[
-              ["Aktif Data", report.summary?.active_customer_count],
+              ["Aktif Müşteri", report.summary?.active_customer_count],
               ["Etiket Değişimi", report.summary?.tag_change_count],
               ["Toplam Randevu", report.summary?.total_appointments],
               ["Günlük Ort. Randevu", averageDailyAppointments],
@@ -516,7 +516,7 @@ function TopProductCard({ productName, count }) {
           </div>
         </div>
       ) : (
-        <EmptyChartState text="Top product verisi bulunamadı." />
+        <EmptyChartState text="En çok satan ürün verisi bulunamadı." />
       )}
     </ReportCard>
   );

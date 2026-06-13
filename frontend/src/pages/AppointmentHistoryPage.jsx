@@ -1,9 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { getAppointments } from "../services/appointment";
 import AppointmentDetailModal from "../components/AppointmentDetailModal";
 import ExportActionButton from "../components/export/ExportActionButton.jsx";
+import LoadingIndicator from "../components/common/LoadingIndicator.jsx";
 import { useAuth } from "../context/AuthContext";
+import { usePageTransition } from "../context/PageTransitionContext.jsx";
+import { isAdmin } from "../utils/roles.js";
+import { Upload } from "lucide-react";
 import "../assets/css/AppointmentHistory.css";
 
 const STATUS_OPTIONS = [
@@ -18,22 +22,30 @@ const TYPE_OPTIONS = [
   { value: "muayene", label: "Muayene" },
   { value: "ameliyat", label: "Ameliyat" },
   { value: "tedavi", label: "Tedavi" },
-  { value: "hatirlatma", label: "Hatirlatma" },
+  { value: "hatirlatma", label: "Hatırlatma" },
 ];
 
 export default function AppointmentHistoryPage() {
   const { user } = useAuth();
+  const canExportEvents = isAdmin(user);
+  const location = useLocation();
   const [appointments, setAppointments] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [loading, setLoading] = useState(false);
+  usePageTransition(loading);
 
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState(() => {
+    const requestedType = location.state?.initialTypeFilter;
+    return TYPE_OPTIONS.some((option) => option.value === requestedType)
+      ? requestedType
+      : "";
+  });
 
   const [selectedAppointment, setSelectedAppointment] =
     useState(null);
@@ -66,6 +78,15 @@ export default function AppointmentHistoryPage() {
   useEffect(() => {
     setPage(1);
   }, [statusFilter, typeFilter, dateFrom, dateTo, search, pageSize]);
+
+  useEffect(() => {
+    const requestedType = location.state?.initialTypeFilter;
+    if (!TYPE_OPTIONS.some((option) => option.value === requestedType)) {
+      return;
+    }
+
+    setTypeFilter((current) => (current === requestedType ? current : requestedType));
+  }, [location.state]);
 
   /* =========================
      QUICK FILTERS
@@ -110,12 +131,16 @@ export default function AppointmentHistoryPage() {
         <h1 className="h1">Randevu Listesi</h1>
 
         <div style={{ display: "flex", gap: "8px" }}>
-          <ExportActionButton
-            model="events"
-            initialRecipientEmail={user?.email || ""}
-            buttonClassName="btn-secondary"
-            buttonLabel="Export"
-          />
+          {canExportEvents && (
+            <ExportActionButton
+              model="events"
+              initialRecipientEmail={user?.email || ""}
+              buttonClassName="btn-secondary customer-action-icon-button"
+              buttonLabel={<Upload size={18} strokeWidth={2} />}
+              buttonTitle="Dışa Aktar"
+              ariaLabel="Dışa Aktar"
+            />
+          )}
           <button
             className="btn-secondary"
             onClick={() => navigate("/events")}
@@ -204,7 +229,9 @@ export default function AppointmentHistoryPage() {
 
         {/* ================= TABLE ================= */}
       {loading ? (
-        <div className="appointment-empty">Yükleniyor…</div>
+        <div className="appointment-empty">
+          <LoadingIndicator inline label="Randevular yükleniyor" />
+        </div>
       ) : rows.length === 0 ? (
         <div className="appointment-empty">
           Kayıt bulunamadı.

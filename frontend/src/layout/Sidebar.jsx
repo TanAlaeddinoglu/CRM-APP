@@ -24,24 +24,24 @@ export default function Sidebar() {
   const canSeeStaffItems = user?.is_staff ?? true;
 
   const menu = [
-    { icon: <Users size={20} />, label: "Customers", path: "/customers" },
-    { icon: <Calendar size={20} />, label: "Events", path: "/events" },
+    { icon: <Users size={20} />, label: "Müşteriler", path: "/customers" },
+    { icon: <Calendar size={20} />, label: "Randevular", path: "/events" },
     ...(!canSeeStaffItems
       ? [{ icon: <Activity size={20} />, label: "Performansım", path: "/performance" }]
       : []),
     ...(canSeeStaffItems
-      ? [{ icon: <CreditCard size={20} />, label: "Payments", path: "/payments" }]
+      ? [{ icon: <CreditCard size={20} />, label: "Ödemeler", path: "/payments" }]
       : []),
-    { icon: <Package size={20} />, label: "Products", path: "/products" },
-    { icon: <Tag size={20} />, label: "Tags", path: "/tags" },
+    { icon: <Package size={20} />, label: "Ürünler", path: "/products" },
+    { icon: <Tag size={20} />, label: "Etiketler", path: "/tags" },
     ...(canSeeStaffItems
-      ? [{ icon: <BarChart3 size={20} />, label: "Reports", path: "/reports" }]
+      ? [{ icon: <BarChart3 size={20} />, label: "Raporlar", path: "/reports" }]
       : []),
     ...(canSeeStaffItems
       ? [
           {
             icon: <FileClock size={20} />,
-            label: "Export History",
+            label: "Dışa Aktarma Geçmişi",
             path: "/exports/history",
           },
         ]

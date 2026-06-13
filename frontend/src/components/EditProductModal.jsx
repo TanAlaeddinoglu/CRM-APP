@@ -20,14 +20,14 @@ export default function EditProductModal({ product, onClose, onSave }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      toast.error("Product name is required.");
+      toast.error("Ürün adı zorunludur.");
       return;
     }
     try {
       await onSave(form);
-      toast.success("Product edited!");
+      toast.success("Ürün güncellendi!");
     } catch (err) {
-      toast.error("Failed to edit product.");
+      toast.error("Ürün güncellenemedi.");
       console.error(err);
     }
   };
@@ -35,13 +35,13 @@ export default function EditProductModal({ product, onClose, onSave }) {
   return (
     <div className="modal-overlay">
       <div className="modal-box">
-        <h2 className="modal-title">Edit Product</h2>
+        <h2 className="modal-title">Ürün Düzenle</h2>
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
 
             <div className="modal-row">
-              <label>Product Name</label>
+              <label>Ürün Adı</label>
               <input
                 name="name"
                 value={form.name}
@@ -50,7 +50,7 @@ export default function EditProductModal({ product, onClose, onSave }) {
             </div>
 
             <div className="modal-row">
-              <label>Description</label>
+              <label>Açıklama</label>
               <textarea
                 name="description"
                 value={form.description}
@@ -70,10 +70,10 @@ export default function EditProductModal({ product, onClose, onSave }) {
               className="btn-secondary"
               onClick={onClose}
             >
-              Cancel
+              İptal
             </button>
             <button type="submit" className="btn-primary">
-              Save
+              Kaydet
             </button>
           </div>
         </form>

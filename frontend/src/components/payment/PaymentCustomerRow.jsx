@@ -48,7 +48,7 @@ export default function PaymentCustomerRow({
 
           <div className="customer-name">
             <div className="customer-text">
-              {appointment?.customer ?? "Unknown customer"}
+              {appointment?.customer ?? "Bilinmeyen müşteri"}
 
               {isCompleted && (
                 <Check
@@ -63,14 +63,14 @@ export default function PaymentCustomerRow({
             </div>
           </div>
 
-          <span className="amount">Total: {formatAmount(total)} ₺</span>
-          <span className="amount">Paid: {formatAmount(paid)} ₺</span>
-          <span className="amount">Remaining: {formatAmount(remaining)} ₺</span>
+          <span className="amount">Toplam: {formatAmount(total)} ₺</span>
+          <span className="amount">Ödenen: {formatAmount(paid)} ₺</span>
+          <span className="amount">Kalan: {formatAmount(remaining)} ₺</span>
 
           <button
             className="add-payment-btn"
             onClick={() => setOpenModal(true)}
-            title="Add payment"
+            title="Ödeme ekle"
             disabled={remaining === 0}
           >
             <Plus size={16} />

@@ -4,10 +4,10 @@
 
 .events-container {
   background: #fff;
-  padding: 18px;
+  padding: 10px 14px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 
 /* Header */
@@ -18,7 +18,7 @@
 }
 
 .events-title {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
 }
 
@@ -31,12 +31,25 @@
   cursor: pointer;
 }
 
+/* Empty state */
+.events-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #9ca3af;
+  text-align: center;
+  padding: 12px;
+}
+
 /* Event List */
 .events-list {
-  margin-top: 14px;
+  margin-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
+  overflow-y: auto;
 }
 
 
@@ -49,11 +62,13 @@
   border-radius: 6px;
   border: 1px solid #e5e7eb;
   background: #fafafa;
-  font-size: 13px;
+  font-size: 12px;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 3px;
   cursor: pointer;
   transition: background 0.15s ease, box-shadow 0.15s ease;
+  box-sizing: border-box;
 }
 
 .event-row:hover {
@@ -61,21 +76,62 @@
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
-/* Row içindeki layout – taşmayı engeller */
-.event-row-main {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: max-content;
-  gap: 6px;
-  width: 100%;
+/* Üst satır */
+.event-row-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.event-row-top-line1,
+.event-row-top-line2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Alt satır: güncelleyen, güncellenme tarihi */
+.event-row-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 4px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.event-row-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.event-row-meta-label {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+.event-row-meta-value {
+  color: #374151;
+  font-weight: 500;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+/* Üst satır etiketli item */
+.event-row-top-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 /* Overflow kırpılan alanlar */
-.event-row-name,
-.event-row-product,
-.event-row-meta {
-  max-width: 150px;
+.event-row-name {
+  max-width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -111,15 +167,17 @@
 .event-row-name {
   color: #111827;
   font-weight: 500;
+  font-size: 14px;
 }
 
-.event-row-product {
-  color: #4b5563;
-}
+@media (max-width: 768px) {
+  .event-row-top {
+    flex-wrap: wrap;
+  }
 
-.event-row-meta {
-  color: #6b7280;
-  font-size: 12px;
+  .event-row-bottom {
+    gap: 8px;
+  }
 }
 
 

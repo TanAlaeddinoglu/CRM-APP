@@ -1,9 +1,9 @@
 import { useAuth } from "../context/AuthContext";
 import { logout } from "../services/auth";
 import { clearExportHistoryCache } from "../services/export";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useNavigationType } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { Bell } from "lucide-react";
+import { Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import HeaderCustomerSearch from "./HeaderCustomerSearch";
 import "../assets/css/header.css";
 
@@ -83,6 +83,106 @@ const INITIAL_NOTIFICATIONS = [
 export default function Header() {
   const { user, setUser } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const navigationType = useNavigationType();
+
+  const MAX_STACK = 5;
+
+  // Her entry: { pathname, browserIdx }
+  // Dedup kriteri: pathname (search/hash görmezden gelinir)
+  const dedupStack = useRef([{
+    pathname: location.pathname,
+    browserIdx: window.history.state?.idx ?? 0,
+  }]);
+  const dedupPos = useRef(0);
+  const [navEnabled, setNavEnabled] = useState({ back: false, forward: false });
+
+  const syncNav = () => {
+    setNavEnabled({
+      back: dedupPos.current > 0,
+      forward: dedupPos.current < dedupStack.current.length - 1,
+    });
+  };
+
+  useEffect(() => {
+    const newPathname = location.pathname;
+    const browserIdx = window.history.state?.idx ?? 0;
+
+    if (navigationType === "POP") {
+      // POP yönünü belirle: önceki entry'nin browserIdx'iyle karşılaştır
+      const prevIdx = dedupStack.current[dedupPos.current]?.browserIdx ?? 0;
+      const goingBack = browserIdx <= prevIdx;
+
+      // Yönlü arama: duplicate pathname olsa da doğru entry'yi bul
+      let found = -1;
+      if (goingBack) {
+        for (let i = dedupPos.current - 1; i >= 0; i--) {
+          if (dedupStack.current[i].pathname === newPathname) { found = i; break; }
+        }
+      } else {
+        for (let i = dedupPos.current + 1; i < dedupStack.current.length; i++) {
+          if (dedupStack.current[i].pathname === newPathname) { found = i; break; }
+        }
+      }
+
+      if (found >= 0) {
+        dedupPos.current = found;
+        // Gerçek browserIdx ile sync: stale değerleri düzelt
+        dedupStack.current[found] = { pathname: newPathname, browserIdx };
+      }
+    } else {
+      // PUSH / REPLACE
+      const cur = dedupStack.current[dedupPos.current];
+
+      if (cur?.pathname === newPathname) {
+        // Aynı sayfa yeniden push edildi (setSearchParams vb.):
+        // browserIdx güncelle + forward geçmişi temizle
+        dedupStack.current = dedupStack.current.slice(0, dedupPos.current + 1);
+        dedupStack.current[dedupPos.current] = { pathname: newPathname, browserIdx };
+      } else {
+        // Farklı sayfa: forward temizle, yeni entry ekle, max 5 tut
+        let next = [
+          ...dedupStack.current.slice(0, dedupPos.current + 1),
+          { pathname: newPathname, browserIdx },
+        ];
+        if (next.length > MAX_STACK) next = next.slice(next.length - MAX_STACK);
+        dedupStack.current = next;
+        dedupPos.current = next.length - 1;
+      }
+    }
+
+    syncNav();
+  }, [location, navigationType]);
+
+  const handleBack = () => {
+    if (dedupPos.current <= 0) return;
+    const target = dedupStack.current[dedupPos.current - 1];
+    const delta = target.browserIdx - (window.history.state?.idx ?? 0);
+    if (delta < 0) {
+      navigate(delta);
+    } else {
+      // Entry bayatlamış: stack'ten temizle
+      dedupStack.current = dedupStack.current.slice(0, dedupPos.current);
+      dedupPos.current = Math.max(0, dedupPos.current - 1);
+      syncNav();
+    }
+  };
+
+  const handleForward = () => {
+    if (dedupPos.current >= dedupStack.current.length - 1) return;
+    const target = dedupStack.current[dedupPos.current + 1];
+    const delta = target.browserIdx - (window.history.state?.idx ?? 0);
+    if (delta > 0) {
+      navigate(delta);
+    } else {
+      // Entry bayatlamış (loop kaynağı): forward stack'i temizle
+      dedupStack.current = dedupStack.current.slice(0, dedupPos.current + 1);
+      syncNav();
+    }
+  };
+
+  const canGoBack = navEnabled.back;
+  const canGoForward = navEnabled.forward;
 
   /* USER DROPDOWN STATE (SADECE BU) */
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -182,8 +282,32 @@ export default function Header() {
   return (
     <header className="main-header">
 
-      {/* 🔍 CUSTOMER SEARCH (KENDİ STATE'İNİ YÖNETİR) */}
-      <HeaderCustomerSearch role={user?.role} />
+      {/* Sol grup: geri/ileri + search */}
+      <div className="header-left">
+        <div className="nav-history-group">
+          <button
+            className="nav-history-btn"
+            onClick={handleBack}
+            disabled={!canGoBack}
+            aria-label="Geri"
+            title="Geri"
+            type="button"
+          >
+            <ChevronLeft size={20} strokeWidth={2} />
+          </button>
+          <button
+            className="nav-history-btn"
+            onClick={handleForward}
+            disabled={!canGoForward}
+            aria-label="İleri"
+            title="İleri"
+            type="button"
+          >
+            <ChevronRight size={20} strokeWidth={2} />
+          </button>
+        </div>
+        <HeaderCustomerSearch role={user?.role} />
+      </div>
 
       <div className="user-area">
         <div className="notification-dropdown" ref={notificationMenuRef}>
@@ -273,18 +397,18 @@ export default function Header() {
           {userMenuOpen && (
             <div className="dropdown-menu">
               <button className="dropdown-item" onClick={goToProfile}>
-                Profile
+                Profil
               </button>
               <button className="dropdown-item" onClick={goToSettings}>
-                Settings
+                Ayarlar
               </button>
               {user?.is_staff && (
                 <button className="dropdown-item" onClick={goToExportHistory}>
-                  Export History
+                  Dışa Aktarma Geçmişi
                 </button>
               )}
               <button className="dropdown-item" onClick={handleLogout}>
-                Logout
+                Çıkış Yap
               </button>
             </div>
           )}

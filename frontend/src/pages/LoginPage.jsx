@@ -73,7 +73,7 @@ export default function LoginPage() {
     useEffect(() => {
         if (remaining > 0) {
             setError(
-                `Cok fazla deneme. 120 saniyelik bekleme suresi aktif. Kalan sure: ${formatRemaining(remaining)}`
+                `Çok fazla deneme. Lütfen ${formatRemaining(remaining)} bekleyin.`
             );
         } else if (banUntil === null) {
             setError("");
@@ -86,7 +86,7 @@ export default function LoginPage() {
 
         if (banUntil && remaining > 0) {
             setError(
-                `Cok fazla deneme. 120 saniyelik bekleme suresi aktif. Kalan sure: ${formatRemaining(remaining)}`
+                `Çok fazla deneme. Lütfen ${formatRemaining(remaining)} bekleyin.`
             );
             return;
         }
@@ -111,7 +111,7 @@ export default function LoginPage() {
                 data.detail ||
                 data?.errors?.[0]?.detail ||
                 err?.message ||
-                "Incorrect username or password.";
+                "Kullanıcı adı veya şifre hatalı.";
 
             const isThrottled =
                 status === 429 || data?.errors?.[0]?.code === "throttled";
@@ -129,7 +129,7 @@ export default function LoginPage() {
                 setBanUntil(until);
                 localStorage.setItem("loginBanUntil", String(until));
                 setError(
-                    `Cok fazla deneme. 120 saniyelik bekleme suresi aktif. Kalan sure: ${formatRemaining(waitSeconds)}`
+                    `Çok fazla deneme. Lütfen ${formatRemaining(waitSeconds)} bekleyin.`
                 );
                 return;
             }
@@ -149,13 +149,13 @@ export default function LoginPage() {
         <div className="login-container">
             <div className="login-card">
 
-                <h2 className="login-title">CRM Login</h2>
-                <p className="login-subtitle">Please enter your credentials</p>
+                <h2 className="login-title">CRM Girişi</h2>
+                <p className="login-subtitle">Lütfen bilgilerinizi girin</p>
 
                 <form onSubmit={handleLogin} className="login-form">
                     <input
                         className="login-input"
-                        placeholder="Username"
+                        placeholder="Kullanıcı Adı"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         disabled={isDisabled}
@@ -164,7 +164,7 @@ export default function LoginPage() {
                     <input
                         type="password"
                         className="login-input"
-                        placeholder="Password"
+                        placeholder="Şifre"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         disabled={isDisabled}
@@ -177,7 +177,7 @@ export default function LoginPage() {
                     )}
 
                     <button type="submit" className="login-button" disabled={isDisabled}>
-                        {isSubmitting ? "Logging in..." : "Login"}
+                        {isSubmitting ? "Giriş yapılıyor..." : "Giriş Yap"}
                     </button>
                 </form>
             </div>

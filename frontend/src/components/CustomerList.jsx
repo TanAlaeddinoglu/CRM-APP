@@ -138,10 +138,10 @@ export default function CustomerList({
                             ["tag", "Tag"],
                             ["tag_timer_days", "Tag Süresi"],
                             ["status", "Status"],
-                            ["assigned_to", "Assigned"],
-                            ["products", "Products"],
-                            ["updated_at", "Updated"],
-                            ["source", "Source"],
+                            ["assigned_to", "Atanan"],
+                            ["products", "Hastalıklar"],
+                            ["updated_at", "Güncelleme"],
+                            ["source", "Kaynak"],
                         ].map(([key, label]) => (
                             <th key={key} onClick={() => sortBy(key)}>
                                 {label}
@@ -152,67 +152,78 @@ export default function CustomerList({
                     </thead>
 
                     <tbody>
-                    {sorted.map((c) => (
-                        <tr
-                            key={c.id}
-                            className="customer-row"
-                            onClick={() => navigate(`/customers/${c.id}`)}
-                        >
+                    {sorted.map((c) => {
+                        const href = `/customers/${c.id}`;
+                        const handleCellClick = (e) => {
+                            if (e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+                            e.preventDefault();
+                            navigate(href);
+                        };
+                        const L = ({ children, className }) => (
+                            <a href={href} className={`row-link${className ? ` ${className}` : ""}`} onClick={handleCellClick}>
+                                {children}
+                            </a>
+                        );
+
+                        return (
+                        <tr key={c.id} className="customer-row">
                             <td className="checkbox-col">
                                 <input
                                     type="checkbox"
                                     checked={selected.includes(c.id)}
-                                    onClick={(e) => e.stopPropagation()}   // 🔥 KRİTİK
                                     onChange={(e) => toggleOne(e, c.id)}
                                 />
                             </td>
 
-                            <td>{c.customer_name}</td>
-                            <td>{c.customer_surname}</td>
-                            <td>{c.customer_email || "-"}</td>
-                            <td>{c.customer_phone || "-"}</td>
-                            <td>{c.city || "-"}</td>
+                            <td><L>{c.customer_name}</L></td>
+                            <td><L>{c.customer_surname}</L></td>
+                            <td><L>{c.customer_email || "-"}</L></td>
+                            <td><L>{c.customer_phone || "-"}</L></td>
+                            <td><L>{c.city || "-"}</L></td>
 
                             {/* TAG */}
                             <td>
-                                <span
-                                    className={`tag-badge ${c.status === "archived" ? "tag-archived" : (c.tag ? "" : "tag-pool")}`}
-                                >
-                                    {c.status === "archived" ? "Archive" : (c.tag || "Pool")}
-                                </span>
+                                <L>
+                                    <span className={`tag-badge ${c.status === "archived" ? "tag-archived" : (c.tag ? "" : "tag-pool")}`}>
+                                        {c.status === "archived" ? "Archive" : (c.tag || "Pool")}
+                                    </span>
+                                </L>
                             </td>
 
                             {/* TAG SÜRESİ */}
                             <td className="tag-timer-col">
-                                {c.tag_timer_days !== null &&
-                                    c.tag_timer_days !== undefined && (
-                                        <span className={`tag-timer-pill ${c.tag_timer_days >= 7 ? "danger" : ""}`}>{c.tag_timer_days} gün</span>
+                                <L>
+                                    {c.tag_timer_days !== null && c.tag_timer_days !== undefined && (
+                                        <span className={`tag-timer-pill ${c.tag_timer_days >= 7 ? "danger" : ""}`}>
+                                            {c.tag_timer_days} gün
+                                        </span>
                                     )}
+                                </L>
                             </td>
-
 
                             <td>
-                  <span className={`status-badge ${c.status}`}>
-                    {c.status}
-                  </span>
+                                <L>
+                                    <span className={`status-badge ${c.status}`}>{c.status}</span>
+                                </L>
                             </td>
 
-                            <td>{c.assigned_to || "-"}</td>
+                            <td><L>{c.assigned_to || "-"}</L></td>
 
                             <td className="product-col">
-                                <div className="product-list">
-                                    {c.products?.map((p) => (
-                                        <span key={p.id} className="badge product-badge">
-                        {p.product}
-                      </span>
-                                    ))}
-                                </div>
+                                <L>
+                                    <div className="product-list">
+                                        {c.products?.map((p) => (
+                                            <span key={p.id} className="badge product-badge">{p.product}</span>
+                                        ))}
+                                    </div>
+                                </L>
                             </td>
 
-                            <td>{new Date(c.updated_at).toLocaleString()}</td>
-                            <td>{c.source}</td>
+                            <td><L>{new Date(c.updated_at).toLocaleString()}</L></td>
+                            <td><L>{c.source}</L></td>
                         </tr>
-                    ))}
+                        );
+                    })}
 
                     {sorted.length === 0 && (
                         <tr>

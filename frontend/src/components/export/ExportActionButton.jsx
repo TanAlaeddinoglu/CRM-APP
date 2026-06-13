@@ -27,6 +27,8 @@ export default function ExportActionButton({
   initialRecipientEmail = "",
   buttonClassName = "btn-secondary",
   buttonLabel = "Export",
+  buttonTitle = "",
+  ariaLabel = "",
   disabled = false,
   onQueued,
 }) {
@@ -127,6 +129,8 @@ export default function ExportActionButton({
         type="button"
         onClick={handleOpen}
         disabled={disabled}
+        title={buttonTitle || undefined}
+        aria-label={ariaLabel || undefined}
       >
         {buttonLabel}
       </button>
@@ -136,7 +140,7 @@ export default function ExportActionButton({
           <div className="export-modal" onClick={(e) => e.stopPropagation()}>
             <div className="export-modal-header">
               <div>
-                <h3>{config.title} Export</h3>
+                <h3>{config.title} Dışa Aktarma</h3>
                 <p>Dosya formatı ve alanları seçip export kuyruğunu başlatın.</p>
               </div>
               <button

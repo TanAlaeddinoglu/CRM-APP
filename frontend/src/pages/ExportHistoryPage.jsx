@@ -19,16 +19,18 @@ import {
   getExportHistoryMeta,
   scheduleExportHistoryCacheExpiry,
 } from "../services/export";
+import LoadingIndicator from "../components/common/LoadingIndicator.jsx";
+import { usePageTransition } from "../context/PageTransitionContext.jsx";
 import "../assets/css/ExportHistory.css";
 
 const MODEL_OPTIONS = [
-  { value: "", label: "Tum modeller" },
-  { value: "customer", label: "Customer" },
-  { value: "events", label: "Events" },
-  { value: "payments", label: "Payments" },
-  { value: "product", label: "Products" },
-  { value: "tag", label: "Tags" },
-  { value: "user", label: "Users" },
+  { value: "", label: "Tüm Modeller" },
+  { value: "customer", label: "Müşteri" },
+  { value: "events", label: "Randevular" },
+  { value: "payments", label: "Ödemeler" },
+  { value: "product", label: "Ürünler" },
+  { value: "tag", label: "Etiketler" },
+  { value: "user", label: "Kullanıcılar" },
 ];
 
 const STATUS_TONE_MAP = {
@@ -50,6 +52,7 @@ const PAGE_SIZE_OPTIONS = [20, 50, 100];
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const META_POLL_INTERVAL_MS = 100 * 1000;
 const FULL_REFRESH_EVERY_N_POLLS = 3;
+const DEFAULT_PAGE_SIZE = 20;
 
 function formatDateTime(value) {
   if (!value) return "-";
@@ -65,15 +68,15 @@ function formatLabel(value) {
 function getEmailStatusMessage(emailStatus) {
   switch (emailStatus) {
     case "sent":
-      return "Email basariyla gonderildi.";
+      return "E-posta başarıyla gönderildi.";
     case "failed":
-      return "Email gonderilemedi. Mail ayarlarinizi kontrol edip tekrar deneyin.";
+      return "E-posta gönderilemedi. E-posta ayarlarınızı kontrol edip tekrar deneyin.";
     case "pending":
-      return "Email gonderimi sirada bekliyor.";
+      return "E-posta gönderimi sırada bekliyor.";
     case "skipped":
-      return "Bu export icin email gonderimi yapilmadi.";
+      return "Bu dışa aktarım için e-posta gönderimi yapılmadı.";
     default:
-      return "Bu export icin email kaydi olusturulmadi.";
+      return "Bu dışa aktarım için e-posta kaydı oluşturulmadı.";
   }
 }
 
@@ -92,6 +95,24 @@ function deriveMetaFromJobs(items) {
 
 function buildMetaSignature(meta) {
   return `${meta?.count || 0}:${meta?.latest_updated_at || ""}`;
+}
+
+function normalizeExportHistoryResponse(payload) {
+  if (Array.isArray(payload)) {
+    return {
+      count: payload.length,
+      results: payload,
+      next: null,
+      previous: null,
+    };
+  }
+
+  return {
+    count: Number(payload?.count || 0),
+    results: Array.isArray(payload?.results) ? payload.results : [],
+    next: payload?.next || null,
+    previous: payload?.previous || null,
+  };
 }
 
 function readCachedHistory() {
@@ -150,7 +171,7 @@ function ExportDetailModal({ job, onClose }) {
       >
         <div className="export-history-modal-header">
           <div>
-            <h3>Export Detayi</h3>
+            <h3>Dışa Aktarım Detayı</h3>
             <p>
               Job #{job.id} · {formatLabel(job.model_name)} ·{" "}
               {formatDateTime(job.created_at)}
@@ -171,7 +192,7 @@ function ExportDetailModal({ job, onClose }) {
           <section className="export-detail-section">
             <div className="export-detail-section-title">
               <Download size={16} />
-              <span>Export Ozeti</span>
+              <span>Dışa Aktarım Özeti</span>
             </div>
 
             <div className="export-detail-grid">
@@ -184,11 +205,11 @@ function ExportDetailModal({ job, onClose }) {
                 <strong>{job.file_type?.toUpperCase() || "-"}</strong>
               </div>
               <div className="export-detail-item">
-                <span>Olusturan</span>
+                <span>Oluşturan</span>
                 <strong>{job.created_by || "-"}</strong>
               </div>
               <div className="export-detail-item">
-                <span>Kayit Sayisi</span>
+                <span>Kayıt Sayısı</span>
                 <strong>{job.row_count}</strong>
               </div>
               <div className="export-detail-item">
@@ -202,7 +223,7 @@ function ExportDetailModal({ job, onClose }) {
             </div>
 
             <div className="export-detail-fields">
-              <span>Secilen Alanlar</span>
+              <span>Seçilen Alanlar</span>
               <div className="export-chip-list">
                 {job.selected_fields?.length ? (
                   job.selected_fields.map((field) => (
@@ -211,7 +232,7 @@ function ExportDetailModal({ job, onClose }) {
                     </span>
                   ))
                 ) : (
-                  <span className="export-empty-inline">Alan secimi yok</span>
+                  <span className="export-empty-inline">Alan seçimi yok</span>
                 )}
               </div>
             </div>
@@ -229,7 +250,7 @@ function ExportDetailModal({ job, onClose }) {
                 <strong>{job.email_subject || "-"}</strong>
               </div>
               <div className="export-detail-item export-detail-item-wide">
-                <span>Alici</span>
+                <span>Alıcı</span>
                 <strong>{job.recipient_email || "-"}</strong>
               </div>
               <div className="export-detail-item">
@@ -240,7 +261,7 @@ function ExportDetailModal({ job, onClose }) {
 
             <div className="export-detail-stack">
               <div className="export-detail-text-block">
-                <span>Email Govdesi</span>
+                <span>E-posta Gövdesi</span>
                 <p>{job.email_body || "-"}</p>
               </div>
 
@@ -258,6 +279,7 @@ function ExportDetailModal({ job, onClose }) {
 
 export default function ExportHistoryPage() {
   const [jobs, setJobs] = useState([]);
+  const [serverTotalCount, setServerTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -265,19 +287,39 @@ export default function ExportHistoryPage() {
   const [modelFilter, setModelFilter] = useState("");
   const [selectedJob, setSelectedJob] = useState(null);
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const metaSignatureRef = useRef("0:");
   const pollCountRef = useRef(0);
+  usePageTransition(loading);
+
+  const canUseCache =
+    page === 1 &&
+    pageSize === DEFAULT_PAGE_SIZE &&
+    !modelFilter &&
+    !dateFrom &&
+    !dateTo;
+
+  const requestParams = useMemo(
+    () => ({
+      page,
+      page_size: pageSize,
+      ...(modelFilter ? { model: modelFilter } : {}),
+      ...(dateFrom ? { date_from: dateFrom } : {}),
+      ...(dateTo ? { date_to: dateTo } : {}),
+    }),
+    [dateFrom, dateTo, modelFilter, page, pageSize]
+  );
 
   useEffect(() => {
     let isMounted = true;
 
-    const applyJobs = (nextJobs, meta) => {
+    const applyJobs = (nextPayload, meta) => {
       if (!isMounted) return;
 
-      setJobs(nextJobs);
+      setJobs(nextPayload.results);
+      setServerTotalCount(Number(nextPayload.count || 0));
       setSelectedJob((current) =>
-        current ? nextJobs.find((job) => job.id === current.id) || null : null
+        current ? nextPayload.results.find((job) => job.id === current.id) || null : null
       );
       metaSignatureRef.current = buildMetaSignature(meta);
     };
@@ -291,15 +333,16 @@ export default function ExportHistoryPage() {
       }
 
       try {
-        const response = await getExportHistory();
-        const nextJobs = Array.isArray(response.data)
-          ? response.data
-          : response.data?.results || [];
-        const nextMeta = deriveMetaFromJobs(nextJobs);
+        const response = await getExportHistory(requestParams);
+        const nextPayload = normalizeExportHistoryResponse(response.data);
+        const nextMeta = {
+          count: nextPayload.count,
+          latest_updated_at: deriveMetaFromJobs(nextPayload.results).latest_updated_at,
+        };
 
-        applyJobs(nextJobs, nextMeta);
+        applyJobs(nextPayload, nextMeta);
         if (persistToCache) {
-          const expiresAt = writeCachedHistory(nextJobs, nextMeta);
+          const expiresAt = writeCachedHistory(nextPayload.results, nextMeta);
           scheduleExportHistoryCacheExpiry(expiresAt);
         }
 
@@ -311,7 +354,7 @@ export default function ExportHistoryPage() {
 
         const detail =
           requestError?.response?.data?.detail ||
-          "Export gecmisi yuklenemedi.";
+          "Dışa aktarma geçmişi yüklenemedi.";
         setError(detail);
       } finally {
         if (isMounted) {
@@ -344,23 +387,28 @@ export default function ExportHistoryPage() {
 
         const detail =
           requestError?.response?.data?.detail ||
-          "Export gecmisi guncellenemedi.";
+          "Dışa aktarma geçmişi güncellenemedi.";
         setError(detail);
       }
     };
 
-    const cachedHistory = readCachedHistory();
+    const cachedHistory = canUseCache ? readCachedHistory() : null;
     if (cachedHistory) {
       ensureExportHistoryCacheExpiry();
       applyJobs(
-        cachedHistory.jobs,
+        {
+          count: cachedHistory.meta?.count || cachedHistory.jobs.length,
+          results: cachedHistory.jobs,
+          next: null,
+          previous: null,
+        },
         cachedHistory.meta || deriveMetaFromJobs(cachedHistory.jobs)
       );
       setLoading(false);
       setError("");
       checkForUpdates();
     } else {
-      fetchFullHistory({ showLoader: true, persistToCache: true });
+      fetchFullHistory({ showLoader: true, persistToCache: canUseCache });
     }
 
     const intervalId = window.setInterval(() => {
@@ -380,53 +428,20 @@ export default function ExportHistoryPage() {
       window.clearInterval(intervalId);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, []);
-
-  const filteredJobs = useMemo(() => {
-    return jobs.filter((job) => {
-      if (modelFilter && job.model_name !== modelFilter) {
-        return false;
-      }
-
-      const createdAt = new Date(job.created_at);
-
-      if (dateFrom) {
-        const from = new Date(dateFrom);
-        from.setHours(0, 0, 0, 0);
-        if (createdAt < from) return false;
-      }
-
-      if (dateTo) {
-        const to = new Date(dateTo);
-        to.setHours(23, 59, 59, 999);
-        if (createdAt > to) return false;
-      }
-
-      return true;
-    });
-  }, [jobs, dateFrom, dateTo, modelFilter]);
+  }, [canUseCache, requestParams]);
 
   const summary = useMemo(() => {
     return {
-      total: filteredJobs.length,
-      sent: filteredJobs.filter((job) => job.email_status === "sent").length,
-      failed: filteredJobs.filter((job) => job.status === "failed").length,
-      pending: filteredJobs.filter((job) =>
+      total: serverTotalCount,
+      sent: jobs.filter((job) => job.email_status === "sent").length,
+      failed: jobs.filter((job) => job.status === "failed").length,
+      pending: jobs.filter((job) =>
         ["queued", "processing"].includes(job.status)
       ).length,
     };
-  }, [filteredJobs]);
+  }, [jobs, serverTotalCount]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredJobs.length / pageSize));
-
-  const paginatedJobs = useMemo(() => {
-    const startIndex = (page - 1) * pageSize;
-    return filteredJobs.slice(startIndex, startIndex + pageSize);
-  }, [filteredJobs, page, pageSize]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [dateFrom, dateTo, modelFilter, pageSize]);
+  const totalPages = Math.max(1, Math.ceil(serverTotalCount / pageSize));
 
   useEffect(() => {
     if (page > totalPages) {
@@ -435,6 +450,7 @@ export default function ExportHistoryPage() {
   }, [page, totalPages]);
 
   const resetFilters = () => {
+    setPage(1);
     setDateFrom("");
     setDateTo("");
     setModelFilter("");
@@ -444,9 +460,9 @@ export default function ExportHistoryPage() {
     <div className="export-history-page">
       <div className="export-history-header">
         <div>
-          <h1 className="export-history-title">Export Gecmisi</h1>
+          <h1 className="export-history-title">Dışa Aktarma Geçmişi</h1>
           <p className="export-history-subtitle">
-            Export islemlerini ve ilgili email log kayitlarini tek ekranda izle.
+            Dışa aktarma işlemlerini ve ilgili e-posta kayıtlarını tek ekranda izleyin.
           </p>
         </div>
       </div>
@@ -457,15 +473,15 @@ export default function ExportHistoryPage() {
           <strong>{summary.total}</strong>
         </div>
         <div className="export-summary-card">
-          <span>Basarili Gonderim</span>
+          <span>Başarılı Gönderim</span>
           <strong>{summary.sent}</strong>
         </div>
         <div className="export-summary-card">
-          <span>Bekleyen Islem</span>
+          <span>Bekleyen İşlem</span>
           <strong>{summary.pending}</strong>
         </div>
         <div className="export-summary-card">
-          <span>Hatali Export</span>
+          <span>Hatalı Dışa Aktarım</span>
           <strong>{summary.failed}</strong>
         </div>
       </section>
@@ -486,24 +502,30 @@ export default function ExportHistoryPage() {
           <label className="export-filter-field">
             <span>
               <CalendarRange size={14} />
-              <span>Baslangic Tarihi</span>
+              <span>Başlangıç Tarihi</span>
             </span>
             <input
               type="date"
               value={dateFrom}
-              onChange={(event) => setDateFrom(event.target.value)}
+              onChange={(event) => {
+                setPage(1);
+                setDateFrom(event.target.value);
+              }}
             />
           </label>
 
           <label className="export-filter-field">
             <span>
               <CalendarRange size={14} />
-              <span>Bitis Tarihi</span>
+              <span>Bitiş Tarihi</span>
             </span>
             <input
               type="date"
               value={dateTo}
-              onChange={(event) => setDateTo(event.target.value)}
+              onChange={(event) => {
+                setPage(1);
+                setDateTo(event.target.value);
+              }}
             />
           </label>
 
@@ -514,7 +536,10 @@ export default function ExportHistoryPage() {
             </span>
             <select
               value={modelFilter}
-              onChange={(event) => setModelFilter(event.target.value)}
+              onChange={(event) => {
+                setPage(1);
+                setModelFilter(event.target.value);
+              }}
             >
               {MODEL_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -529,8 +554,8 @@ export default function ExportHistoryPage() {
       <section className="export-table-panel">
         <div className="export-table-panel-header">
           <div>
-            <h2>Export Job Listesi</h2>
-            <p>{filteredJobs.length} kayit gosteriliyor</p>
+            <h2>Dışa Aktarma Listesi</h2>
+            <p>{serverTotalCount} kayıt gösteriliyor</p>
           </div>
 
           <div className="export-table-controls">
@@ -538,7 +563,10 @@ export default function ExportHistoryPage() {
               <span>Sayfa Boyutu</span>
               <select
                 value={pageSize}
-                onChange={(event) => setPageSize(Number(event.target.value))}
+                onChange={(event) => {
+                  setPage(1);
+                  setPageSize(Number(event.target.value));
+                }}
               >
                 {PAGE_SIZE_OPTIONS.map((option) => (
                   <option key={option} value={option}>
@@ -551,12 +579,14 @@ export default function ExportHistoryPage() {
         </div>
 
         {loading ? (
-          <div className="export-empty-state">Yukleniyor...</div>
+          <div className="export-empty-state">
+            <LoadingIndicator inline label="Export geçmişi yükleniyor" />
+          </div>
         ) : error ? (
           <div className="export-empty-state export-empty-state-error">{error}</div>
-        ) : filteredJobs.length === 0 ? (
+        ) : jobs.length === 0 ? (
           <div className="export-empty-state">
-            Secili filtrelerle eslesen export kaydi bulunamadi.
+            Seçili filtrelerle eşleşen dışa aktarma kaydı bulunamadı.
           </div>
         ) : (
           <>
@@ -567,16 +597,16 @@ export default function ExportHistoryPage() {
                     <th>Tarih</th>
                     <th>Model</th>
                     <th>Dosya</th>
-                    <th>Alici</th>
+                    <th>Alıcı</th>
                     <th>Genel Durum</th>
                     <th>Dosya Durumu</th>
-                    <th>Email Durumu</th>
-                    <th>Olusturan</th>
+                    <th>E-posta Durumu</th>
+                    <th>Oluşturan</th>
                     <th>Detay</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {paginatedJobs.map((job) => (
+                  {jobs.map((job) => (
                     <tr key={job.id}>
                       <td>
                         <div className="export-primary-cell">
@@ -588,7 +618,7 @@ export default function ExportHistoryPage() {
                       <td>
                         <div className="export-primary-cell">
                           <strong>{job.file_type?.toUpperCase()}</strong>
-                          <span>{job.row_count} satir</span>
+                          <span>{job.row_count} satır</span>
                         </div>
                       </td>
                       <td>{job.recipient_email}</td>
@@ -636,7 +666,7 @@ export default function ExportHistoryPage() {
                   disabled={page === 1}
                 >
                   <ChevronLeft size={14} />
-                  <span>Onceki</span>
+                  <span>Önceki</span>
                 </button>
 
                 <button
