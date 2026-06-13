@@ -78,8 +78,13 @@ class AppointmentViewSet(viewsets.ModelViewSet):
         customer = serializer.validated_data.get("customer", None)
 
         if not (user.is_staff or user.is_superuser):
-            effective_customer = customer or getattr(serializer.instance, "customer", None)
-            if effective_customer is None or effective_customer.assigned_to_id != user.id:
+            effective_customer = customer or getattr(
+                serializer.instance, "customer", None
+            )
+            if (
+                effective_customer is None
+                or effective_customer.assigned_to_id != user.id
+            ):
                 raise PermissionDenied("Bu randevuyu güncelleyemezsin.")
 
         serializer.save(updated_by=user)
@@ -121,17 +126,18 @@ class AppointmentPaymentsViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         preset = self.request.query_params.get("preset")
+        customer_id = self.request.query_params.get("customer")
 
-        if not preset:
-            return qs
+        if preset:
+            if preset not in self.payment_preset_values:
+                raise ValidationError({"preset": ["Geçerli değerler: 7, 14, 30."]})
+            start_dt = timezone.now() - timedelta(days=int(preset))
+            qs = qs.filter(payment_date__gte=start_dt)
 
-        if preset not in self.payment_preset_values:
-            raise ValidationError(
-                {"preset": ["Geçerli değerler: 7, 14, 30."]}
-            )
+        if customer_id:
+            qs = qs.filter(appointment__customer_id=customer_id)
 
-        start_dt = timezone.now() - timedelta(days=int(preset))
-        return qs.filter(payment_date__gte=start_dt)
+        return qs
 
     def perform_destroy(self, instance):
         appointment = instance.appointment

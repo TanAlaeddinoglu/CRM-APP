@@ -27,21 +27,21 @@ export default function AddUserModal({ onClose, onSave }) {
 
     // 🔥 FRONTEND VALIDATION
     if (!form.username.trim()) {
-      toast.error("Username is required.");
+      toast.error("Kullanıcı adı zorunludur.");
       return;
     }
     if (!form.email.trim()) {
-      toast.error("Email is required.");
+      toast.error("E-posta zorunludur.");
       return;
     }
     if (!form.password.trim()) {
-      toast.error("Password is required.");
+      toast.error("Şifre zorunludur.");
       return;
     }
 
     try {
       await onSave(form);
-      toast.success("User created successfully!");
+      toast.success("Kullanıcı oluşturuldu.");
 
       onClose();
     } catch (err) {
@@ -55,21 +55,26 @@ export default function AddUserModal({ onClose, onSave }) {
           toast.error(`${field}: ${res[field]}`);
         });
       } else {
-        toast.error("Failed to create user.");
+        toast.error("Kullanıcı oluşturulamadı.");
       }
     }
   };
   return (
-    <div className="modal-overlay">
-      <div className="modal-box">
+    <div className="add-user-modal-overlay">
+      <div className="add-user-modal-box">
 
-        <h2 className="modal-title">Add New User</h2>
+        <div className="add-user-modal-header">
+          <h2 className="add-user-modal-title">Yeni Kullanıcı Ekle</h2>
+          <p className="add-user-modal-subtitle">
+            Rol ve erişim durumuyla birlikte kullanıcı hesabı oluşturun.
+          </p>
+        </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="modal-body">
+          <div className="add-user-modal-body">
 
-            <div className="modal-row">
-              <label>Username</label>
+            <div className="add-user-modal-row">
+              <label>Kullanıcı Adı</label>
               <input
                 name="username"
                 value={form.username}
@@ -78,8 +83,8 @@ export default function AddUserModal({ onClose, onSave }) {
               />
             </div>
 
-            <div className="modal-row">
-              <label>Email</label>
+            <div className="add-user-modal-row">
+              <label>E-posta</label>
               <input
                 name="email"
                 value={form.email}
@@ -88,26 +93,28 @@ export default function AddUserModal({ onClose, onSave }) {
               />
             </div>
 
-            <div className="modal-row">
-              <label>First Name</label>
-              <input
-                name="first_name"
-                value={form.first_name}
-                onChange={handleChange}
-              />
+            <div className="add-user-modal-grid">
+              <div className="add-user-modal-row">
+                <label>Ad</label>
+                <input
+                  name="first_name"
+                  value={form.first_name}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="add-user-modal-row">
+                <label>Soyad</label>
+                <input
+                  name="last_name"
+                  value={form.last_name}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
 
-            <div className="modal-row">
-              <label>Last Name</label>
-              <input
-                name="last_name"
-                value={form.last_name}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="modal-row">
-              <label>Password</label>
+            <div className="add-user-modal-row">
+              <label>Şifre</label>
               <input
                 name="password"
                 value={form.password}
@@ -117,35 +124,37 @@ export default function AddUserModal({ onClose, onSave }) {
               />
             </div>
 
-            <div className="modal-row">
-              <label>Role</label>
-              <select
-                name="role"
-                value={form.role}
-                onChange={handleChange}
-              >
-                <option value="ADMIN">ADMIN</option>
-                <option value="USER">USER</option>
-              </select>
-            </div>
+            <div className="add-user-modal-grid">
+              <div className="add-user-modal-row">
+                <label>Rol</label>
+                <select
+                  name="role"
+                  value={form.role}
+                  onChange={handleChange}
+                >
+                  <option value="ADMIN">ADMIN</option>
+                  <option value="USER">USER</option>
+                </select>
+              </div>
 
-            <label className="checkbox-row">
-              <input
-                type="checkbox"
-                name="is_active"
-                checked={form.is_active}
-                onChange={handleChange}
-              />
-              <span>Active User</span>
-            </label>
+              <label className="add-user-checkbox-row">
+                <input
+                  type="checkbox"
+                  name="is_active"
+                  checked={form.is_active}
+                  onChange={handleChange}
+                />
+                <span>Aktif Kullanıcı</span>
+              </label>
+            </div>
           </div>
 
-          <div className="modal-footer">
+          <div className="add-user-modal-footer">
             <button type="button" className="btn-secondary" onClick={onClose}>
-              Cancel
+              İptal
             </button>
             <button type="submit" className="btn-primary">
-              Add User
+              Kullanıcı Ekle
             </button>
           </div>
         </form>

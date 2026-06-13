@@ -13,7 +13,13 @@
 }
 
 .reports-page__title {
-  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 18px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  letter-spacing: -0.02em;
 }
 
 .reports-tabs {

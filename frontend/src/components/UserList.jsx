@@ -5,13 +5,18 @@ import EditProfileModal from "./EditProfileModal";
 import { useAuth } from "../context/AuthContext";
 import {toast} from "react-hot-toast";
 import ExportActionButton from "./export/ExportActionButton.jsx";
+import LoadingIndicator from "./common/LoadingIndicator.jsx";
+import { Pencil, Upload } from "lucide-react";
+import { usePageTransition } from "../context/PageTransitionContext.jsx";
 
 export default function UserList() {
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
 
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [editUser, setEditUser] = useState(null);
+  usePageTransition(loading);
 
   // filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,10 +29,13 @@ export default function UserList() {
 
   const loadUsers = async () => {
     try {
+      setLoading(true);
       const res = await getUsers();
       setUsers(res.data);
     } catch (err) {
       console.error("User load error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -92,7 +100,7 @@ export default function UserList() {
       setEditUser(null);                    // Modal kapanır
     } catch (err) {
       console.error("Update user error:", err);
-      toast.loading("Failed to update user.");
+      toast.error("Kullanıcı güncellenemedi.");
     }
   };
 
@@ -103,7 +111,7 @@ export default function UserList() {
       <div className="user-filters">
         <input
           type="text"
-          placeholder="Search users..."
+          placeholder="Kullanıcı ara..."
           className="user-search-input"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -114,9 +122,9 @@ export default function UserList() {
           value={roleFilter}
           onChange={(e) => setRoleFilter(e.target.value)}
         >
-          <option value="ALL">All Roles</option>
+          <option value="ALL">Tüm Roller</option>
           <option value="ADMIN">Admin</option>
-          <option value="USER">User</option>
+          <option value="USER">Kullanıcı</option>
         </select>
 
         <select
@@ -124,39 +132,42 @@ export default function UserList() {
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value)}
         >
-          <option value="ALL">All Status</option>
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
+          <option value="ALL">Tüm Durumlar</option>
+          <option value="ACTIVE">Aktif</option>
+          <option value="INACTIVE">Pasif</option>
         </select>
 
         <ExportActionButton
           model="user"
           initialRecipientEmail={user?.email || ""}
-          buttonClassName="btn-secondary"
-          buttonLabel="Export"
+          buttonClassName="btn-secondary customer-action-icon-button"
+          buttonLabel={<Upload size={18} strokeWidth={2} />}
+          buttonTitle="Dışa Aktar"
+          ariaLabel="Dışa Aktar"
         />
       </div>
 
       {/* USER TABLE */}
       <div className="user-table-wrapper">
+        {loading ? (
+          <LoadingIndicator inline label="Kullanıcılar yükleniyor" />
+        ) : (
         <table className="user-table">
           <thead>
             <tr>
-              <th onClick={() => handleSort("id")}>ID</th>
-              <th onClick={() => handleSort("username")}>Username</th>
-              <th onClick={() => handleSort("first_name")}>Name</th>
-              <th onClick={() => handleSort("last_name")}>Surname</th>
-              <th onClick={() => handleSort("email")}>Email</th>
-              <th onClick={() => handleSort("role")}>Role</th>
-              <th onClick={() => handleSort("is_active")}>Status</th>
-              <th>Edit</th>
+              <th onClick={() => handleSort("username")}>Kullanıcı Adı</th>
+              <th onClick={() => handleSort("first_name")}>Ad</th>
+              <th onClick={() => handleSort("last_name")}>Soyad</th>
+              <th onClick={() => handleSort("email")}>E-posta</th>
+              <th onClick={() => handleSort("role")}>Rol</th>
+              <th onClick={() => handleSort("is_active")}>Durum</th>
+              <th></th>
             </tr>
           </thead>
 
           <tbody>
             {filteredUsers.map((u) => (
               <tr key={u.id}>
-                <td>{u.id}</td>
                 <td>{u.username}</td>
                 <td>{u.first_name}</td>
                 <td>{u.last_name}</td>
@@ -164,18 +175,25 @@ export default function UserList() {
                 <td>{u.role}</td>
                 <td>
                   <span className={`status ${u.is_active ? "active" : "inactive"}`}>
-                    {u.is_active ? "Active" : "Inactive"}
+                    {u.is_active ? "Aktif" : "Pasif"}
                   </span>
                 </td>
                 <td>
-                  <button className="edit-btn" onClick={() => setEditUser(u)}>
-                    ✏ Edit
+                  <button
+                    className="edit-btn"
+                    onClick={() => setEditUser(u)}
+                    title="Düzenle"
+                    aria-label="Düzenle"
+                    type="button"
+                  >
+                    <Pencil size={16} strokeWidth={2} />
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        )}
       </div>
 
       {editUser && (

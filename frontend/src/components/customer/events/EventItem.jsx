@@ -13,60 +13,59 @@ const EventItem = ({ event, onClick }) => {
     });
   };
 
-  const formatShortText = (text, max = 20) => {
-    if (!text) return "-";
-    if (text.length <= max) return text;
-    return text.slice(0, max) + "...";
+  const formatDate = (value) => {
+    if (!value) return "-";
+    return new Date(value).toLocaleString("tr-TR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   };
 
   return (
     <div className="event-row" onClick={onClick}>
-      <span className="event-row-main">
-        {/* Tarih & Saat */}
-        <span className="event-row-date">
-          {formatDateTime(event.scheduled_for)}
-        </span>
+      {/* Üst satır: 2 alt satır */}
+      <div className="event-row-top">
+        <div className="event-row-top-line1">
+          <span className="event-row-date">{formatDateTime(event.scheduled_for)}</span>
+          <span className="event-row-top-item">
+            <span className="event-row-meta-label">Randevu Adı:</span>
+            <span className="event-row-name">{event.name}</span>
+          </span>
+        </div>
+        <div className="event-row-top-line2">
+          <span className="event-row-top-item">
+            <span className="event-row-meta-label">Randevu Türü:</span>
+            <span className="event-row-type">{event.appointment_type}</span>
+          </span>
+          <span className="event-row-top-item">
+            <span className="event-row-meta-label">Durum:</span>
+            <span className={`event-row-status status-${event.status}`}>{event.status}</span>
+          </span>
+          {event.product && (
+            <span className="event-row-top-item">
+              <span className="event-row-meta-label">Hastalık:</span>
+              <span className="event-row-type">{event.product}</span>
+            </span>
+          )}
+        </div>
+      </div>
 
-        {/* Tür */}
-        <span className="event-row-divider">—</span>
-        <span className="event-row-type">{event.appointment_type}</span>
-
-        {/* Durum */}
-        <span className="event-row-divider">—</span>
-        <span className={`event-row-status status-${event.status}`}>
-          {event.status}
-        </span>
-
-        {/* İsim */}
-        <span className="event-row-divider">—</span>
-        <span className="event-row-name">{event.name}</span>
-
-        {/* Ürün */}
-        {event.product && (
-          <>
-            <span className="event-row-divider">—</span>
-            <span className="event-row-product">{event.product}</span>
-          </>
+      {/* Alt satır: güncelleyen, güncellenme tarihi */}
+      <div className="event-row-bottom">
+        {event.created_by && (
+          <span className="event-row-meta-item">
+            <span className="event-row-meta-label">Güncelleyen:</span>
+            <span className="event-row-meta-value">{event.created_by}</span>
+          </span>
         )}
-
-        {/* Created by / Updated at / Note */}
-        <span className="event-row-meta">
-          {" • "}
-          {event.created_by && (
-            <span>by {event.created_by}</span>
-          )}
-          {event.updated_at && (
-            <span>
-              {" "}| upd {formatDateTime(event.updated_at)}
-            </span>
-          )}
-          {event.notes && (
-            <span>
-              {" "}| note: {formatShortText(event.notes, 25)}
-            </span>
-          )}
-        </span>
-      </span>
+        {event.updated_at && (
+          <span className="event-row-meta-item">
+            <span className="event-row-meta-label">Güncellenme Tarihi:</span>
+            <span className="event-row-meta-value">{formatDate(event.updated_at)}</span>
+          </span>
+        )}
+      </div>
     </div>
   );
 };

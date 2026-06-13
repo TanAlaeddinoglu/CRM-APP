@@ -68,6 +68,23 @@ html, body, #root {
   background: #fecaca;
 }
 
+.customer-action-icon-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 14px;
+  line-height: 1;
+}
+
+.customer-action-icon-button svg {
+  display: block;
+  flex-shrink: 0;
+}
+
 /* --------------------------------------------------------
    SHARED MODAL SHELL
 --------------------------------------------------------- */
@@ -207,7 +224,7 @@ html, body, #root {
 .page-content {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 10px 24px 24px;
   min-width: 0; /* prevent horizontal overflow from wide children */
 }
 
@@ -231,8 +248,11 @@ html, body, #root {
 .page-title {
   font-size: 22px;
   font-weight: 600;
-  margin-bottom: 18px;
-  color: var(--color-text);
+  color: #111827;
+  margin: 0 0 18px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+  letter-spacing: -0.02em;
 }
 
 .calendar-container {

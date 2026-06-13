@@ -21,6 +21,7 @@ import UserReportSection from "../../components/reports/UserReportSection";
 import AppointmentsReportSection from "../../components/reports/AppointmentsReportSection";
 import PaymentReportSection from "../../components/reports/PaymentReportSection";
 import ProductPriceDistributionReportSection from "../../components/reports/ProductPriceDistributionReportSection";
+import { usePageTransition } from "../../context/PageTransitionContext.jsx";
 import {
   buildUserLabel,
   extractList,
@@ -92,6 +93,13 @@ export default function ReportsPage() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [priceDistributionLoading, setPriceDistributionLoading] =
     useState(false);
+  usePageTransition(
+    optionsLoading ||
+      userLoading ||
+      appointmentsLoading ||
+      paymentLoading ||
+      priceDistributionLoading
+  );
 
   useEffect(() => {
     setOptionsLoading(true);
@@ -149,7 +157,7 @@ export default function ReportsPage() {
 
   const submitUserReport = async () => {
     if (!userFilters.user_id) {
-      toast.error("User seçimi zorunlu.");
+      toast.error("Kullanıcı seçimi zorunludur.");
       return;
     }
 
@@ -212,7 +220,7 @@ export default function ReportsPage() {
     <div className="reports-page">
       <div className="reports-page__header">
         <h1 className="h1 reports-page__title">
-          Reports
+          Raporlar
         </h1>
       </div>
 
@@ -220,25 +228,25 @@ export default function ReportsPage() {
         <TabButton
           active={activeTab === "user"}
           onClick={() => setActiveTab("user")}
-          label="User Report"
+          label="Kullanıcı Raporu"
           icon={UserRound}
         />
         <TabButton
           active={activeTab === "appointments"}
           onClick={() => setActiveTab("appointments")}
-          label="Appointments Report"
+          label="Randevu Raporu"
           icon={CalendarDays}
         />
         <TabButton
           active={activeTab === "payment"}
           onClick={() => setActiveTab("payment")}
-          label="Payment Report"
+          label="Ödeme Raporu"
           icon={CreditCard}
         />
         <TabButton
           active={activeTab === "priceDistribution"}
           onClick={() => setActiveTab("priceDistribution")}
-          label="Product Price Distribution"
+          label="Ürün Fiyat Dağılımı"
           icon={BarChart3}
         />
       </div>

@@ -1,12 +1,14 @@
 // src/components/ProductList.jsx
 import {useEffect, useMemo, useState} from "react";
 import "../assets/css/ProductList.css";
-import { Plus, Search } from "lucide-react";
+import { Pencil, Plus, Search, Upload } from "lucide-react";
 import {getProducts, createProduct, updateProduct} from "../services/product";
 import {useAuth} from "../context/AuthContext";
 import AddProductModal from "./AddProductModal.jsx";
 import EditProductModal from "./EditProductModal.jsx";
 import ExportActionButton from "./export/ExportActionButton.jsx";
+import LoadingIndicator from "./common/LoadingIndicator.jsx";
+import { usePageTransition } from "../context/PageTransitionContext.jsx";
 
 export default function ProductList() {
     const {user} = useAuth();
@@ -14,6 +16,7 @@ export default function ProductList() {
 
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    usePageTransition(loading);
 
     const [searchTerm, setSearchTerm] = useState("");
 
@@ -156,26 +159,32 @@ export default function ProductList() {
                         <ExportActionButton
                             model="product"
                             initialRecipientEmail={user?.email || ""}
-                            buttonClassName="btn-secondary"
-                            buttonLabel="Dışa Aktar"
+                            buttonClassName="btn-secondary customer-action-icon-button"
+                            buttonLabel={<Upload size={18} strokeWidth={2} />}
+                            buttonTitle="Dışa Aktar"
+                            ariaLabel="Dışa Aktar"
                         />
                     </div>
                 )}
 
                 {isAdmin && (
                     <button
-                        className="btn-primary product-list-add-btn"
+                        className="btn-primary customer-action-icon-button"
                         onClick={() => setAddModalOpen(true)}
+                        title="Ürün Ekle"
+                        aria-label="Ürün Ekle"
+                        type="button"
                     >
-                        <Plus size={16} />
-                        Ürün Ekle
+                        <Plus size={18} strokeWidth={2} />
                     </button>
                 )}
             </div>
 
             <div className="product-table-wrapper">
                 {loading ? (
-                    <div className="product-loading">Ürünler yükleniyor...</div>
+                    <div className="product-loading">
+                        <LoadingIndicator inline label="Ürünler yükleniyor" />
+                    </div>
                 ) : filteredProducts.length === 0 ? (
                     <div className="product-empty">Ürün bulunamadı.</div>
                 ) : (
@@ -196,7 +205,7 @@ export default function ProductList() {
                                 Oluşturulma {sortConfig.key === "created_at" ? (sortConfig.direction === "asc" ? "▲" : "▼") : ""}
                             </th>
 
-                            {isAdmin && <th>Düzenle</th>}
+                            {isAdmin && <th></th>}
                         </tr>
                         </thead>
 
@@ -217,8 +226,11 @@ export default function ProductList() {
                                         <button
                                             className="product-edit-btn"
                                             onClick={() => setEditProduct(p)}
+                                            title="Düzenle"
+                                            aria-label="Düzenle"
+                                            type="button"
                                         >
-                                            Düzenle
+                                            <Pencil size={16} strokeWidth={2} />
                                         </button>
                                     </td>
                                 )}

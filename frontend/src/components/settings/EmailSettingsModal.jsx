@@ -27,7 +27,7 @@ export default function EmailSettingsModal({ open, onClose, onSaved }) {
 
   const payload = useMemo(
     () => ({
-      name: "Primary SMTP",
+      name: "Birincil SMTP",
       host: form.host.trim(),
       port: Number(form.port),
       host_user: form.hostUser.trim(),
@@ -101,11 +101,11 @@ export default function EmailSettingsModal({ open, onClose, onSaved }) {
       return false;
     }
     if (!form.hostUser.trim()) {
-      toast.error("Host user alanı zorunlu.");
+      toast.error("Kullanıcı adı alanı zorunludur.");
       return false;
     }
     if (!form.hostPassword.trim()) {
-      toast.error("Host password alanı zorunlu.");
+      toast.error("Şifre alanı zorunludur.");
       return false;
     }
     if (!form.defaultFromEmail.trim()) {

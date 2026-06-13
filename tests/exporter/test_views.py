@@ -116,16 +116,17 @@ def test_export_history_view_returns_export_jobs_with_email_logs(
     response = admin_client.get("/api/exports/")
 
     assert response.status_code == status.HTTP_200_OK
-    assert len(response.data) == 1
-    assert response.data[0]["id"] == job.id
-    assert response.data[0]["created_by"] == admin_user.username
-    assert response.data[0]["recipient_email"] == "admin@example.com"
-    assert "metadata" not in response.data[0]
-    assert "error_message" not in response.data[0]
-    assert "email_log" not in response.data[0]
-    assert "email_body" not in response.data[0]
-    assert "absolute_path" not in response.data[0]
-    assert "workflow_task_id" not in response.data[0]
+    assert response.data["count"] == 1
+    assert len(response.data["results"]) == 1
+    assert response.data["results"][0]["id"] == job.id
+    assert response.data["results"][0]["created_by"] == admin_user.username
+    assert response.data["results"][0]["recipient_email"] == "admin@example.com"
+    assert "metadata" not in response.data["results"][0]
+    assert "error_message" not in response.data["results"][0]
+    assert "email_log" not in response.data["results"][0]
+    assert "email_body" not in response.data["results"][0]
+    assert "absolute_path" not in response.data["results"][0]
+    assert "workflow_task_id" not in response.data["results"][0]
 
 
 def test_export_history_view_filters_by_model_and_date(admin_client, admin_user):
@@ -170,7 +171,48 @@ def test_export_history_view_filters_by_model_and_date(admin_client, admin_user)
     )
 
     assert response.status_code == status.HTTP_200_OK
-    assert [item["id"] for item in response.data] == [new_job.id]
+    assert [item["id"] for item in response.data["results"]] == [new_job.id]
+
+
+def test_export_history_view_uses_default_page_size_of_twenty(admin_client, admin_user):
+    for idx in range(25):
+        ExportJob.objects.create(
+            created_by=admin_user,
+            model_name="customer",
+            file_type="csv",
+            selected_fields=["customer_name"],
+            recipient_email=f"admin{idx}@example.com",
+        )
+
+    response = admin_client.get("/api/exports/")
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["count"] == 25
+    assert len(response.data["results"]) == 20
+    assert response.data["next"] is not None
+    assert response.data["previous"] is None
+
+
+def test_export_history_view_supports_page_and_page_size(admin_client, admin_user):
+    created_ids = []
+    for idx in range(25):
+        job = ExportJob.objects.create(
+            created_by=admin_user,
+            model_name="customer",
+            file_type="csv",
+            selected_fields=["customer_name"],
+            recipient_email=f"admin{idx}@example.com",
+        )
+        created_ids.append(job.id)
+
+    created_ids.reverse()
+
+    response = admin_client.get("/api/exports/", {"page": 2, "page_size": 5})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["count"] == 25
+    assert len(response.data["results"]) == 5
+    assert [item["id"] for item in response.data["results"]] == created_ids[5:10]
 
 
 def test_export_history_view_rejects_invalid_date_range(admin_client):

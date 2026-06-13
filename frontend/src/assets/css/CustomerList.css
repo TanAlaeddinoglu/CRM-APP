@@ -36,9 +36,9 @@ html, body {
   width: 100%;
   max-width: 100%;
   background: #ffffff;
-  padding: 18px;
+  padding: 10px;
   border-radius: 14px;
-  overflow: hidden; /* ❗ ÖNEMLİ */
+  overflow: auto; /* ❗ ÖNEMLİ */
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
@@ -90,13 +90,17 @@ html, body {
    CELLS
 ================================ */
 .customer-table td {
-  padding: 5px 10px;
+  padding: 0;
   font-size: 13px;
   border-top: 1px solid #f0f0f0;
   color: #374151;
   vertical-align: middle;
   text-align: center;
+}
 
+/* checkbox hücresi padding korunur */
+.customer-table td.checkbox-col {
+  padding: 5px 10px;
 }
 
 /* ================================
@@ -105,6 +109,20 @@ html, body {
 
 .customer-row:hover {
   background: #f9fafb;
+}
+
+/* Her hücreyi tam kaplayan link — sağ tık / orta tık / Ctrl+tık destekler */
+.row-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 5px 10px;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
 /* ================================

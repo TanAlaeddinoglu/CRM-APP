@@ -72,7 +72,7 @@ export default function CustomerFilterModal({
         {/* 🔐 STATUS – SADECE ADMIN */}
         {!statusLocked && (
           <>
-            <label>Status</label>
+            <label>Durum</label>
             <select
               value={form.status}
               onChange={(e) =>
@@ -92,7 +92,7 @@ export default function CustomerFilterModal({
         {/* 🔐 SOURCE – SADECE ADMIN */}
         {isAdmin && (
           <>
-            <label>Source</label>
+            <label>Kaynak</label>
             <select
               value={form.source}
               onChange={(e) =>
@@ -147,7 +147,7 @@ export default function CustomerFilterModal({
 
         <div className="modal-actions">
           <button className="btn-danger" onClick={resetFilter}>
-            Reset
+            Sıfırla
           </button>
           <div>
             <button className="btn-secondary" onClick={onClose}>

@@ -21,15 +21,15 @@ export default function AddProductModal({ onClose, onSave }) {
     e.preventDefault();
 
     if (!form.name.trim()) {
-      toast.error("Product name is required.");
+      toast.error("Ürün adı zorunludur.");
       return;
     }
 
     try {
       await onSave(form);
-      toast.success("Product created!");
+      toast.success("Ürün oluşturuldu!");
     } catch (err) {
-      toast.error("Failed to create product.");
+      toast.error("Ürün oluşturulamadı.");
       console.error(err);
     }
   };
@@ -37,29 +37,29 @@ export default function AddProductModal({ onClose, onSave }) {
   return (
     <div className="modal-overlay">
       <div className="modal-box">
-        <h2 className="modal-title">Add Product</h2>
+        <h2 className="modal-title">Ürün Ekle</h2>
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             <div className="modal-field">
-              <label>Product Name</label>
+              <label>Ürün Adı</label>
               <input
                 className="modal-input"
                 name="name"
                 value={form.name}
                 onChange={handleChange}
-                placeholder="Product name"
+                placeholder="Ürün adı"
               />
             </div>
 
             <div className="modal-field">
-              <label>Description</label>
+              <label>Açıklama</label>
               <textarea
                 className="modal-textarea"
                 name="description"
                 value={form.description}
                 onChange={handleChange}
-                placeholder="Short description (optional)"
+                placeholder="Kısa açıklama (isteğe bağlı)"
                 rows={3}
               />
             </div>
@@ -71,10 +71,10 @@ export default function AddProductModal({ onClose, onSave }) {
               className="btn-secondary"
               onClick={onClose}
             >
-              Cancel
+              İptal
             </button>
             <button type="submit" className="btn-primary">
-              Add
+              Ekle
             </button>
           </div>
         </form>
