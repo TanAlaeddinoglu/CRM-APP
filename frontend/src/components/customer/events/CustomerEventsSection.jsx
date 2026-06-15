@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import {
   getAppointments,
   createAppointment,
@@ -6,6 +7,7 @@ import {
   deleteAppointment,
 } from "../../../services/appointment";
 import { toast } from "react-hot-toast";
+import { usePageTransition } from "../../../context/PageTransitionContext.jsx";
 
 import EventItem from "./EventItem";
 import EventModal from "./EventModal";
@@ -14,6 +16,7 @@ import "./eventStyles.css";
 const CustomerEventsSection = ({ customerId }) => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
+  usePageTransition(loading);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
@@ -81,8 +84,14 @@ const CustomerEventsSection = ({ customerId }) => {
     <div className="events-container">
       <div className="events-header">
         <h3 className="events-title">Randevular</h3>
-        <button className="events-add-btn" onClick={handleCreateClick}>
-          + Randevu Ekle
+        <button
+          className="btn-primary customer-action-icon-button"
+          onClick={handleCreateClick}
+          title="Randevu Ekle"
+          aria-label="Randevu Ekle"
+          type="button"
+        >
+          <Plus size={18} strokeWidth={2} />
         </button>
       </div>
 

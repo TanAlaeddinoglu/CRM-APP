@@ -32,6 +32,7 @@ import {
   SelectField,
   TwoColumnGrid,
 } from "../components/reports/ReportUI";
+import { usePageTransition } from "../context/PageTransitionContext.jsx";
 import { normalizeParams } from "../utils/reportUtils";
 import "../assets/css/reports.css";
 
@@ -82,6 +83,7 @@ export default function MyPerformancePage() {
   const [filters, setFilters] = useState(initialFilters);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(false);
+  usePageTransition(loading);
 
   const appointmentByDayData = useMemo(
     () =>
@@ -202,7 +204,7 @@ export default function MyPerformancePage() {
         <div className="reports-section-stack">
           <KpiGrid
             items={[
-              ["Aktif Data", report.summary?.active_data],
+              ["Aktif Müşteri", report.summary?.active_data],
               ["Toplam Randevu", report.summary?.total_appointments],
               [
                 "Günlük Ortalama Randevu",

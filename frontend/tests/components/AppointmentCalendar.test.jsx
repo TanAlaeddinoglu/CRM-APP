@@ -1,14 +1,19 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import AppointmentCalendar from "../../src/components/AppointmentCalendar.jsx";
+import { PageTransitionProvider } from "../../src/context/PageTransitionContext.jsx";
 import { getAppointments } from "../../src/services/appointment";
 
 const fullCalendarState = vi.hoisted(() => ({
   activeStart: new Date("2026-05-01T00:00:00"),
   activeEnd: new Date("2026-06-01T00:00:00"),
 }));
+
+const mockUseAuth = vi.hoisted(() => vi.fn());
+const mockNavigate = vi.hoisted(() => vi.fn());
 
 vi.mock("@fullcalendar/react", async () => {
   const React = await import("react");
@@ -54,12 +59,16 @@ vi.mock("@fullcalendar/interaction", () => ({ default: {} }));
 vi.mock("@fullcalendar/list", () => ({ default: {} }));
 vi.mock("@fullcalendar/core/locales/tr", () => ({ default: {} }));
 
-vi.mock("react-router-dom", () => ({
-  useNavigate: () => vi.fn(),
-}));
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
 
 vi.mock("../../src/context/AuthContext", () => ({
-  useAuth: () => ({ user: { email: "admin@example.com" } }),
+  useAuth: () => mockUseAuth(),
 }));
 
 vi.mock("../../src/services/appointment", () => ({
@@ -89,9 +98,22 @@ function pagedResponse({ count, results }) {
   });
 }
 
+function renderCalendar() {
+  return render(
+    <MemoryRouter>
+      <PageTransitionProvider>
+        <AppointmentCalendar />
+      </PageTransitionProvider>
+    </MemoryRouter>
+  );
+}
+
 describe("AppointmentCalendar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseAuth.mockReturnValue({
+      user: { email: "admin@example.com", role: "ADMIN" },
+    });
     fullCalendarState.activeStart = new Date("2026-05-01T00:00:00");
     fullCalendarState.activeEnd = new Date("2026-06-01T00:00:00");
   });
@@ -104,7 +126,7 @@ describe("AppointmentCalendar", () => {
       },
     });
 
-    render(<AppointmentCalendar />);
+    renderCalendar();
 
     await waitFor(() => {
       expect(getAppointments).toHaveBeenCalledWith({
@@ -168,7 +190,7 @@ describe("AppointmentCalendar", () => {
         })
       );
 
-    render(<AppointmentCalendar />);
+    renderCalendar();
 
     await waitFor(() => {
       expect(getAppointments).toHaveBeenCalledTimes(3);
@@ -202,7 +224,7 @@ describe("AppointmentCalendar", () => {
       },
     });
 
-    render(<AppointmentCalendar />);
+    renderCalendar();
 
     await waitFor(() => {
       expect(getAppointments).toHaveBeenCalledTimes(1);
@@ -218,6 +240,51 @@ describe("AppointmentCalendar", () => {
         page: 1,
         page_size: 100,
       });
+    });
+  });
+
+  it("hides the export button for non-admin users", async () => {
+    getAppointments.mockResolvedValue({
+      data: {
+        count: 0,
+        results: [],
+      },
+    });
+
+    mockUseAuth.mockReturnValue({
+      user: { email: "user@example.com", role: "USER" },
+    });
+
+    renderCalendar();
+
+    await waitFor(() => {
+      expect(getAppointments).toHaveBeenCalled();
+    });
+
+    expect(screen.queryByRole("button", { name: "Export" })).not.toBeInTheDocument();
+  });
+
+  it("navigates to reminder history with the reminder filter applied", async () => {
+    getAppointments.mockResolvedValue({
+      data: {
+        count: 0,
+        results: [],
+      },
+    });
+
+    renderCalendar();
+
+    await waitFor(() => {
+      expect(getAppointments).toHaveBeenCalled();
+    });
+
+    await userEvent.click(screen.getByRole("button", { name: "Hatırlatıcı" }));
+    await userEvent.click(
+      screen.getByRole("button", { name: "Tüm Hatırlatıcılar" })
+    );
+
+    expect(mockNavigate).toHaveBeenCalledWith("/appointments/history", {
+      state: { initialTypeFilter: "hatirlatma" },
     });
   });
 });

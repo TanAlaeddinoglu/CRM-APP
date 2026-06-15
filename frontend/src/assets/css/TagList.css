@@ -25,10 +25,10 @@
 
 .tag-catalog-title {
   margin: 0;
-  color: #0f172a;
-  font-size: 20px;
-  font-weight: 800;
-  letter-spacing: 0;
+  color: #111827;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .tag-catalog-count {
@@ -191,19 +191,21 @@
 }
 
 .tag-catalog-edit-btn {
-  min-height: 32px;
-  padding: 0 11px;
-  border-radius: 9px;
-  border: 1px solid #0f254f;
-  background: #0f254f;
-  color: #ffffff;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tag-catalog-edit-btn:hover {
-  background: #142f62;
+  color: #475569;
 }
 
 .tag-catalog-state {

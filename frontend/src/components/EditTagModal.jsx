@@ -4,13 +4,13 @@ import { toast } from "react-hot-toast";
 import "../assets/css/ProductList.css";
 
 const COLOR_CHOICES = [
-  { value: "#FF0000", label: "Red" },
-  { value: "#800000", label: "Maroon" },
-  { value: "#FFFF00", label: "Yellow" },
-  { value: "#008000", label: "Green" },
-  { value: "#0000FF", label: "Blue" },
-  { value: "#00FFFF", label: "Aqua" },
-  { value: "#800080", label: "Purple" }
+  { value: "#FF0000", label: "Kırmızı" },
+  { value: "#800000", label: "Bordo" },
+  { value: "#FFFF00", label: "Sarı" },
+  { value: "#008000", label: "Yeşil" },
+  { value: "#0000FF", label: "Mavi" },
+  { value: "#00FFFF", label: "Açık Mavi" },
+  { value: "#800080", label: "Mor" }
 ];
 
 export default function EditTagModal({ tag, onClose, onSave, onDelete }) {
@@ -48,26 +48,26 @@ export default function EditTagModal({ tag, onClose, onSave, onDelete }) {
   };
 
   const handleSubmit = async () => {
-    if (!form.tag_name.trim()) return toast.error("Tag name is required");
-    if (!form.slug.trim()) return toast.error("Slug is required");
-    if (!form.color) return toast.error("Color is required");
+    if (!form.tag_name.trim()) return toast.error("Etiket adı zorunludur.");
+    if (!form.slug.trim()) return toast.error("Slug zorunludur.");
+    if (!form.color) return toast.error("Renk seçmelisiniz.");
 
     try {
       await onSave(form);
-      toast.success("Tag updated successfully!");
+      toast.success("Etiket güncellendi!");
     } catch (err) {
       console.error(err);
-      toast.error("Failed to update tag");
+      toast.error("Etiket güncellenemedi.");
     }
   };
 
   return (
     <div className="modal-background">
       <div className="modal-box modal-box-sm">
-        <h2 className="modal-title">Edit Tag</h2>
+        <h2 className="modal-title">Etiket Düzenle</h2>
 
         <div className="modal-field">
-          <label>Tag Name</label>
+          <label>Etiket Adı</label>
           <input
             className="modal-input"
             value={form.tag_name}
@@ -85,7 +85,7 @@ export default function EditTagModal({ tag, onClose, onSave, onDelete }) {
         </div>
 
         <div className="modal-field">
-          <label>Color</label>
+          <label>Renk</label>
           <select
             className="modal-input"
             value={form.color}
@@ -100,7 +100,7 @@ export default function EditTagModal({ tag, onClose, onSave, onDelete }) {
         </div>
 
         <div className="modal-field">
-          <label>Description</label>
+          <label>Açıklama</label>
           <textarea
             className="modal-textarea"
             rows={3}
@@ -116,16 +116,16 @@ export default function EditTagModal({ tag, onClose, onSave, onDelete }) {
               type="button"
               onClick={() => setConfirmDelete(true)}
             >
-              Delete
+              Sil
             </button>
           )}
 
           <div className="modal-actions-right">
             <button className="modal-cancel" type="button" onClick={onClose}>
-              Cancel
+              İptal
             </button>
             <button className="modal-save" type="button" onClick={handleSubmit}>
-              Save
+              Kaydet
             </button>
           </div>
         </div>

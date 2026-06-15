@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.authenticate import CustomAuthentication
+from common.pagination import CustomPagination
 from exporter.api.serializers import (
     ExportDeleteSerializer,
     ExportHistoryQuerySerializer,
@@ -21,6 +22,14 @@ from exporter.tasks import queue_export_delivery
 class ExportView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     authentication_classes = [CustomAuthentication]
+    pagination_class = CustomPagination
+
+    @property
+    def paginator(self):
+        if not hasattr(self, "_paginator"):
+            self._paginator = self.pagination_class()
+            self._paginator.page_size = 20
+        return self._paginator
 
     def get(self, request, *args, **kwargs):
         serializer = ExportHistoryQuerySerializer(data=request.query_params)
@@ -43,8 +52,9 @@ class ExportView(APIView):
         if date_to:
             queryset = queryset.filter(created_at__date__lte=date_to)
 
-        response_payload = ExportHistorySerializer(queryset, many=True).data
-        return Response(response_payload, status=status.HTTP_200_OK)
+        page = self.paginator.paginate_queryset(queryset, request, view=self)
+        response_payload = ExportHistorySerializer(page, many=True).data
+        return self.paginator.get_paginated_response(response_payload)
 
     def post(self, request, *args, **kwargs):
         serializer = ExportRequestSerializer(data=request.data)

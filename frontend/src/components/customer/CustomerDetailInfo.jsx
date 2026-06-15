@@ -234,7 +234,7 @@ export default function CustomerDetailInfo({
             <div className="info-list">
                 {/* EMAIL */}
                 <Info
-                    label="Email"
+                    label="E-posta"
                     value={form.customer_email}
                     edit={isEditing && isAdmin}
                     onChange={(v) => handleChange("customer_email", v)}

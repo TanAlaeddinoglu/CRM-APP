@@ -67,7 +67,7 @@ export default function AddPaymentModal({
         if (cancelled) return;
 
         const appointment = res.data;
-        const label = `${appointment?.customer ?? "Unknown customer"} — ${appointment?.name ?? ""}`;
+        const label = `${appointment?.customer ?? "Bilinmeyen müşteri"} — ${appointment?.name ?? ""}`;
 
         setSelectedAppointmentLabel(label);
         setSelectedAppointmentProduct(appointment?.product || "");
@@ -189,7 +189,7 @@ export default function AddPaymentModal({
       appointment: appointment.id,
     }));
 
-    const label = `${appointment.customer ?? "Unknown customer"} — ${appointment.name ?? ""}`;
+    const label = `${appointment.customer ?? "Bilinmeyen müşteri"} — ${appointment.name ?? ""}`;
     setAppointmentSearch(label);
     setSelectedAppointmentLabel(label);
     setSelectedAppointmentProduct(appointment.product || "");
@@ -231,17 +231,17 @@ export default function AddPaymentModal({
     <div className="modal-backdrop">
       <div className="modal-card">
         <div className="modal-header">
-          <h2>Add Appointment Payment</h2>
+          <h2>Ödeme Başlat</h2>
           <button onClick={onClose}>✕</button>
         </div>
 
         <div className="modal-body">
-          <label>Appointment *</label>
+          <label>Müşteri Bilgisi *</label>
 
           {appointmentId ? (
             <input
               type="text"
-              value={selectedAppointmentLabel || `Appointment #${form.appointment}`}
+              value={selectedAppointmentLabel || ` #${form.appointment}`}
               disabled
             />
           ) : (
@@ -288,7 +288,7 @@ export default function AddPaymentModal({
                       onClick={() => handleAppointmentSelect(a)}
                     >
                       <div className="appointment-search-title">
-                        {a.customer ?? "Unknown customer"}
+                        {a.customer ?? "Bilinmeyen müşteri"}
                       </div>
                       <div className="appointment-search-subtitle">
                         {a.name ?? ""}
@@ -314,7 +314,7 @@ export default function AddPaymentModal({
             </>
           )}
 
-          <label>Total Amount</label>
+          <label>Toplam Tutar</label>
           <input
             type="number"
             name="total_amount"
@@ -325,11 +325,11 @@ export default function AddPaymentModal({
 
           {isExistingPayment && (
             <small className="info-text">
-              Total amount is locked for existing payments
+              Mevcut ödemelerde toplam tutar kilitlidir
             </small>
           )}
 
-          <label>Paid Amount *</label>
+          <label>Ödenen Tutar *</label>
           <input
             type="number"
             name="paid_amount"
@@ -337,7 +337,7 @@ export default function AddPaymentModal({
             onChange={handleChange}
           />
 
-          <label>Payment Date *</label>
+          <label>Ödeme Tarihi *</label>
           <input
             type="date"
             name="payment_date"
@@ -348,14 +348,14 @@ export default function AddPaymentModal({
 
         <div className="modal-footer">
           <button className="btn-secondary" onClick={onClose}>
-            Cancel
+            İptal
           </button>
           <button
             className="btn-primary"
             onClick={handleSubmit}
             disabled={loading}
           >
-            {loading ? "Saving..." : "Create Payment"}
+            {loading ? "Kaydediliyor..." : "Ödeme Oluştur"}
           </button>
         </div>
       </div>

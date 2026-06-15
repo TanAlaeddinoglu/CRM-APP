@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { getCustomerTagHistory } from "../../services/customer.js";
+import { usePageTransition } from "../../context/PageTransitionContext.jsx";
 import "../../assets/css/CustomerTagHistory.css";
 
 const CustomerTagHistory = ({ customerId, refreshKey }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  usePageTransition(loading);
 
   useEffect(() => {
     if (!customerId) return;
