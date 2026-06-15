@@ -16,7 +16,7 @@
   font-size: 22px;
   font-weight: 600;
   color: #111827;
-  margin: 0 0 18px 0;
+  margin: 0;
   padding-bottom: 8px;
   border-bottom: 1px solid #e5e7eb;
   letter-spacing: -0.02em;
@@ -389,6 +389,21 @@
 .reports-section-stack {
   display: grid;
   gap: 18px;
+}
+
+.reports-tab-content {
+  animation: reportsFadeSlide 240ms ease;
+}
+
+@keyframes reportsFadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .reports-section-stack--loose {
