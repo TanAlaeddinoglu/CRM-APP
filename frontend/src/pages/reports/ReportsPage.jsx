@@ -4,6 +4,7 @@ import {
   BarChart3,
   CalendarDays,
   CreditCard,
+  Tag,
   UserRound,
 } from "lucide-react";
 
@@ -21,6 +22,7 @@ import UserReportSection from "../../components/reports/UserReportSection";
 import AppointmentsReportSection from "../../components/reports/AppointmentsReportSection";
 import PaymentReportSection from "../../components/reports/PaymentReportSection";
 import ProductPriceDistributionReportSection from "../../components/reports/ProductPriceDistributionReportSection";
+import TagStatisticsReportSection from "../../components/reports/TagStatisticsReportSection";
 import { usePageTransition } from "../../context/PageTransitionContext.jsx";
 import {
   buildUserLabel,
@@ -249,66 +251,81 @@ export default function ReportsPage() {
           label="Ürün Fiyat Dağılımı"
           icon={BarChart3}
         />
+        <TabButton
+          active={activeTab === "tagStatistics"}
+          onClick={() => setActiveTab("tagStatistics")}
+          label="Etiket İstatistikleri"
+          icon={Tag}
+        />
       </div>
 
-      {activeTab === "user" && (
-        <UserReportSection
-          filters={userFilters}
-          setFilters={setUserFilters}
-          report={userReport}
-          loading={userLoading}
-          optionsLoading={optionsLoading}
-          userOptions={userOptions}
-          presetOptions={PRESET_OPTIONS}
-          onSubmit={submitUserReport}
-          onReset={resetUserReport}
-        />
-      )}
+      <div key={activeTab} className="reports-tab-content">
+        {activeTab === "user" && (
+          <UserReportSection
+            filters={userFilters}
+            setFilters={setUserFilters}
+            report={userReport}
+            loading={userLoading}
+            optionsLoading={optionsLoading}
+            userOptions={userOptions}
+            presetOptions={PRESET_OPTIONS}
+            onSubmit={submitUserReport}
+            onReset={resetUserReport}
+          />
+        )}
 
-      {activeTab === "appointments" && (
-        <AppointmentsReportSection
-          filters={appointmentFilters}
-          setFilters={setAppointmentFilters}
-          report={appointmentsReport}
-          loading={appointmentsLoading}
-          optionsLoading={optionsLoading}
-          userOptions={userOptions}
-          productOptions={productOptions}
-          presetOptions={PRESET_OPTIONS}
-          onSubmit={submitAppointmentsReport}
-          onReset={resetAppointmentsReport}
-        />
-      )}
+        {activeTab === "appointments" && (
+          <AppointmentsReportSection
+            filters={appointmentFilters}
+            setFilters={setAppointmentFilters}
+            report={appointmentsReport}
+            loading={appointmentsLoading}
+            optionsLoading={optionsLoading}
+            userOptions={userOptions}
+            productOptions={productOptions}
+            presetOptions={PRESET_OPTIONS}
+            onSubmit={submitAppointmentsReport}
+            onReset={resetAppointmentsReport}
+          />
+        )}
 
-      {activeTab === "payment" && (
-        <PaymentReportSection
-          filters={paymentFilters}
-          setFilters={setPaymentFilters}
-          report={paymentReport}
-          loading={paymentLoading}
-          optionsLoading={optionsLoading}
-          userOptions={userOptions}
-          productOptions={productOptions}
-          presetOptions={PRESET_OPTIONS}
-          onSubmit={submitPaymentReport}
-          onReset={resetPaymentReport}
-        />
-      )}
+        {activeTab === "payment" && (
+          <PaymentReportSection
+            filters={paymentFilters}
+            setFilters={setPaymentFilters}
+            report={paymentReport}
+            loading={paymentLoading}
+            optionsLoading={optionsLoading}
+            userOptions={userOptions}
+            productOptions={productOptions}
+            presetOptions={PRESET_OPTIONS}
+            onSubmit={submitPaymentReport}
+            onReset={resetPaymentReport}
+          />
+        )}
 
-      {activeTab === "priceDistribution" && (
-        <ProductPriceDistributionReportSection
-          filters={priceDistributionFilters}
-          setFilters={setPriceDistributionFilters}
-          report={priceDistributionReport}
-          loading={priceDistributionLoading}
-          optionsLoading={optionsLoading}
-          userOptions={userOptions}
-          productOptions={productOptions}
-          presetOptions={PRESET_OPTIONS}
-          onSubmit={submitPriceDistributionReport}
-          onReset={resetPriceDistributionReport}
-        />
-      )}
+        {activeTab === "priceDistribution" && (
+          <ProductPriceDistributionReportSection
+            filters={priceDistributionFilters}
+            setFilters={setPriceDistributionFilters}
+            report={priceDistributionReport}
+            loading={priceDistributionLoading}
+            optionsLoading={optionsLoading}
+            userOptions={userOptions}
+            productOptions={productOptions}
+            presetOptions={PRESET_OPTIONS}
+            onSubmit={submitPriceDistributionReport}
+            onReset={resetPriceDistributionReport}
+          />
+        )}
+
+        {activeTab === "tagStatistics" && (
+          <TagStatisticsReportSection
+            userOptions={userOptions}
+            optionsLoading={optionsLoading}
+          />
+        )}
+      </div>
     </div>
   );
 }
