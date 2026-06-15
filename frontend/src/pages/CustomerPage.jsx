@@ -23,6 +23,8 @@ import CustomerCreateModal from "../components/customer/CustomerCreateModal.jsx"
 import CustomerBulkUpdateModal from "../components/customer/CustomerBulkUpdateModal.jsx";
 
 import ExcelImportModal from "../components/customer/ExcelImportModal.jsx";
+import LoadingIndicator from "../components/common/LoadingIndicator.jsx";
+import { usePageTransition } from "../context/PageTransitionContext.jsx";
 
 // ----------------------------
 // Helpers
@@ -258,6 +260,7 @@ export default function CustomerPage({ archiveOnly = false }) {
   // Excel
   const fileInputRef = useRef(null);
   const [excelUploading, setExcelUploading] = useState(false);
+  usePageTransition(loading || excelUploading);
 
   // Modal state
   const [excelModalOpen, setExcelModalOpen] = useState(false);
@@ -697,7 +700,9 @@ export default function CustomerPage({ archiveOnly = false }) {
     }
   };
 
-  if (loading) return <div>Loading customers...</div>;
+  if (loading) {
+    return <LoadingIndicator inline label="Müşteriler yükleniyor" />;
+  }
 
   return (
     <div className="customer-page-wrapper">

@@ -52,7 +52,7 @@ export default function CustomerBulkUpdateModal({
     }
 
     if (status === "active" && (!tagId || !assignedId)) {
-      toast.error("Active için kullanıcı ve tag seçiniz");
+      toast.error("Aktif için kullanıcı ve etiket seçiniz.");
       return;
     }
 
@@ -95,7 +95,7 @@ export default function CustomerBulkUpdateModal({
             value={status}
             onChange={(e) => handleStatusChange(e.target.value)}
           >
-            <option value="">Status değiştir</option>
+            <option value="">Durum değiştir</option>
             {ADMIN_STATUS_CHOICES.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -103,7 +103,7 @@ export default function CustomerBulkUpdateModal({
             ))}
           </select>
           {status === "active" && (
-            <div className="full input-hint">Active için kullanıcı ve tag seçiniz</div>
+            <div className="full input-hint">Aktif için kullanıcı ve etiket seçiniz</div>
           )}
 
           <select
@@ -112,8 +112,8 @@ export default function CustomerBulkUpdateModal({
             disabled={statusClears}
             onChange={(e) => setTagId(e.target.value)}
           >
-            <option value="">Tag değiştir</option>
-            <option value="__clear__">Tag temizle</option>
+            <option value="">Etiket değiştir</option>
+            <option value="__clear__">Etiketi temizle</option>
             {tags.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.tag_name}
@@ -127,8 +127,8 @@ export default function CustomerBulkUpdateModal({
             disabled={statusClears}
             onChange={(e) => setAssignedId(e.target.value)}
           >
-            <option value="">Assigned değiştir</option>
-            <option value="__clear__">Assigned temizle</option>
+            <option value="">Atamayı değiştir</option>
+            <option value="__clear__">Atamayı temizle</option>
             {users.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.username}

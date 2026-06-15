@@ -2,7 +2,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 18px 0 22px;
+  margin: 0 0 5px;
 }
 
 /* Sol ve sağ gruplar */
@@ -24,6 +24,38 @@
   align-items: center;
   gap: 6px;
   white-space: nowrap;
+}
+
+.customer-action-icon-button {
+  position: relative;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 14px;
+}
+
+.customer-action-icon-button svg {
+  flex-shrink: 0;
+}
+
+.customer-action-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #0f254f;
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .customer-actions button:disabled {
@@ -72,5 +104,9 @@
   .customer-actions-left,
   .customer-actions-right {
     justify-content: space-between;
+  }
+
+  .customer-actions-right {
+    flex-wrap: wrap;
   }
 }

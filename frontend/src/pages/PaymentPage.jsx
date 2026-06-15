@@ -8,7 +8,10 @@ import {
 import PaymentCustomerRow from "../components/payment/PaymentCustomerRow.jsx";
 import AddPaymentModal from "../components/payment/AddPaymentModal.jsx";
 import ExportActionButton from "../components/export/ExportActionButton.jsx";
+import LoadingIndicator from "../components/common/LoadingIndicator.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { usePageTransition } from "../context/PageTransitionContext.jsx";
+import { Plus, Upload } from "lucide-react";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 const MIN_SEARCH_LENGTH = 3;
@@ -38,6 +41,7 @@ export default function PaymentPage() {
   const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
 
   const [search, setSearch] = useState(urlSearch);
+  usePageTransition(loading);
 
   const updateSearchParams = useCallback(({
     page = currentPage,
@@ -218,8 +222,10 @@ export default function PaymentPage() {
           <ExportActionButton
             model="payments"
             initialRecipientEmail={user?.email || ""}
-            buttonClassName="btn-secondary"
-            buttonLabel="Export"
+            buttonClassName="btn-secondary customer-action-icon-button"
+            buttonLabel={<Upload size={18} strokeWidth={2} />}
+            buttonTitle="Dışa Aktar"
+            ariaLabel="Dışa Aktar"
           />
           <button
             className="btn-secondary"
@@ -229,10 +235,13 @@ export default function PaymentPage() {
           </button>
 
           <button
-            className="btn-primary"
+            className="btn-primary customer-action-icon-button"
             onClick={() => setOpenModal(true)}
+            title="Ödeme Ekle"
+            aria-label="Payment Ekle"
+            type="button"
           >
-            + Appointment Payment
+            <Plus size={18} strokeWidth={2} />
           </button>
         </div>
       </div>
@@ -281,7 +290,7 @@ export default function PaymentPage() {
       <div className="payment-list-container">
         {loading && (
           <div className="payment-empty">
-            Loading...
+            <LoadingIndicator inline label="Ödemeler yükleniyor" />
           </div>
         )}
 

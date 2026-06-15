@@ -19,15 +19,21 @@ import {
 import AppointmentDetailModal from "./AppointmentDetailModal";
 import EventModal from "../components/customer/events/EventModal.jsx";
 import ExportActionButton from "./export/ExportActionButton.jsx";
+import LoadingIndicator from "./common/LoadingIndicator.jsx";
+import { isAdmin } from "../utils/roles.js";
+import { usePageTransition } from "../context/PageTransitionContext.jsx";
+import { Upload } from "lucide-react";
 
 import "../assets/css/AppointmentCalendar.css";
 
 export default function AppointmentCalendar() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const canExportEvents = isAdmin(user);
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
+  usePageTransition(loading);
   const [showReminders, setShowReminders] = useState(false);
 
   const [selectedAppointment, setSelectedAppointment] = useState(null);
@@ -220,12 +226,16 @@ export default function AppointmentCalendar() {
         </h1>
 
         <div style={{ display: "flex", gap: "8px" }}>
-          <ExportActionButton
-            model="events"
-            initialRecipientEmail={user?.email || ""}
-            buttonClassName="btn-secondary"
-            buttonLabel="Export"
-          />
+          {canExportEvents && (
+            <ExportActionButton
+              model="events"
+              initialRecipientEmail={user?.email || ""}
+              buttonClassName="btn-secondary customer-action-icon-button"
+              buttonLabel={<Upload size={18} strokeWidth={2} />}
+              buttonTitle="Dışa Aktar"
+              ariaLabel="Dışa Aktar"
+            />
+          )}
           <button
             className={showReminders ? "btn-primary" : "btn-secondary"}
             onClick={() => setShowReminders((prev) => !prev)}
@@ -234,9 +244,15 @@ export default function AppointmentCalendar() {
           </button>
           <button
             className="btn-secondary"
-            onClick={() => navigate("/appointments/history")}
+            onClick={() =>
+              navigate("/appointments/history", {
+                state: showReminders
+                  ? { initialTypeFilter: "hatirlatma" }
+                  : undefined,
+              })
+            }
           >
-            📋 Tüm Randevular
+            {showReminders ? "Tüm Hatırlatıcılar" : "Tüm Randevular"}
           </button>
         </div>
       </div>
@@ -244,8 +260,8 @@ export default function AppointmentCalendar() {
       {/* ================= CALENDAR ================= */}
       <div className="appointment-calendar-wrapper">
         {loading && (
-          <div style={{ padding: "8px 4px", color: "#6b7280" }}>
-            Takvim güncelleniyor…
+          <div style={{ padding: "4px 0" }}>
+            <LoadingIndicator label="Takvim güncelleniyor" />
           </div>
         )}
         <FullCalendar

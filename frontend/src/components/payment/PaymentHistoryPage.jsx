@@ -6,7 +6,10 @@ import {
 } from "../../services/events";
 import PaymentHistoryTable from "./PaymentHistoryTable";
 import ExportActionButton from "../export/ExportActionButton.jsx";
+import LoadingIndicator from "../common/LoadingIndicator.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { usePageTransition } from "../../context/PageTransitionContext.jsx";
+import { Upload } from "lucide-react";
 import "./payment.css";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
@@ -18,6 +21,7 @@ export default function PaymentHistoryPage() {
   const [payments, setPayments] = useState([]);
   const [appointments, setAppointments] = useState({});
   const [loading, setLoading] = useState(true);
+  usePageTransition(loading);
   const [totalCount, setTotalCount] = useState(0);
 
   const [customerFilter, setCustomerFilter] = useState("");
@@ -184,8 +188,10 @@ export default function PaymentHistoryPage() {
           <ExportActionButton
             model="payments"
             initialRecipientEmail={user?.email || ""}
-            buttonClassName="btn-secondary"
-            buttonLabel="Export"
+            buttonClassName="btn-secondary customer-action-icon-button"
+            buttonLabel={<Upload size={18} strokeWidth={2} />}
+            buttonTitle="Dışa Aktar"
+            ariaLabel="Dışa Aktar"
           />
           <button
             className="btn-secondary"
@@ -220,7 +226,7 @@ export default function PaymentHistoryPage() {
   />
 </div>
       {loading ? (
-        <div>Loading...</div>
+        <LoadingIndicator inline label="Ödeme geçmişi yükleniyor" />
       ) : (
         <>
           <PaymentHistoryTable rows={rows} />

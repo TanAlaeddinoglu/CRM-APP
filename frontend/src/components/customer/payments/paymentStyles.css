@@ -1,0 +1,138 @@
+/* =========================================
+   PAYMENT ROW
+========================================= */
+
+.payment-row {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #fafafa;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.payment-row:hover {
+  background: #f3f4f6;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+
+.payment-row-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  overflow: hidden;
+}
+
+/* Etiket + değer grubu */
+.payment-row-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.payment-row-label {
+  color: #9ca3af;
+  font-weight: 500;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Typography */
+.payment-row-date {
+  font-weight: 500;
+  color: #111827;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.payment-row-name {
+  color: #111827;
+  font-weight: 500;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+
+.payment-row-status {
+  font-weight: 500;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.payment-row-amount {
+  color: #374151;
+  font-weight: 500;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.payment-row-meta-value {
+  color: #374151;
+  font-weight: 500;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+/* Status renkleri */
+.payment-status-kismi      { color: #92400e; }
+.payment-status-tamamlandi { color: #166534; }
+.payment-status-iptal      { color: #991b1b; }
+
+/* Ekleme butonu */
+.payment-add-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.payment-row:hover .payment-add-btn {
+  color: var(--color-primary);
+}
+
+.payment-add-btn:hover {
+  background: #e0e7ff;
+  color: var(--color-primary);
+}
+
+/* Silme butonu */
+.payment-delete-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s;
+}
+
+.payment-row:hover .payment-delete-btn {
+  color: #ef4444;
+}
+
+.payment-delete-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}

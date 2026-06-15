@@ -1,15 +1,18 @@
 import React, {useEffect, useRef, useState} from "react";
+import { SendHorizonal, RefreshCw } from "lucide-react";
 import {
     getCustomerNotes,
     createCustomerNote,
     updateCustomerNote,
 } from "../../services/customer.js";
+import { usePageTransition } from "../../context/PageTransitionContext.jsx";
 import "../../assets/css/CustomerNotes.css";
 
 
 const CustomerNotes = ({customerId}) => {
     const [notes, setNotes] = useState([]);
     const [loading, setLoading] = useState(true);
+    usePageTransition(loading);
 
     const [inputValue, setInputValue] = useState("");
     const [submitting, setSubmitting] = useState(false);
@@ -197,14 +200,9 @@ const CustomerNotes = ({customerId}) => {
 
     return (
         <div className="notes-container">
-            <div className="note-status-buttons">
-                {/*<button*/}
-                {/*    className={`status-btn ${status === "reached" ? "active" : ""}`}*/}
-                {/*    onClick={() => handleReached()}*/}
-                {/*>*/}
-                {/*    Ulaşıldı*/}
-                {/*</button>*/}
-
+            {/* Başlık + Ulaşılamadı aynı hizada */}
+            <div className="notes-header">
+                <h3 className="notes-title">Notlar</h3>
                 <button
                     className={`status-btn ${status === "unreachable" ? "active" : ""}`}
                     onClick={() => handleUnreachable()}
@@ -212,8 +210,6 @@ const CustomerNotes = ({customerId}) => {
                     Ulaşılamadı
                 </button>
             </div>
-
-            <h3 className="notes-title">Notlar</h3>
 
             <div className="notes-list" ref={listRef}>
                 {loading ? (
@@ -248,17 +244,14 @@ const CustomerNotes = ({customerId}) => {
             </div>
 
             <form className="note-input-area" onSubmit={handleSubmit}>
-        <textarea
-            disabled={textAreaDisabled}
-            className="note-textarea"
-            placeholder={
-                editingNoteId ? "Notu güncelle..." : "Yeni not yaz..."
-            }
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            rows={3}
-        />
-
+                <textarea
+                    disabled={textAreaDisabled}
+                    className="note-textarea"
+                    placeholder={editingNoteId ? "Notu güncelle..." : "Yeni not yaz..."}
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    rows={2}
+                />
                 <div className="note-input-actions">
                     {editingNoteId && (
                         <button
@@ -270,19 +263,18 @@ const CustomerNotes = ({customerId}) => {
                             İptal
                         </button>
                     )}
-
                     <button
                         type="submit"
                         className="note-send-btn"
                         disabled={submitting || !inputValue.trim()}
+                        title={editingNoteId ? "Güncelle" : "Gönder"}
                     >
-                        {editingNoteId
-                            ? submitting
-                                ? "Güncelleniyor..."
-                                : "Güncelle"
-                            : submitting
-                                ? "Gönderiliyor..."
-                                : "Gönder"}
+                        {submitting
+                            ? <RefreshCw size={16} className="note-send-spinning" />
+                            : editingNoteId
+                                ? <RefreshCw size={16} />
+                                : <SendHorizonal size={16} />
+                        }
                     </button>
                 </div>
             </form>

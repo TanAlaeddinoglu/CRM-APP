@@ -3,13 +3,13 @@ import { toast } from "react-hot-toast";
 import "../assets/css/ProductList.css";
 
 const COLOR_CHOICES = [
-  { value: "#FF0000", label: "Red" },
-  { value: "#800000", label: "Maroon" },
-  { value: "#FFFF00", label: "Yellow" },
-  { value: "#008000", label: "Green" },
-  { value: "#0000FF", label: "Blue" },
-  { value: "#00FFFF", label: "Aqua" },
-  { value: "#800080", label: "Purple" }
+  { value: "#FF0000", label: "Kırmızı" },
+  { value: "#800000", label: "Bordo" },
+  { value: "#FFFF00", label: "Sarı" },
+  { value: "#008000", label: "Yeşil" },
+  { value: "#0000FF", label: "Mavi" },
+  { value: "#00FFFF", label: "Açık Mavi" },
+  { value: "#800080", label: "Mor" }
 ];
 
 export default function AddTagModal({ onClose, onSave }) {
@@ -35,10 +35,10 @@ export default function AddTagModal({ onClose, onSave }) {
   };
 
 const handleSubmit = async () => {
-  if (!form.tag_name.trim()) return toast.error("Tag name is required");
-  if (!form.slug.trim()) return toast.error("Slug is required");
-  if (!form.color) return toast.error("You must choose a color");
-  if (!form.description) return toast.error("You must write description");
+  if (!form.tag_name.trim()) return toast.error("Etiket adı zorunludur.");
+  if (!form.slug.trim()) return toast.error("Slug zorunludur.");
+  if (!form.color) return toast.error("Renk seçmelisiniz.");
+  if (!form.description) return toast.error("Açıklama zorunludur.");
 
 
   try {
@@ -51,10 +51,10 @@ const handleSubmit = async () => {
   return (
     <div className="modal-background">
       <div className="modal-box modal-box-sm">
-        <h2 className="modal-title">Add New Tag</h2>
+        <h2 className="modal-title">Yeni Etiket Ekle</h2>
 
         <div className="modal-field">
-          <label>Tag Name</label>
+          <label>Etiket Adı</label>
           <input
               className="modal-input"
               value={form.tag_name}
@@ -72,13 +72,13 @@ const handleSubmit = async () => {
         </div>
 
         <div className="modal-field">
-          <label>Color</label>
+          <label>Renk</label>
           <select
               className="modal-input"
               value={form.color}
               onChange={(e) => handleChange("color", e.target.value)}
           >
-            <option value="">Choose color</option>
+            <option value="">Renk seçin</option>
             {COLOR_CHOICES.map(c => (
               <option key={c.value} value={c.value}>{c.label}</option>
             ))}
@@ -86,7 +86,7 @@ const handleSubmit = async () => {
         </div>
 
         <div className="modal-field">
-          <label>Description</label>
+          <label>Açıklama</label>
           <textarea
               className="modal-textarea"
               value={form.description}
@@ -95,8 +95,8 @@ const handleSubmit = async () => {
         </div>
 
         <div className="modal-actions">
-          <button className="modal-cancel" onClick={onClose}>Cancel</button>
-          <button className="modal-save" onClick={handleSubmit}>Save</button>
+          <button className="modal-cancel" onClick={onClose}>İptal</button>
+          <button className="modal-save" onClick={handleSubmit}>Kaydet</button>
         </div>
       </div>
     </div>

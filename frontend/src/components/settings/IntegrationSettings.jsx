@@ -57,7 +57,6 @@ export default function IntegrationSettings() {
         <article className="settings-card">
           <div className="settings-card-header">
             <h2>Bağlı Servisler</h2>
-            <span>1 aktif</span>
           </div>
           <div className="settings-field-list">
             <div className="settings-field-row">

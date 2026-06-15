@@ -6,16 +6,16 @@ import "./payment.css";
 export default function PaymentDetailsTable({ payments, onRefresh }) {
   const handleDelete = async (paymentId) => {
     const ok = window.confirm(
-      "This payment will be deleted. Are you sure?"
+      "Bu ödeme silinecek. Emin misiniz?"
     );
     if (!ok) return;
 
     try {
       await deleteAppointmentPayment(paymentId);
-      toast.success("Payment deleted successfully");
+      toast.success("Ödeme silindi.");
       onRefresh?.();
     } catch {
-      toast.error("Failed to delete payment");
+      toast.error("Ödeme silinemedi.");
     }
   };
 
@@ -23,10 +23,10 @@ export default function PaymentDetailsTable({ payments, onRefresh }) {
     <table className="payment-table">
       <thead>
         <tr>
-          <th>Date</th>
-          <th>Paid</th>
-          <th>Remaining</th>
-          <th>Status</th>
+          <th>Tarih</th>
+          <th>Ödenen</th>
+          <th>Kalan</th>
+          <th>Durum</th>
           <th></th>
         </tr>
       </thead>
@@ -47,7 +47,7 @@ export default function PaymentDetailsTable({ payments, onRefresh }) {
               <button
                 className="delete-payment-btn"
                 onClick={() => handleDelete(p.id)}
-                title="Delete payment"
+                title="Ödemeyi sil"
               >
                 <Trash size={16} />
               </button>

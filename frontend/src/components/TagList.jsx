@@ -5,8 +5,10 @@ import "../assets/css/TagList.css";
 import { useAuth } from "../context/AuthContext";
 import { getTags, createTag, updateTag, deleteTag } from "../services/tag";
 import { toast } from "react-hot-toast";
-import { Plus, Search } from "lucide-react";
+import { Pencil, Plus, Search, Upload } from "lucide-react";
 import ExportActionButton from "./export/ExportActionButton.jsx";
+import LoadingIndicator from "./common/LoadingIndicator.jsx";
+import { usePageTransition } from "../context/PageTransitionContext.jsx";
 
 import AddTagModal from "./AddTagModal";
 import EditTagModal from "./EditTagModal";
@@ -17,6 +19,7 @@ export default function TagList() {
 
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
+  usePageTransition(loading);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [showOnlyWithDescription, setShowOnlyWithDescription] = useState(false);
@@ -189,19 +192,23 @@ export default function TagList() {
             <ExportActionButton
               model="tag"
               initialRecipientEmail={user?.email || ""}
-              buttonClassName="btn-secondary"
-              buttonLabel="Dışa Aktar"
+              buttonClassName="btn-secondary customer-action-icon-button"
+              buttonLabel={<Upload size={18} strokeWidth={2} />}
+              buttonTitle="Dışa Aktar"
+              ariaLabel="Dışa Aktar"
             />
           </div>
         )}
 
         {isAdmin && (
           <button
-            className="btn-primary tag-catalog-add-btn"
+            className="btn-primary customer-action-icon-button"
             onClick={() => setAddModalOpen(true)}
+            title="Etiket Ekle"
+            aria-label="Etiket Ekle"
+            type="button"
           >
-            <Plus size={16} />
-            Etiket Ekle
+            <Plus size={18} strokeWidth={2} />
           </button>
         )}
       </div>
@@ -210,7 +217,7 @@ export default function TagList() {
       <div className="tag-catalog-table-wrap">
         {loading ? (
           <div className="tag-catalog-state">
-            Etiketler yükleniyor...
+            <LoadingIndicator inline label="Etiketler yükleniyor" />
           </div>
         ) : filteredTags.length === 0 ? (
           <div className="tag-catalog-state">
@@ -246,7 +253,7 @@ export default function TagList() {
                     : ""}
                 </th>
 
-                {isAdmin && <th>Düzenle</th>}
+                {isAdmin && <th></th>}
               </tr>
             </thead>
 
@@ -266,8 +273,11 @@ export default function TagList() {
                       <button
                         className="tag-catalog-edit-btn"
                         onClick={() => setEditTag(t)}
+                        title="Düzenle"
+                        aria-label="Düzenle"
+                        type="button"
                       >
-                        Düzenle
+                        <Pencil size={16} strokeWidth={2} />
                       </button>
                     </td>
                   )}

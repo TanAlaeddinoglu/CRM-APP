@@ -1,17 +1,30 @@
 /* ========== PAGE LAYOUT ========== */
 .customer-detail-container {
   display: flex;
+  flex-direction: column;
   gap: 24px;
-  padding: 24px;
+}
+
+.customer-columns {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+  height: calc(100vh - 112px); /* 100vh - header(64) - page-content padding(24+24) */
+  overflow: hidden;
 }
 
 /* ========== PANELS ========== */
 .customer-left {
   width: 34%;
+  display: flex;
+  flex-direction: column;
 }
 
 .customer-right {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .customer-left-card,
@@ -23,6 +36,48 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  flex: 1;
+  min-height: 0;
+}
+
+.customer-left-card {
+  overflow-y: auto;
+}
+
+.customer-right-card {
+  overflow: hidden;
+}
+
+/* ========== RIGHT CARD INTERNALS ========== */
+.customer-right-card > .events-container {
+  flex: 0 0 260px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.customer-right-card > .events-container .events-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.customer-right-card > .separator {
+  flex-shrink: 0;
+}
+
+.customer-right-card > .notes-container {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  overflow: hidden;
+}
+
+/* ========== PAYMENT SECTION CARD ========== */
+.customer-payment-card {
+  border: 1px solid var(--color-border);
+  border-radius: 14px;
+  box-shadow: none;
 }
 
 /* ========== SEPARATOR ========== */
@@ -221,7 +276,7 @@
 }
 
 @media (max-width: 900px) {
-  .customer-detail-container {
+  .customer-columns {
     flex-direction: column;
   }
 

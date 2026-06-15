@@ -221,7 +221,7 @@ export default function ExcelImportModal({
               </div>
 
               <div className="excel-bulk-field">
-                <span>Toplu Assigned:</span>
+                <span>Toplu Atama:</span>
                 <select value={bulkAssignedId} onChange={(e) => setBulkAssignedId(e.target.value)}>
                   <option value="">— seç —</option>
                   {users.map((u) => (
@@ -263,10 +263,10 @@ export default function ExcelImportModal({
                 <th>Telefon</th>
                 <th>Şehir</th>
                 <th>Tag</th>
-                <th>Assigned</th>
-                <th>Products</th>
-                <th>Updated</th>
-                <th>Source</th>
+                <th>Atanan</th>
+                <th>Hastalıklar</th>
+                <th>Güncelleme</th>
+                <th>Kaynak</th>
                 <th>Sil</th>
               </tr>
             </thead>
@@ -387,7 +387,7 @@ export default function ExcelImportModal({
 
                       {isDbDup && r._dbTag ? (
                         <div style={{ fontSize: 12, marginTop: 6, opacity: 0.75 }}>
-                          DB Tag: {r._dbTag}
+                          Mevcut Etiket: {r._dbTag}
                         </div>
                       ) : null}
                     </td>
@@ -415,7 +415,7 @@ export default function ExcelImportModal({
 
                       {isDbDup && r._dbAssigned ? (
                         <div style={{ fontSize: 12, marginTop: 6, opacity: 0.75 }}>
-                          DB User: {r._dbAssigned}
+                          Mevcut Kullanıcı: {r._dbAssigned}
                         </div>
                       ) : null}
                     </td>

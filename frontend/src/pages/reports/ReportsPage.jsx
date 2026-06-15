@@ -4,6 +4,7 @@ import {
   BarChart3,
   CalendarDays,
   CreditCard,
+  Tag,
   UserRound,
 } from "lucide-react";
 
@@ -21,6 +22,8 @@ import UserReportSection from "../../components/reports/UserReportSection";
 import AppointmentsReportSection from "../../components/reports/AppointmentsReportSection";
 import PaymentReportSection from "../../components/reports/PaymentReportSection";
 import ProductPriceDistributionReportSection from "../../components/reports/ProductPriceDistributionReportSection";
+import TagStatisticsReportSection from "../../components/reports/TagStatisticsReportSection";
+import { usePageTransition } from "../../context/PageTransitionContext.jsx";
 import {
   buildUserLabel,
   extractList,
@@ -92,6 +95,13 @@ export default function ReportsPage() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [priceDistributionLoading, setPriceDistributionLoading] =
     useState(false);
+  usePageTransition(
+    optionsLoading ||
+      userLoading ||
+      appointmentsLoading ||
+      paymentLoading ||
+      priceDistributionLoading
+  );
 
   useEffect(() => {
     setOptionsLoading(true);
@@ -149,7 +159,7 @@ export default function ReportsPage() {
 
   const submitUserReport = async () => {
     if (!userFilters.user_id) {
-      toast.error("User seçimi zorunlu.");
+      toast.error("Kullanıcı seçimi zorunludur.");
       return;
     }
 
@@ -212,7 +222,7 @@ export default function ReportsPage() {
     <div className="reports-page">
       <div className="reports-page__header">
         <h1 className="h1 reports-page__title">
-          Reports
+          Raporlar
         </h1>
       </div>
 
@@ -220,87 +230,102 @@ export default function ReportsPage() {
         <TabButton
           active={activeTab === "user"}
           onClick={() => setActiveTab("user")}
-          label="User Report"
+          label="Kullanıcı Raporu"
           icon={UserRound}
         />
         <TabButton
           active={activeTab === "appointments"}
           onClick={() => setActiveTab("appointments")}
-          label="Appointments Report"
+          label="Randevu Raporu"
           icon={CalendarDays}
         />
         <TabButton
           active={activeTab === "payment"}
           onClick={() => setActiveTab("payment")}
-          label="Payment Report"
+          label="Ödeme Raporu"
           icon={CreditCard}
         />
         <TabButton
           active={activeTab === "priceDistribution"}
           onClick={() => setActiveTab("priceDistribution")}
-          label="Product Price Distribution"
+          label="Ürün Fiyat Dağılımı"
           icon={BarChart3}
+        />
+        <TabButton
+          active={activeTab === "tagStatistics"}
+          onClick={() => setActiveTab("tagStatistics")}
+          label="Etiket İstatistikleri"
+          icon={Tag}
         />
       </div>
 
-      {activeTab === "user" && (
-        <UserReportSection
-          filters={userFilters}
-          setFilters={setUserFilters}
-          report={userReport}
-          loading={userLoading}
-          optionsLoading={optionsLoading}
-          userOptions={userOptions}
-          presetOptions={PRESET_OPTIONS}
-          onSubmit={submitUserReport}
-          onReset={resetUserReport}
-        />
-      )}
+      <div key={activeTab} className="reports-tab-content">
+        {activeTab === "user" && (
+          <UserReportSection
+            filters={userFilters}
+            setFilters={setUserFilters}
+            report={userReport}
+            loading={userLoading}
+            optionsLoading={optionsLoading}
+            userOptions={userOptions}
+            presetOptions={PRESET_OPTIONS}
+            onSubmit={submitUserReport}
+            onReset={resetUserReport}
+          />
+        )}
 
-      {activeTab === "appointments" && (
-        <AppointmentsReportSection
-          filters={appointmentFilters}
-          setFilters={setAppointmentFilters}
-          report={appointmentsReport}
-          loading={appointmentsLoading}
-          optionsLoading={optionsLoading}
-          userOptions={userOptions}
-          productOptions={productOptions}
-          presetOptions={PRESET_OPTIONS}
-          onSubmit={submitAppointmentsReport}
-          onReset={resetAppointmentsReport}
-        />
-      )}
+        {activeTab === "appointments" && (
+          <AppointmentsReportSection
+            filters={appointmentFilters}
+            setFilters={setAppointmentFilters}
+            report={appointmentsReport}
+            loading={appointmentsLoading}
+            optionsLoading={optionsLoading}
+            userOptions={userOptions}
+            productOptions={productOptions}
+            presetOptions={PRESET_OPTIONS}
+            onSubmit={submitAppointmentsReport}
+            onReset={resetAppointmentsReport}
+          />
+        )}
 
-      {activeTab === "payment" && (
-        <PaymentReportSection
-          filters={paymentFilters}
-          setFilters={setPaymentFilters}
-          report={paymentReport}
-          loading={paymentLoading}
-          optionsLoading={optionsLoading}
-          userOptions={userOptions}
-          productOptions={productOptions}
-          presetOptions={PRESET_OPTIONS}
-          onSubmit={submitPaymentReport}
-          onReset={resetPaymentReport}
-        />
-      )}
+        {activeTab === "payment" && (
+          <PaymentReportSection
+            filters={paymentFilters}
+            setFilters={setPaymentFilters}
+            report={paymentReport}
+            loading={paymentLoading}
+            optionsLoading={optionsLoading}
+            userOptions={userOptions}
+            productOptions={productOptions}
+            presetOptions={PRESET_OPTIONS}
+            onSubmit={submitPaymentReport}
+            onReset={resetPaymentReport}
+          />
+        )}
 
-      {activeTab === "priceDistribution" && (
-        <ProductPriceDistributionReportSection
-          filters={priceDistributionFilters}
-          setFilters={setPriceDistributionFilters}
-          report={priceDistributionReport}
-          loading={priceDistributionLoading}
-          optionsLoading={optionsLoading}
-          userOptions={userOptions}
-          productOptions={productOptions}
-          presetOptions={PRESET_OPTIONS}
-          onSubmit={submitPriceDistributionReport}
-          onReset={resetPriceDistributionReport}
-        />
-      )}
+        {activeTab === "priceDistribution" && (
+          <ProductPriceDistributionReportSection
+            filters={priceDistributionFilters}
+            setFilters={setPriceDistributionFilters}
+            report={priceDistributionReport}
+            loading={priceDistributionLoading}
+            optionsLoading={optionsLoading}
+            userOptions={userOptions}
+            productOptions={productOptions}
+            presetOptions={PRESET_OPTIONS}
+            onSubmit={submitPriceDistributionReport}
+            onReset={resetPriceDistributionReport}
+          />
+        )}
+
+        {activeTab === "tagStatistics" && (
+          <TagStatisticsReportSection
+            userOptions={userOptions}
+            optionsLoading={optionsLoading}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -77,4 +77,57 @@ describe("AuthContext", () => {
     );
     expect(screen.getByText("user:none")).toBeInTheDocument();
   });
+
+  it("falls back to anonymous state when profile request returns network error", async () => {
+    window.history.pushState({}, "", "/dashboard");
+    mockMe.mockRejectedValue(new Error("Network Error"))
+
+    render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>
+    )
+
+    await waitFor(() => expect(screen.getByText("loading:false")).toBeInTheDocument())
+    // Bug: 401 and network error both set user to null — not distinguished
+    expect(screen.getByText("user:none")).toBeInTheDocument()
+  })
+
+  it("exposes setUser so child components can update the authenticated user", async () => {
+    window.history.pushState({}, "", "/customers")
+    mockMe.mockResolvedValue({ data: { username: "admin" } })
+
+    function SetUserProbe() {
+      const { user, setUser } = useAuth()
+      return (
+        <div>
+          <span>user:{user?.username || "none"}</span>
+          <button onClick={() => setUser({ username: "updated" })}>Update</button>
+        </div>
+      )
+    }
+
+    const { getByText } = render(
+      <AuthProvider>
+        <SetUserProbe />
+      </AuthProvider>
+    )
+
+    await waitFor(() => expect(getByText("user:admin")).toBeInTheDocument())
+    getByText("Update").click()
+    await waitFor(() => expect(getByText("user:updated")).toBeInTheDocument())
+  })
+
+  it("starts with loading:true before any fetch completes", () => {
+    window.history.pushState({}, "", "/customers")
+    mockMe.mockReturnValue(new Promise(() => {})) // never resolves
+
+    render(
+      <AuthProvider>
+        <AuthProbe />
+      </AuthProvider>
+    )
+
+    expect(screen.getByText("loading:true")).toBeInTheDocument()
+  })
 });
