@@ -64,4 +64,84 @@ describe('PaymentReportSection', () => {
     render(<PaymentReportSection {...defaultProps} report={report} />)
     expect(screen.getByText('Raporu Getir')).toBeInTheDocument()
   })
+
+  describe('empty state', () => {
+    it('shows empty state when report is null', () => {
+      render(<PaymentReportSection {...defaultProps} report={null} />)
+      expect(screen.getByText('Henüz veri yok')).toBeInTheDocument()
+    })
+  })
+
+  describe('with report data', () => {
+    const fullReport = {
+      summary: {
+        total_sales_appointments: 15,
+        total_payment_rows: 30,
+        completed_appointments: 10,
+        partial_appointments: 3,
+        not_started_appointments: 2,
+        total_paid_amount: 6000,
+        total_remaining_amount: 4000,
+      },
+      tables: {
+        product_breakdown: [
+          {
+            product_name: 'Diyabet Paketi',
+            total_sales_appointments: 15,
+            completed_appointments: 10,
+            partial_appointments: 3,
+            not_started_appointments: 2,
+            total_paid_amount: 6000,
+            total_remaining_amount: 4000,
+          },
+        ],
+      },
+      charts: { revenue_by_product: [], payment_trend: [] },
+    }
+
+    it('renders KPI label "Randevulu Satışlar"', () => {
+      render(<PaymentReportSection {...defaultProps} report={fullReport} />)
+      // appears in KPI grid and table header column
+      expect(screen.getAllByText('Randevulu Satışlar').length).toBeGreaterThan(0)
+    })
+
+    it('renders KPI label "Tamamlanan Satışlar"', () => {
+      render(<PaymentReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getAllByText('Tamamlanan Satışlar').length).toBeGreaterThan(0)
+    })
+
+    it('renders total sales appointments value', () => {
+      render(<PaymentReportSection {...defaultProps} report={fullReport} />)
+      // 15 appears in KPI card and table cell
+      expect(screen.getAllByText('15').length).toBeGreaterThan(0)
+    })
+
+    it('renders product breakdown table row', () => {
+      render(<PaymentReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Diyabet Paketi')).toBeInTheDocument()
+    })
+
+    it('renders collection rate KPI label', () => {
+      render(<PaymentReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Tahsilat Oranı %')).toBeInTheDocument()
+    })
+
+    it('computes collection rate as totalPaid / (totalPaid + totalRemaining)', () => {
+      // 6000 / 10000 = 60%
+      render(<PaymentReportSection {...defaultProps} report={fullReport} />)
+      // KpiGrid calls formatMetric which calls formatPercent → contains %60 or 60%
+      const cells = screen.getAllByText((content) => content.includes('60'))
+      expect(cells.length).toBeGreaterThan(0)
+    })
+
+    it('shows empty revenue chart text when data is empty', () => {
+      render(<PaymentReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Gelir verisi bulunamadı.')).toBeInTheDocument()
+    })
+
+    it('shows empty payment trend text when data is empty', () => {
+      render(<PaymentReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Ödeme trend verisi bulunamadı.')).toBeInTheDocument()
+    })
+  })
 })

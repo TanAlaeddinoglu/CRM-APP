@@ -139,7 +139,7 @@ export function SimpleTable({ columns, rows, emptyText }) {
         <thead>
           <tr>
             {columns.map((column) => (
-              <th key={column.key}>
+              <th key={column.key} className={`reports-table-header--${colAlign(column)}`}>
                 {column.label}
               </th>
             ))}
@@ -149,7 +149,7 @@ export function SimpleTable({ columns, rows, emptyText }) {
           {rows.map((row, index) => (
             <tr key={row.id || row.day || `${index}-${row[columns[0].key]}`}>
               {columns.map((column) => (
-                <td key={column.key}>
+                <td key={column.key} className={`reports-table-cell--${colAlign(column)}`}>
                   {renderCellValue(column.key, row[column.key])}
                 </td>
               ))}
@@ -166,7 +166,6 @@ export function SortableReportTable({
   rows,
   emptyText,
   defaultSort = null,
-  resetLabel = "Sıralamayı sıfırla",
   showReset = true,
   minWidth,
 }) {
@@ -236,7 +235,6 @@ export function SortableReportTable({
             title="Varsayılan sıralamaya dön"
           >
             <RotateCcw size={14} />
-            {resetLabel}
           </button>
         </div>
       )}
@@ -254,12 +252,10 @@ export function SortableReportTable({
           <thead>
             <tr>
               {columns.map((column) => (
-                <th
-                  key={column.key}
-                  className={column.align === "right" ? "reports-table-header--right" : ""}
-                >
+                <th key={column.key} className={`reports-table-header--${colAlign(column)}`}>
                   <SortableHeaderButton
                     column={column}
+                    align={colAlign(column)}
                     active={sortConfig.key === column.key}
                     direction={sortConfig.direction}
                     onClick={() => handleSort(column.key)}
@@ -276,10 +272,8 @@ export function SortableReportTable({
                     key={column.key}
                     className={[
                       column.truncate ? "reports-table-cell--truncate" : "",
-                      column.align === "right" ? "reports-table-cell--right" : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
+                      `reports-table-cell--${colAlign(column)}`,
+                    ].filter(Boolean).join(" ")}
                   >
                     {column.render
                       ? column.render(row, index)
@@ -324,13 +318,17 @@ export function ChartAxisTick({
   );
 }
 
-function SortableHeaderButton({ column, active, direction, onClick }) {
+function SortableHeaderButton({ column, align, active, direction, onClick }) {
   const arrow = active ? (direction === "asc" ? "↑" : "↓") : "↕";
 
   return (
     <button
       type="button"
-      className={`reports-sort-header ${active ? "reports-sort-header--active" : ""}`}
+      className={[
+        "reports-sort-header",
+        active ? "reports-sort-header--active" : "",
+        align === "right" ? "reports-sort-header--right" : "",
+      ].filter(Boolean).join(" ")}
       onClick={onClick}
       title={`${column.label} sıralama`}
     >
@@ -340,6 +338,11 @@ function SortableHeaderButton({ column, active, direction, onClick }) {
       </span>
     </button>
   );
+}
+
+function colAlign(column) {
+  if (column.align) return column.align;
+  return column.type === "number" ? "right" : "left";
 }
 
 function splitAxisLabel(value, maxLineLength, maxLines) {

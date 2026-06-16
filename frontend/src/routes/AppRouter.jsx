@@ -124,7 +124,7 @@ export default function AppRouter() {
       <Route
         path="/appointments/history"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute staffOnly>
             <MainLayout>
               <Suspense fallback={<PageLoader />}>
                 <AppointmentHistoryPage />
