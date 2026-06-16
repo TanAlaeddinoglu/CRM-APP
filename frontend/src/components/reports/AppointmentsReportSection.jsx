@@ -36,53 +36,24 @@ import {
 const CHART_HEIGHT = 280;
 
 const SEMANTIC_STYLES = {
-  success: {
-    fill: "#16a34a",
-    bg: "#dcfce7",
-    border: "#86efac",
-    text: "#166534",
-  },
-  warning: {
-    fill: "#f59e0b",
-    bg: "#fef3c7",
-    border: "#fcd34d",
-    text: "#92400e",
-  },
-  danger: {
-    fill: "#dc2626",
-    bg: "#fee2e2",
-    border: "#fca5a5",
-    text: "#991b1b",
-  },
-  info: {
-    fill: "#0f254f",
-    bg: "#eef5ff",
-    border: "#c7d7f3",
-    text: "#0f254f",
-  },
+  success: { fill: "#16a34a" },
+  warning: { fill: "#f59e0b" },
+  danger:  { fill: "#dc2626" },
+  info:    { fill: "#0f254f" },
 };
 
 const STATUS_META = {
-  Beklemede: {
-    semantic: "warning",
-    fill: SEMANTIC_STYLES.warning.fill,
-  },
-  Satış: {
-    semantic: "success",
-    fill: SEMANTIC_STYLES.success.fill,
-  },
-  Olumsuz: {
-    semantic: "danger",
-    fill: SEMANTIC_STYLES.danger.fill,
-  },
+  Beklemede: { semantic: "warning", fill: "#f59e0b" },
+  Satış:     { semantic: "success", fill: "#16a34a" },
+  Olumsuz:   { semantic: "danger",  fill: "#dc2626" },
 };
 
 const USER_PERFORMANCE_COLUMNS = [
-  { key: "username", label: "User", type: "text", width: "24%", truncate: true },
-  { key: "total", label: "Toplam Randevu", type: "number", width: "19%" },
-  { key: "pending", label: "Beklemede", type: "number", width: "16%" },
-  { key: "sales", label: "Satış", type: "number", width: "12%" },
-  { key: "negative", label: "Olumsuz", type: "number", width: "13%" },
+  { key: "username",   label: "User",            type: "text",   width: "24%", truncate: true },
+  { key: "total",      label: "Toplam Randevu",  type: "number", width: "19%" },
+  { key: "pending",    label: "Beklemede",        type: "number", width: "16%" },
+  { key: "sales",      label: "Satış",            type: "number", width: "12%" },
+  { key: "negative",   label: "Olumsuz",          type: "number", width: "13%" },
   {
     key: "sales_rate",
     label: "Satış %",
@@ -93,17 +64,11 @@ const USER_PERFORMANCE_COLUMNS = [
 ];
 
 const PRODUCT_BREAKDOWN_COLUMNS = [
-  {
-    key: "product_name",
-    label: "Ürün",
-    type: "text",
-    width: "24%",
-    truncate: true,
-  },
-  { key: "total", label: "Toplam", type: "number", width: "14%" },
-  { key: "pending", label: "Beklemede", type: "number", width: "16%" },
-  { key: "sales", label: "Satış", type: "number", width: "12%" },
-  { key: "negative", label: "Olumsuz", type: "number", width: "14%" },
+  { key: "product_name", label: "Ürün",      type: "text",   width: "24%", truncate: true },
+  { key: "total",        label: "Toplam",    type: "number", width: "14%" },
+  { key: "pending",      label: "Beklemede", type: "number", width: "16%" },
+  { key: "sales",        label: "Satış",     type: "number", width: "12%" },
+  { key: "negative",     label: "Olumsuz",   type: "number", width: "14%" },
   {
     key: "sales_rate",
     label: "Satış %",
@@ -153,18 +118,9 @@ export default function AppointmentsReportSection({
 
   const statusDistributionData = report
     ? [
-        {
-          name: "Beklemede",
-          value: Number(report.summary?.pending_appointments || 0),
-        },
-        {
-          name: "Satış",
-          value: Number(report.summary?.sales_appointments || 0),
-        },
-        {
-          name: "Olumsuz",
-          value: Number(report.summary?.negative_appointments || 0),
-        },
+        { name: "Beklemede", value: Number(report.summary?.pending_appointments  || 0) },
+        { name: "Satış",     value: Number(report.summary?.sales_appointments    || 0) },
+        { name: "Olumsuz",   value: Number(report.summary?.negative_appointments || 0) },
       ]
         .filter((item) => item.value > 0)
         .map((item) => ({
@@ -190,7 +146,6 @@ export default function AppointmentsReportSection({
             options={userOptions}
             placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"}
           />
-
           <SelectField
             label="Product"
             name="product_id"
@@ -199,7 +154,6 @@ export default function AppointmentsReportSection({
             options={productOptions}
             placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"}
           />
-
           <SelectField
             label="Önerilen Aralık"
             name="preset"
@@ -208,7 +162,6 @@ export default function AppointmentsReportSection({
             options={presetOptions}
             placeholder="Aralık seç"
           />
-
           <InputField
             label="Başlangıç Tarihi"
             name="date_from"
@@ -216,7 +169,6 @@ export default function AppointmentsReportSection({
             value={filters.date_from}
             onChange={handleFilterChange}
           />
-
           <InputField
             label="Bitiş Tarihi"
             name="date_to"
@@ -238,48 +190,37 @@ export default function AppointmentsReportSection({
           <KpiGrid
             items={[
               ["Toplam Randevu", report.summary?.total_appointments],
-              ["Beklemede", report.summary?.pending_appointments],
-              ["Satış", report.summary?.sales_appointments],
-              ["Olumsuz", report.summary?.negative_appointments],
-              ["Satış %", report.summary?.sales_rate],
-              ["Beklemede %", report.summary?.pending_rate],
-              ["Olumsuz %", report.summary?.negative_rate],
+              ["Beklemede",      report.summary?.pending_appointments],
+              ["Satış",          report.summary?.sales_appointments],
+              ["Olumsuz",        report.summary?.negative_appointments],
+              ["Satış %",        report.summary?.sales_rate],
+              ["Beklemede %",    report.summary?.pending_rate],
+              ["Olumsuz %",      report.summary?.negative_rate],
             ]}
           />
 
           <TwoColumnGrid>
-            <ReportCard
-              title={<SectionTitle icon={Package} title="Ürün Kırılımı" />}
-            >
-              <AppointmentsBreakdownTable
+            <ReportCard title={<SectionTitle icon={Package} title="Ürün Kırılımı" />}>
+              <SortableReportTable
+                columns={PRODUCT_BREAKDOWN_COLUMNS}
                 rows={report.tables?.product_breakdown || []}
                 emptyText="Ürün kırılımı bulunamadı."
+                defaultSort={{ key: "total", direction: "desc" }}
               />
-
-              <div
-                style={{
-                  marginTop: "14px",
-                  paddingTop: "12px",
-                  borderTop: "1px solid #eef2f7",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  fontSize: "14px",
-                }}
-              >
-                <span style={{ color: "#64748b" }}>Toplam Randevu</span>
-                <strong style={{ color: "#0f172a" }}>
+              <div className="reports-table-footer">
+                <span className="reports-table-footer__label">Toplam Randevu</span>
+                <strong className="reports-table-footer__value">
                   {report.summary?.total_appointments ?? "-"}
                 </strong>
               </div>
             </ReportCard>
 
-            <ReportCard
-              title={<SectionTitle icon={UserRound} title="Kullanıcı Performansı" />}
-            >
-              <UserPerformanceTable
+            <ReportCard title={<SectionTitle icon={UserRound} title="Kullanıcı Performansı" />}>
+              <SortableReportTable
+                columns={USER_PERFORMANCE_COLUMNS}
                 rows={report.tables?.user_performance || []}
                 emptyText="Kullanıcı performans verisi bulunamadı."
+                defaultSort={{ key: "total", direction: "desc" }}
               />
             </ReportCard>
           </TwoColumnGrid>
@@ -287,19 +228,15 @@ export default function AppointmentsReportSection({
           <TwoColumnGrid>
             <ReportCard title={<SectionTitle icon={Activity} title="Trend" />}>
               {trendData.length === 0 ? (
-                <EmptyTableLike text="Trend verisi bulunamadı." />
+                <EmptyChart text="Trend verisi bulunamadı." />
               ) : (
-                <div style={{ width: "100%", height: `${CHART_HEIGHT}px` }}>
+                <div className="reports-chart-wrap" style={{ height: `${CHART_HEIGHT}px` }}>
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart
                       data={trendData}
                       margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
                     >
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        vertical={false}
-                        stroke="#e5e7eb"
-                      />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                       <XAxis
                         dataKey="short_day"
                         tick={{ fontSize: 12, fill: "#64748b" }}
@@ -314,13 +251,7 @@ export default function AppointmentsReportSection({
                         width={40}
                       />
                       <Tooltip content={<TrendTooltip />} />
-                      <Bar
-                        dataKey="total"
-                        name="Toplam Randevu"
-                        fill="#cbd5e1"
-                        radius={[8, 8, 0, 0]}
-                        barSize={34}
-                      />
+                      <Bar dataKey="total" name="Toplam Randevu" fill="#cbd5e1" radius={[8, 8, 0, 0]} barSize={34} />
                       <Line
                         type="monotone"
                         dataKey="sales"
@@ -336,37 +267,19 @@ export default function AppointmentsReportSection({
               )}
 
               {trendData.length > 0 && (
-                <div
-                  style={{
-                    marginTop: "10px",
-                    display: "flex",
-                    gap: "16px",
-                    flexWrap: "wrap",
-                    fontSize: "13px",
-                    color: "#64748b",
-                  }}
-                >
+                <div className="reports-legend">
                   <LegendChip color="#cbd5e1" label="Toplam Randevu" />
                   <LegendChip color={SEMANTIC_STYLES.info.fill} label="Satış" />
                 </div>
               )}
             </ReportCard>
 
-            <ReportCard
-              title={<SectionTitle icon={PieChart} title="Status Dağılımı" />}
-            >
+            <ReportCard title={<SectionTitle icon={PieChart} title="Status Dağılımı" />}>
               {statusDistributionData.length === 0 ? (
-                <EmptyTableLike text="Status dağılımı verisi bulunamadı." />
+                <EmptyChart text="Status dağılımı verisi bulunamadı." />
               ) : (
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(220px, 1fr) minmax(180px, 220px)",
-                    gap: "12px",
-                    alignItems: "center",
-                  }}
-                >
-                  <div style={{ width: "100%", height: `${CHART_HEIGHT}px` }}>
+                <div className="reports-pie-grid">
+                  <div className="reports-chart-wrap" style={{ height: `${CHART_HEIGHT}px` }}>
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
                         <Pie
@@ -392,7 +305,7 @@ export default function AppointmentsReportSection({
                     </ResponsiveContainer>
                   </div>
 
-                  <div style={{ display: "grid", gap: "10px" }}>
+                  <div className="reports-pie-legend">
                     {statusDistributionData.map((item) => (
                       <StatusSummaryCard key={item.name} item={item} />
                     ))}
@@ -409,87 +322,21 @@ export default function AppointmentsReportSection({
 
 function SectionTitle({ icon: Icon, title }) {
   return (
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "10px",
-      }}
-    >
-      <div
-        style={{
-          width: "32px",
-          height: "32px",
-          borderRadius: "10px",
-          background: SEMANTIC_STYLES.info.bg,
-          border: `1px solid ${SEMANTIC_STYLES.info.border}`,
-          display: "grid",
-          placeItems: "center",
-          color: SEMANTIC_STYLES.info.text,
-          flexShrink: 0,
-        }}
-      >
+    <div className="reports-section-title">
+      <div className="reports-section-title__icon">
         {React.createElement(Icon, { size: 16 })}
       </div>
-
-      <span
-        style={{
-          fontSize: "16px",
-          fontWeight: 800,
-          color: "#0f172a",
-          lineHeight: 1.2,
-        }}
-      >
-        {title}
-      </span>
+      <span className="reports-section-title__text">{title}</span>
     </div>
-  );
-}
-
-function AppointmentsBreakdownTable({ rows, emptyText }) {
-  return (
-    <SortableReportTable
-      columns={PRODUCT_BREAKDOWN_COLUMNS}
-      rows={rows}
-      emptyText={emptyText}
-      defaultSort={{ key: "total", direction: "desc" }}
-    />
-  );
-}
-
-function UserPerformanceTable({ rows, emptyText }) {
-  return (
-    <SortableReportTable
-      columns={USER_PERFORMANCE_COLUMNS}
-      rows={rows}
-      emptyText={emptyText}
-      defaultSort={{ key: "total", direction: "desc" }}
-    />
   );
 }
 
 function RateBadge({ value }) {
   const numeric = Number(value ?? 0);
   const semantic = getRateSemantic(numeric);
-  const style = SEMANTIC_STYLES[semantic];
 
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minWidth: "78px",
-        height: "32px",
-        padding: "0 12px",
-        borderRadius: "999px",
-        fontSize: "13px",
-        fontWeight: 700,
-        background: style.bg,
-        color: style.text,
-        border: `1px solid ${style.border}`,
-      }}
-    >
+    <span className={`reports-rate-badge reports-semantic--${semantic}`}>
       {formatPercent(numeric)}
     </span>
   );
@@ -498,40 +345,78 @@ function RateBadge({ value }) {
 function RateProgress({ value }) {
   const numeric = Number(value ?? 0);
   const semantic = getRateSemantic(numeric);
-  const style = SEMANTIC_STYLES[semantic];
+  const fill = { success: "#16a34a", warning: "#f59e0b", danger: "#dc2626" }[semantic];
 
   return (
-    <div style={{ minWidth: "120px" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          fontSize: "12px",
-          marginBottom: "6px",
-          color: "#475569",
-        }}
-      >
-        <strong>{formatPercent(numeric)}</strong>
-      </div>
-
-      <div
-        style={{
-          width: "100%",
-          height: "8px",
-          background: "#e5e7eb",
-          borderRadius: "999px",
-          overflow: "hidden",
-        }}
-      >
+    <div className="reports-rate-progress">
+      <div className="reports-rate-progress__track">
         <div
-          style={{
-            width: `${Math.max(0, Math.min(100, numeric))}%`,
-            height: "100%",
-            background: style.fill,
-            borderRadius: "999px",
-          }}
+          className="reports-rate-progress__bar"
+          style={{ width: `${Math.max(0, Math.min(100, numeric))}%`, background: fill }}
         />
       </div>
+      <span className="reports-rate-progress__value" style={{ color: fill }}>
+        {formatPercent(numeric)}
+      </span>
+    </div>
+  );
+}
+
+function StatusSummaryCard({ item }) {
+  const semantic = STATUS_META[item.name]?.semantic || "info";
+  const fill = STATUS_META[item.name]?.fill || SEMANTIC_STYLES.info.fill;
+
+  return (
+    <div className={`reports-status-card reports-semantic--${semantic}`}>
+      <div className="reports-status-card__header">
+        <span className="reports-status-dot" style={{ background: fill }} />
+        {item.name}
+      </div>
+      <div className="reports-status-card__meta">
+        Oran: <strong>{formatPercent(item.percent)}</strong>
+      </div>
+      <div className="reports-status-card__meta reports-status-card__meta--plain">
+        Adet: <strong>{item.value}</strong>
+      </div>
+    </div>
+  );
+}
+
+function LegendChip({ color, label }) {
+  return (
+    <div className="reports-legend-chip">
+      <span className="reports-legend-chip__dot" style={{ background: color }} />
+      <span>{label}</span>
+    </div>
+  );
+}
+
+function EmptyChart({ text }) {
+  return <div className="reports-empty-chart">{text}</div>;
+}
+
+function TrendTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null;
+  const row = payload[0]?.payload;
+
+  return (
+    <div className="reports-tooltip-card">
+      <div className="reports-tooltip-label">{row?.day || label}</div>
+      <div className="reports-tooltip-text">Toplam Randevu: <strong>{row?.total ?? "-"}</strong></div>
+      <div className="reports-tooltip-text">Satış: <strong>{row?.sales ?? "-"}</strong></div>
+    </div>
+  );
+}
+
+function StatusTooltip({ active, payload }) {
+  if (!active || !payload || !payload.length) return null;
+  const row = payload[0]?.payload;
+
+  return (
+    <div className="reports-tooltip-card">
+      <div className="reports-tooltip-label">{row?.name}</div>
+      <div className="reports-tooltip-text">Oran: <strong>{formatPercent(row?.percent || 0)}</strong></div>
+      <div className="reports-tooltip-text">Adet: <strong>{row?.value ?? "-"}</strong></div>
     </div>
   );
 }
@@ -542,156 +427,9 @@ function getRateSemantic(value) {
   return "danger";
 }
 
-function TrendTooltip({ active, payload, label }) {
-  if (!active || !payload || !payload.length) return null;
-
-  const row = payload[0]?.payload;
-
-  return (
-    <TooltipCard>
-      <div style={tooltipLabelStyle}>{row?.day || label}</div>
-      <div style={tooltipTextStyle}>
-        Toplam Randevu: <strong>{row?.total ?? "-"}</strong>
-      </div>
-      <div style={tooltipTextStyle}>
-        Satış: <strong>{row?.sales ?? "-"}</strong>
-      </div>
-    </TooltipCard>
-  );
-}
-
-function StatusTooltip({ active, payload }) {
-  if (!active || !payload || !payload.length) return null;
-
-  const row = payload[0]?.payload;
-
-  return (
-    <TooltipCard>
-      <div style={tooltipLabelStyle}>{row?.name}</div>
-      <div style={tooltipTextStyle}>
-        Oran: <strong>{formatPercent(row?.percent || 0)}</strong>
-      </div>
-      <div style={tooltipTextStyle}>
-        Adet: <strong>{row?.value ?? "-"}</strong>
-      </div>
-    </TooltipCard>
-  );
-}
-
-function StatusSummaryCard({ item }) {
-  const semantic = STATUS_META[item.name]?.semantic || "info";
-  const style = SEMANTIC_STYLES[semantic];
-
-  return (
-    <div
-      style={{
-        border: `1px solid ${style.border}`,
-        borderRadius: "14px",
-        padding: "12px 14px",
-        background: style.bg,
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          marginBottom: "6px",
-          fontSize: "14px",
-          fontWeight: 700,
-          color: "#0f172a",
-        }}
-      >
-        <span
-          style={{
-            width: "10px",
-            height: "10px",
-            borderRadius: "999px",
-            background: STATUS_META[item.name]?.fill || SEMANTIC_STYLES.info.fill,
-            display: "inline-block",
-          }}
-        />
-        {item.name}
-      </div>
-
-      <div style={{ fontSize: "13px", color: "#64748b", marginBottom: "4px" }}>
-        Oran: <strong style={{ color: style.text }}>{formatPercent(item.percent)}</strong>
-      </div>
-
-      <div style={{ fontSize: "13px", color: "#64748b" }}>
-        Adet: <strong style={{ color: "#0f172a" }}>{item.value}</strong>
-      </div>
-    </div>
-  );
-}
-
-function LegendChip({ color, label }) {
-  return (
-    <div style={{ display: "inline-flex", alignItems: "center", gap: "8px" }}>
-      <span
-        style={{
-          width: "12px",
-          height: "12px",
-          borderRadius: "4px",
-          background: color,
-          display: "inline-block",
-        }}
-      />
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function TooltipCard({ children }) {
-  return (
-    <div
-      style={{
-        background: "#ffffff",
-        border: "1px solid #e2e8f0",
-        borderRadius: "12px",
-        padding: "10px 12px",
-        boxShadow: "0 8px 20px rgba(15, 23, 42, 0.08)",
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function EmptyTableLike({ text }) {
-  return (
-    <div
-      style={{
-        background: "#f8fafc",
-        border: "1px dashed #d6e0ea",
-        borderRadius: "14px",
-        padding: "18px",
-        color: "#64748b",
-        fontSize: "14px",
-      }}
-    >
-      {text}
-    </div>
-  );
-}
-
 function formatShortDate(dateString) {
   if (!dateString) return "-";
-
   const parts = dateString.split("-");
   if (parts.length !== 3) return dateString;
-
   return `${parts[2]}.${parts[1]}`;
 }
-
-const tooltipLabelStyle = {
-  fontSize: "13px",
-  color: "#64748b",
-  marginBottom: "6px",
-};
-
-const tooltipTextStyle = {
-  fontSize: "13px",
-  color: "#0f172a",
-  marginBottom: "4px",
-};
