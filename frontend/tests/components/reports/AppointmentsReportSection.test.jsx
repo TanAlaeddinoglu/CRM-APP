@@ -78,8 +78,98 @@ describe('AppointmentsReportSection', () => {
       await userEvent.selectOptions(presetSelect, '7')
       expect(setFilters).toHaveBeenCalled()
     } else {
-      // Fallback: setFilters should be callable
       expect(setFilters).toBeDefined()
     }
+  })
+
+  describe('empty state', () => {
+    it('shows empty state when report is null', () => {
+      render(<AppointmentsReportSection {...defaultProps} report={null} />)
+      expect(screen.getByText('Henüz veri yok')).toBeInTheDocument()
+    })
+  })
+
+  describe('with report data', () => {
+    const fullReport = {
+      summary: {
+        total_appointments: 40,
+        pending_appointments: 10,
+        sales_appointments: 25,
+        negative_appointments: 5,
+        sales_rate: 62.5,
+        pending_rate: 25,
+        negative_rate: 12.5,
+      },
+      tables: {
+        product_breakdown: [
+          { product_name: 'Diabetes Paketi', total: 20, pending: 5, sales: 13, negative: 2, sales_rate: 65 },
+        ],
+        user_performance: [
+          { username: 'aveli', total: 40, pending: 10, sales: 25, negative: 5, sales_rate: 62.5 },
+        ],
+      },
+      charts: { trend: [] },
+    }
+
+    it('renders KPI label "Toplam Randevu"', () => {
+      render(<AppointmentsReportSection {...defaultProps} report={fullReport} />)
+      // appears in both KPI grid and table header
+      expect(screen.getAllByText('Toplam Randevu').length).toBeGreaterThan(0)
+    })
+
+    it('renders total appointments value', () => {
+      render(<AppointmentsReportSection {...defaultProps} report={fullReport} />)
+      // value appears in KPI card, table footer, and table cell
+      expect(screen.getAllByText('40').length).toBeGreaterThan(0)
+    })
+
+    it('renders KPI label "Beklemede"', () => {
+      render(<AppointmentsReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getAllByText('Beklemede').length).toBeGreaterThan(0)
+    })
+
+    it('renders product breakdown table with product name', () => {
+      render(<AppointmentsReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Diabetes Paketi')).toBeInTheDocument()
+    })
+
+    it('renders user performance table with username', () => {
+      render(<AppointmentsReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('aveli')).toBeInTheDocument()
+    })
+
+    it('shows empty trend chart text when trend data is empty', () => {
+      render(<AppointmentsReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Trend verisi bulunamadı.')).toBeInTheDocument()
+    })
+  })
+
+  describe('filter mutual exclusion', () => {
+    it('clears dates when preset is selected', async () => {
+      const setFilters = vi.fn()
+      const filtersWithDates = { preset: '', date_from: '2024-01-01', date_to: '2024-01-31', user_id: '', product_id: '' }
+      const { container } = render(
+        <AppointmentsReportSection {...defaultProps} filters={filtersWithDates} setFilters={setFilters} />
+      )
+      const presetSelect = container.querySelector('[name="preset"]')
+      await userEvent.selectOptions(presetSelect, '7')
+      const call = setFilters.mock.calls[0][0]
+      const next = typeof call === 'function' ? call(filtersWithDates) : call
+      expect(next.date_from).toBe('')
+      expect(next.date_to).toBe('')
+    })
+
+    it('clears preset when date_to is set', async () => {
+      const setFilters = vi.fn()
+      const filtersWithPreset = { preset: '7', date_from: '', date_to: '', user_id: '', product_id: '' }
+      const { container } = render(
+        <AppointmentsReportSection {...defaultProps} filters={filtersWithPreset} setFilters={setFilters} />
+      )
+      const dateInput = container.querySelector('[name="date_to"]')
+      await userEvent.type(dateInput, '2024-03-31')
+      const call = setFilters.mock.calls[0][0]
+      const next = typeof call === 'function' ? call(filtersWithPreset) : call
+      expect(next.preset).toBe('')
+    })
   })
 })

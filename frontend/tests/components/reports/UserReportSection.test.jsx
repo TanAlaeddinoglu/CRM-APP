@@ -8,7 +8,8 @@ vi.mock('recharts', () => ({
   BarChart: ({ children }) => <div>{children}</div>,
   Bar: () => null, CartesianGrid: () => null, XAxis: () => null, YAxis: () => null,
   Tooltip: () => null, Legend: () => null, PieChart: ({ children }) => <div>{children}</div>,
-  Pie: () => null, Cell: () => null, LineChart: ({ children }) => <div>{children}</div>, Line: () => null,
+  Pie: () => null, Cell: () => null, LineChart: ({ children }) => <div>{children}</div>,
+  Line: () => null, LabelList: () => null,
 }))
 
 beforeEach(() => vi.clearAllMocks())
@@ -86,5 +87,126 @@ describe('UserReportSection', () => {
       await userEvent.selectOptions(presetSelect, '7')
       expect(setFilters).toHaveBeenCalled()
     }
+  })
+
+  describe('empty state', () => {
+    it('shows empty state when report is null', () => {
+      render(<UserReportSection {...defaultProps} report={null} />)
+      expect(screen.getByText('Henüz veri yok')).toBeInTheDocument()
+    })
+  })
+
+  describe('with report data', () => {
+    const fullReport = {
+      target_user: { username: 'aveli', first_name: 'Ali', last_name: 'Veli', role: 'Agent' },
+      summary: {
+        active_customer_count: 12,
+        tag_change_count: 4,
+        total_appointments: 20,
+        pending_appointments: 3,
+        sales_appointments: 14,
+        negative_appointments: 3,
+        conversion_rate: 70,
+        rejection_rate: 15,
+        top_product: { product_name: 'Diabetes Paketi', count: 8 },
+      },
+      charts: {
+        tag_distribution: [],
+        sales_by_product: [],
+        appointments_trend: [],
+      },
+    }
+
+    it('renders KPI label "Aktif Müşteri"', () => {
+      render(<UserReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Aktif Müşteri')).toBeInTheDocument()
+    })
+
+    it('renders KPI label "Toplam Randevu"', () => {
+      render(<UserReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Toplam Randevu')).toBeInTheDocument()
+    })
+
+    it('renders KPI label "Etiket Değişimi"', () => {
+      render(<UserReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Etiket Değişimi')).toBeInTheDocument()
+    })
+
+    it('renders active customer count value', () => {
+      render(<UserReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('12')).toBeInTheDocument()
+    })
+
+    it('renders selected user full name in user card', () => {
+      const { container } = render(<UserReportSection {...defaultProps} report={fullReport} />)
+      const nameEl = container.querySelector('.reports-user-name')
+      expect(nameEl?.textContent).toBe('Ali Veli')
+    })
+
+    it('renders selected user username in user card', () => {
+      const { container } = render(<UserReportSection {...defaultProps} report={fullReport} />)
+      const handleEl = container.querySelector('.reports-user-handle')
+      expect(handleEl?.textContent).toBe('@aveli')
+    })
+
+    it('renders user role in user card', () => {
+      render(<UserReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Agent')).toBeInTheDocument()
+    })
+
+    it('renders top product name', () => {
+      render(<UserReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Diabetes Paketi')).toBeInTheDocument()
+    })
+
+    it('renders top product sale count', () => {
+      render(<UserReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Satış: 8')).toBeInTheDocument()
+    })
+
+    it('shows empty chart text when trend data is empty', () => {
+      render(<UserReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Randevu trend verisi bulunamadı.')).toBeInTheDocument()
+    })
+
+    it('shows empty chart text when tag distribution is empty', () => {
+      render(<UserReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Etiket değişim verisi bulunamadı.')).toBeInTheDocument()
+    })
+
+    it('shows empty chart text when sales by product is empty', () => {
+      render(<UserReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Ürün bazlı satış verisi bulunamadı.')).toBeInTheDocument()
+    })
+  })
+
+  describe('filter mutual exclusion', () => {
+    it('clears date_from and date_to when preset is selected', async () => {
+      const setFilters = vi.fn()
+      const filtersWithDates = { preset: '', date_from: '2024-01-01', date_to: '2024-01-31', user_id: '' }
+      const { container } = render(
+        <UserReportSection {...defaultProps} filters={filtersWithDates} setFilters={setFilters} />
+      )
+      const presetSelect = container.querySelector('[name="preset"]')
+      await userEvent.selectOptions(presetSelect, '7')
+      const call = setFilters.mock.calls[0][0]
+      const next = typeof call === 'function' ? call(filtersWithDates) : call
+      expect(next.date_from).toBe('')
+      expect(next.date_to).toBe('')
+      expect(next.preset).toBe('7')
+    })
+
+    it('clears preset when date_from is set', async () => {
+      const setFilters = vi.fn()
+      const filtersWithPreset = { preset: '7', date_from: '', date_to: '', user_id: '' }
+      const { container } = render(
+        <UserReportSection {...defaultProps} filters={filtersWithPreset} setFilters={setFilters} />
+      )
+      const dateInput = container.querySelector('[name="date_from"]')
+      await userEvent.type(dateInput, '2024-03-01')
+      const call = setFilters.mock.calls[0][0]
+      const next = typeof call === 'function' ? call(filtersWithPreset) : call
+      expect(next.preset).toBe('')
+    })
   })
 })

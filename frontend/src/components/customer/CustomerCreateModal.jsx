@@ -80,6 +80,7 @@ export default function CustomerCreateModal({
           products: [],
         };
       }
+
       return { ...prev, [field]: value };
     });
   };
@@ -106,13 +107,23 @@ export default function CustomerCreateModal({
       return;
     }
 
+    const rawPhone = form.customer_phone;
+    const normalizedPhone = rawPhone.startsWith("0") ? "9" + rawPhone : rawPhone;
+    if (rawPhone) {
+      const digits = normalizedPhone.replace(/\D/g, "");
+      if (digits.length === 10) {
+        toast.error("Telefon numarası geçersiz");
+        return;
+      }
+    }
+
     try {
       /* 1️⃣ CUSTOMER CREATE */
       const customerRes = await createCustomer({
         customer_name: form.customer_name,
         customer_surname: form.customer_surname,
         customer_email: form.customer_email,
-        customer_phone: form.customer_phone,
+        customer_phone: normalizedPhone || form.customer_phone,
         city: form.city,
         date_of_birth: form.date_of_birth || null,
         status: isAdmin ? form.status : "active",

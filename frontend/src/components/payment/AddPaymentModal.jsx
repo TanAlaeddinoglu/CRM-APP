@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { AlertTriangle } from "lucide-react";
 import toast from "react-hot-toast";
 import {
   createAppointmentPayment,
@@ -27,6 +28,14 @@ export default function AddPaymentModal({
     paid_amount: "",
     payment_date: "",
   });
+
+  const formatAmount = (val) => {
+    const digits = String(val).replace(/\D/g, "");
+    if (!digits) return "";
+    return Number(digits).toLocaleString("tr-TR");
+  };
+
+  const parseAmount = (formatted) => formatted.replace(/\./g, "").replace(/,/g, "");
 
   const [isExistingPayment, setIsExistingPayment] = useState(false);
   const checkedAppointmentRef = useRef(null);
@@ -67,7 +76,7 @@ export default function AddPaymentModal({
         if (cancelled) return;
 
         const appointment = res.data;
-        const label = `${appointment?.customer ?? "Bilinmeyen müşteri"} — ${appointment?.name ?? ""}`;
+        const label = appointment?.customer ?? "Bilinmeyen müşteri";
 
         setSelectedAppointmentLabel(label);
         setSelectedAppointmentProduct(appointment?.product || "");
@@ -153,7 +162,9 @@ export default function AddPaymentModal({
 
           setForm((prev) => ({
             ...prev,
-            total_amount: latest.total_amount,
+            total_amount: latest.total_amount
+              ? Number(String(latest.total_amount).replace(/\D/g, "")).toLocaleString("tr-TR")
+              : "",
           }));
 
           setIsExistingPayment(true);
@@ -180,16 +191,29 @@ export default function AddPaymentModal({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    if (name === "total_amount" || name === "paid_amount") {
+      const raw = value.replace(/\./g, "").replace(/,/g, "");
+      const digits = raw.replace(/\D/g, "");
+      setForm((prev) => ({ ...prev, [name]: digits ? Number(digits).toLocaleString("tr-TR") : "" }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleAppointmentSelect = (appointment) => {
+    if (appointment.status !== "satis") {
+      toast.error("Bu randevuya ödeme başlatılamaz. Randevu durumu 'Satış' olmalıdır.", {
+        id: "non-satis-warning",
+      });
+      return;
+    }
+
     setForm((prev) => ({
       ...prev,
       appointment: appointment.id,
     }));
 
-    const label = `${appointment.customer ?? "Bilinmeyen müşteri"} — ${appointment.name ?? ""}`;
+    const label = appointment.customer ?? "Bilinmeyen müşteri";
     setAppointmentSearch(label);
     setSelectedAppointmentLabel(label);
     setSelectedAppointmentProduct(appointment.product || "");
@@ -212,8 +236,8 @@ export default function AddPaymentModal({
     try {
       await createAppointmentPayment({
         appointment: form.appointment,
-        total_amount: form.total_amount || undefined,
-        paid_amount: form.paid_amount,
+        total_amount: form.total_amount ? parseAmount(form.total_amount) : undefined,
+        paid_amount: parseAmount(form.paid_amount),
         payment_date: formatPaymentDateForApi(form.payment_date),
       });
 
@@ -288,13 +312,25 @@ export default function AddPaymentModal({
                       onClick={() => handleAppointmentSelect(a)}
                     >
                       <div className="appointment-search-title">
-                        {a.customer ?? "Bilinmeyen müşteri"}
+                        <strong>{a.customer ?? "Bilinmeyen müşteri"}</strong>
+                        {a.status !== "satis" && (
+                          <AlertTriangle
+                            size={14}
+                            className="appointment-search-warning"
+                            title="Bu randevuya ödeme başlatılamaz"
+                          />
+                        )}
                       </div>
                       <div className="appointment-search-subtitle">
-                        {a.name ?? ""}
-                        {a.scheduled_for
-                          ? ` — ${new Date(a.scheduled_for).toLocaleDateString()}`
-                          : ""}
+                        {[
+                          a.customer_phone,
+                          a.product,
+                          a.scheduled_for
+                            ? new Date(a.scheduled_for).toLocaleDateString("tr-TR")
+                            : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </div>
                     </button>
                   ))}
@@ -316,7 +352,8 @@ export default function AddPaymentModal({
 
           <label>Toplam Tutar</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             name="total_amount"
             value={form.total_amount}
             onChange={handleChange}
@@ -331,7 +368,8 @@ export default function AddPaymentModal({
 
           <label>Ödenen Tutar *</label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             name="paid_amount"
             value={form.paid_amount}
             onChange={handleChange}

@@ -4,6 +4,7 @@ import { describe, it, expect, vi } from 'vitest'
 import {
   TabButton, FilterPanel, FilterGrid, EmptyReportState,
   KpiGrid, TwoColumnGrid, ReportCard, InfoCard, SimpleTable, SortableReportTable,
+  SelectField, InputField,
 } from '../../../src/components/reports/ReportUI.jsx'
 import { BarChart3 } from 'lucide-react'
 
@@ -162,6 +163,168 @@ describe('ReportUI components', () => {
     it('renders children', () => {
       render(<TwoColumnGrid><span>col content</span></TwoColumnGrid>)
       expect(screen.getByText('col content')).toBeInTheDocument()
+    })
+  })
+
+  describe('SelectField', () => {
+    const options = [
+      { value: '7', label: '7 Gün' },
+      { value: '30', label: '30 Gün' },
+    ]
+
+    it('renders label text', () => {
+      render(<SelectField label="Aralık" options={options} placeholder="Seç" onChange={vi.fn()} value="" />)
+      expect(screen.getByText('Aralık')).toBeInTheDocument()
+    })
+
+    it('renders all options', () => {
+      render(<SelectField label="Aralık" options={options} placeholder="Seç" onChange={vi.fn()} value="" />)
+      expect(screen.getByText('7 Gün')).toBeInTheDocument()
+      expect(screen.getByText('30 Gün')).toBeInTheDocument()
+    })
+
+    it('renders placeholder as first option', () => {
+      render(<SelectField label="Aralık" options={options} placeholder="Seçiniz" onChange={vi.fn()} value="" />)
+      expect(screen.getByText('Seçiniz')).toBeInTheDocument()
+    })
+
+    it('calls onChange when option is selected', async () => {
+      const onChange = vi.fn()
+      render(<SelectField label="Aralık" options={options} placeholder="Seç" onChange={onChange} value="" />)
+      await userEvent.selectOptions(screen.getByRole('combobox'), '7')
+      expect(onChange).toHaveBeenCalled()
+    })
+  })
+
+  describe('InputField', () => {
+    it('renders label text', () => {
+      render(<InputField label="Başlangıç" type="date" value="" onChange={vi.fn()} />)
+      expect(screen.getByText('Başlangıç')).toBeInTheDocument()
+    })
+
+    it('renders input element with correct type', () => {
+      const { container } = render(<InputField label="Tarih" type="date" value="" onChange={vi.fn()} />)
+      const input = container.querySelector('input[type="date"]')
+      expect(input).toBeInTheDocument()
+    })
+
+    it('calls onChange when value changes', async () => {
+      const onChange = vi.fn()
+      render(<InputField label="Tarih" type="text" value="" onChange={onChange} name="date_from" />)
+      await userEvent.type(screen.getByRole('textbox'), 'a')
+      expect(onChange).toHaveBeenCalled()
+    })
+  })
+
+  describe('FilterPanel — disabled state', () => {
+    it('disables submit button when loading=true', () => {
+      render(
+        <FilterPanel title="F" onSubmit={vi.fn()} onReset={vi.fn()} loading={true}>
+          <span />
+        </FilterPanel>
+      )
+      const btn = screen.getByText('Yükleniyor...')
+      expect(btn).toBeDisabled()
+    })
+
+    it('submit button is enabled when loading=false', () => {
+      render(
+        <FilterPanel title="F" onSubmit={vi.fn()} onReset={vi.fn()} loading={false}>
+          <span />
+        </FilterPanel>
+      )
+      expect(screen.getByText('Raporu Getir')).not.toBeDisabled()
+    })
+  })
+
+  describe('SortableReportTable — sort behaviour', () => {
+    const columns = [
+      { key: 'name', label: 'Name', type: 'text' },
+      { key: 'count', label: 'Count', type: 'number' },
+    ]
+    const rows = [
+      { name: 'Zara', count: 1 },
+      { name: 'Ali',  count: 9 },
+      { name: 'Mert', count: 5 },
+    ]
+
+    it('default sort desc puts highest count first', () => {
+      render(
+        <SortableReportTable
+          columns={columns}
+          rows={rows}
+          emptyText="empty"
+          defaultSort={{ key: 'count', direction: 'desc' }}
+        />
+      )
+      const cells = screen.getAllByRole('cell')
+      expect(cells[0].textContent).toBe('Ali')
+    })
+
+    it('clicking header sorts ascending on second click (desc → asc toggle)', async () => {
+      render(
+        <SortableReportTable
+          columns={columns}
+          rows={rows}
+          emptyText="empty"
+          defaultSort={{ key: 'count', direction: 'desc' }}
+        />
+      )
+      const countBtn = screen.getAllByRole('button').find(b => b.textContent.includes('Count'))
+      // First click: switches to asc (lowest count first)
+      await userEvent.click(countBtn)
+      const cells = screen.getAllByRole('cell')
+      expect(cells[0].textContent).toBe('Zara')
+    })
+
+    it('reset sort button restores default order', async () => {
+      render(
+        <SortableReportTable
+          columns={columns}
+          rows={rows}
+          emptyText="empty"
+          defaultSort={{ key: 'count', direction: 'desc' }}
+        />
+      )
+      const countBtn = screen.getAllByRole('button').find(b => b.textContent.includes('Count'))
+      await userEvent.click(countBtn) // now asc
+      // Find reset button by title attribute
+      const resetBtn = document.querySelector('[title="Varsayılan sıralamaya dön"]')
+      await userEvent.click(resetBtn)
+      const cells = screen.getAllByRole('cell')
+      expect(cells[0].textContent).toBe('Ali') // back to desc (highest first)
+    })
+
+    it('hides reset button when showReset=false', () => {
+      render(
+        <SortableReportTable
+          columns={columns}
+          rows={rows}
+          emptyText="empty"
+          showReset={false}
+        />
+      )
+      expect(document.querySelector('[title="Varsayılan sıralamaya dön"]')).toBeNull()
+    })
+
+    it('renders custom cell via column.render', () => {
+      const columnsWithRender = [
+        { key: 'name', label: 'Name', type: 'text' },
+        {
+          key: 'count',
+          label: 'Count',
+          type: 'number',
+          render: (row) => <span data-testid="custom">{row.count * 2}</span>,
+        },
+      ]
+      render(
+        <SortableReportTable
+          columns={columnsWithRender}
+          rows={[{ name: 'Ali', count: 5 }]}
+          emptyText="empty"
+        />
+      )
+      expect(screen.getByTestId('custom').textContent).toBe('10')
     })
   })
 })

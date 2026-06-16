@@ -307,19 +307,15 @@ function CollectionRateCell({ value }) {
 
   return (
     <div className="reports-collection-rate">
-      <span className="reports-collection-rate__label">
-        %{numericValue.toFixed(2)}
-      </span>
-
       <div className="reports-collection-rate__track">
         <div
           className="reports-collection-rate__bar"
-          style={{
-            width: `${safeValue}%`,
-            background: barColor,
-          }}
+          style={{ width: `${safeValue}%`, background: barColor }}
         />
       </div>
+      <span className="reports-collection-rate__label" style={{ color: barColor }}>
+        %{numericValue.toFixed(1)}
+      </span>
     </div>
   );
 }
