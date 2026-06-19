@@ -13,7 +13,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from common.secrets import get_secret_store
-from notifications.models import (
+from notifications.mail.models import (
     EmailLog,
     MailConfiguration,
     MailConfigurationTestSession,

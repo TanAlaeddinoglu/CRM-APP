@@ -143,5 +143,79 @@ describe('PaymentReportSection', () => {
       render(<PaymentReportSection {...defaultProps} report={fullReport} />)
       expect(screen.getByText('Ödeme trend verisi bulunamadı.')).toBeInTheDocument()
     })
+
+    it('renders the paid-vs-remaining legend cards when amounts exist', () => {
+      render(<PaymentReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Tahsil Edilen')).toBeInTheDocument()
+      expect(screen.getByText('Kalan')).toBeInTheDocument()
+    })
+
+    it('renders footer summary rows', () => {
+      render(<PaymentReportSection {...defaultProps} report={fullReport} />)
+      expect(screen.getByText('Toplam Satış Appointment')).toBeInTheDocument()
+      expect(screen.getByText('Toplam Alınan Ödeme Sayısı')).toBeInTheDocument()
+      expect(screen.getByText('Toplam Kalan Tutar')).toBeInTheDocument()
+    })
+  })
+
+  describe('with chart data', () => {
+    const reportWithCharts = {
+      summary: {
+        total_sales_appointments: 5,
+        total_payment_rows: 8,
+        completed_appointments: 4,
+        partial_appointments: 1,
+        not_started_appointments: 0,
+        total_paid_amount: 3000,
+        total_remaining_amount: 1000,
+      },
+      tables: { product_breakdown: [] },
+      charts: {
+        revenue_by_product: [
+          { product_name: 'Paket A', total_paid_amount: 2000 },
+          { product_name: 'Paket B', total_paid_amount: 1000 },
+        ],
+        payment_trend: [
+          { day: '2024-03-01', total_payment_rows: 3, total_paid_amount: 1500 },
+          { day: '2024-03-02', total_payment_rows: 5, total_paid_amount: 1500 },
+        ],
+      },
+    }
+
+    it('renders the revenue chart instead of the empty text', () => {
+      render(<PaymentReportSection {...defaultProps} report={reportWithCharts} />)
+      expect(screen.queryByText('Gelir verisi bulunamadı.')).not.toBeInTheDocument()
+    })
+
+    it('renders the payment trend chart with its legend', () => {
+      render(<PaymentReportSection {...defaultProps} report={reportWithCharts} />)
+      expect(screen.queryByText('Ödeme trend verisi bulunamadı.')).not.toBeInTheDocument()
+      expect(screen.getByText('Gelir')).toBeInTheDocument()
+    })
+
+    it('shows the product breakdown empty text when table is empty', () => {
+      render(<PaymentReportSection {...defaultProps} report={reportWithCharts} />)
+      expect(screen.getByText('Ödeme ürün kırılımı bulunamadı.')).toBeInTheDocument()
+    })
+  })
+
+  describe('collection rate edge cases', () => {
+    it('is 0 and pie shows empty text when there are no amounts', () => {
+      const zeroReport = {
+        summary: {
+          total_sales_appointments: 0,
+          total_payment_rows: 0,
+          completed_appointments: 0,
+          partial_appointments: 0,
+          not_started_appointments: 0,
+          total_paid_amount: 0,
+          total_remaining_amount: 0,
+        },
+        tables: { product_breakdown: [] },
+        charts: { revenue_by_product: [], payment_trend: [] },
+      }
+      render(<PaymentReportSection {...defaultProps} report={zeroReport} />)
+      expect(screen.getByText('Tahsilat dağılımı verisi bulunamadı.')).toBeInTheDocument()
+    })
   })
 })

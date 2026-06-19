@@ -1,6 +1,7 @@
 from django.contrib import admin
 
-from .models import EmailLog, MailConfiguration, MailConfigurationTestSession
+from .mail.models import EmailLog, MailConfiguration, MailConfigurationTestSession
+from .models import Notification, NotificationRule
 
 
 @admin.register(MailConfiguration)
@@ -49,3 +50,25 @@ class EmailLogAdmin(admin.ModelAdmin):
     )
     list_filter = ("delivery_type", "status", "created_at", "sent_at")
     search_fields = ("subject", "from_email", "to_emails")
+
+
+@admin.register(NotificationRule)
+class NotificationRuleAdmin(admin.ModelAdmin):
+    list_display = (
+        "id",
+        "type_key",
+        "name",
+        "channels",
+        "is_active",
+        "is_system_default",
+        "created_at",
+    )
+    list_filter = ("type_key", "is_active", "is_system_default")
+    search_fields = ("type_key", "name")
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("id", "recipient", "type_key", "title", "is_read", "created_at")
+    list_filter = ("type_key", "is_read", "created_at")
+    search_fields = ("type_key", "title", "recipient__email")

@@ -338,6 +338,7 @@ class NotesViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+# TODO: CustomerTagStatsMeView ile CustomerTagStatsAdminView endpointlerini birleştir
 # ============================================================
 # ✅ NEW: Tag Statistics Endpoints (pagination bağımsız)
 # ============================================================

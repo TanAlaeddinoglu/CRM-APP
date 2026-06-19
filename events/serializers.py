@@ -126,6 +126,13 @@ class AppointmentSerializer(serializers.ModelSerializer):
 class AppointmentPaymentSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source="created_by.username")
     updated_by = serializers.ReadOnlyField(source="updated_by.username")
+    assigned_user_name = serializers.SerializerMethodField(read_only=True)
+
+    def get_assigned_user_name(self, obj):
+        user = getattr(getattr(obj.appointment, "customer", None), "assigned_to", None)
+        if user is None:
+            return None
+        return user.get_full_name() or user.username
 
     class Meta:
         model = AppointmentPayment

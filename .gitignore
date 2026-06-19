@@ -56,6 +56,8 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+test_db.sqlite3
+*.sqlite3
 media/
 staticfiles/
 static/
@@ -253,13 +255,8 @@ marimo/_lsp/
 __marimo__/
 
 # env files
-.env
 .env.*
-db.env
-db.env.*
 docker/.env
 docker/.env.*
 !.env.example
 !.env.*.example
-!db.env.example
-!db.env.*.example

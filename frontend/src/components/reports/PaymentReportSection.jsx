@@ -25,15 +25,12 @@ import { formatCurrency, formatPercent } from "../../utils/reportUtils";
 import {
   ChartAxisTick,
   EmptyReportState,
-  FilterGrid,
-  FilterPanel,
-  InputField,
   KpiGrid,
   ReportCard,
-  SelectField,
-  SortableReportTable,
+  SortableTableCard,
   TwoColumnGrid,
 } from "./ReportUI";
+import FilterBar from "../common/FilterBar.jsx";
 
 const MAIN_CHART_HEIGHT = 300;
 const SIDE_CHART_HEIGHT = 280;
@@ -63,27 +60,21 @@ export default function PaymentReportSection({
   optionsLoading,
   userOptions,
   productOptions,
-  presetOptions,
   onSubmit,
   onReset,
 }) {
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
 
-    setFilters((prev) => {
-      const next = { ...prev, [name]: value };
-
-      if (name === "preset" && value) {
-        next.date_from = "";
-        next.date_to = "";
-      }
-
-      if ((name === "date_from" || name === "date_to") && value) {
-        next.preset = "";
-      }
-
-      return next;
-    });
+  const handleDateRangeChange = (key, from, to) => {
+    setFilters((prev) => ({
+      ...prev,
+      preset: key === "custom" ? "" : key,
+      date_from: from,
+      date_to: to,
+    }));
   };
 
   const totalPaidAmount      = Number(report?.summary?.total_paid_amount      || 0);
@@ -118,36 +109,13 @@ export default function PaymentReportSection({
 
   return (
     <div className="reports-section-stack">
-      <FilterPanel title="Filtreler" onSubmit={onSubmit} onReset={onReset} loading={loading}>
-        <FilterGrid>
-          <SelectField
-            label="User"
-            name="user_id"
-            value={filters.user_id}
-            onChange={handleFilterChange}
-            options={userOptions}
-            placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"}
-          />
-          <SelectField
-            label="Product"
-            name="product_id"
-            value={filters.product_id}
-            onChange={handleFilterChange}
-            options={productOptions}
-            placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"}
-          />
-          <SelectField
-            label="Önerilen Aralık"
-            name="preset"
-            value={filters.preset}
-            onChange={handleFilterChange}
-            options={presetOptions}
-            placeholder="Aralık seç"
-          />
-          <InputField label="Başlangıç Tarihi" name="date_from" type="date" value={filters.date_from} onChange={handleFilterChange} />
-          <InputField label="Bitiş Tarihi"     name="date_to"   type="date" value={filters.date_to}   onChange={handleFilterChange} />
-        </FilterGrid>
-      </FilterPanel>
+      <FilterBar.Panel title="Filtreler" onSubmit={onSubmit} onReset={onReset} loading={loading}>
+        <FilterBar.Grid>
+          <FilterBar.Select label="User" name="user_id" value={filters.user_id} onChange={handleFilterChange} options={userOptions} placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"} />
+          <FilterBar.Select label="Product" name="product_id" value={filters.product_id} onChange={handleFilterChange} options={productOptions} placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"} />
+          <FilterBar.DateRange label="Tarih Aralığı" value={filters.preset} onChange={handleDateRangeChange} />
+        </FilterBar.Grid>
+      </FilterBar.Panel>
 
       {!report ? (
         <EmptyReportState
@@ -165,26 +133,27 @@ export default function PaymentReportSection({
               ["Kısmi Satışlar",        report.summary?.partial_appointments],
               ["Ödemeye Başlanmadı",    report.summary?.not_started_appointments],
               ["Tahsilat Oranı %",      collectionRate],
-              ["Toplam Gelir",          totalPaidAmount],
-              ["Kalan Tutar",           totalRemainingAmount],
+              ["Toplam Ciro",          totalPaidAmount],
+              ["Açık Bakiye",           totalRemainingAmount],
             ]}
           />
 
-          <ReportCard title={<SectionTitle icon={Package} title="Ürün Kırılımı" />}>
-            <SortableReportTable
-              columns={PRODUCT_BREAKDOWN_COLUMNS}
-              rows={report.tables?.product_breakdown || []}
-              emptyText="Ödeme ürün kırılımı bulunamadı."
-              defaultSort={{ key: "total_sales_appointments", direction: "desc" }}
-              minWidth="980px"
-            />
-            <div className="reports-table-footer reports-table-footer--grid">
-              <SummaryRow label="Toplam Satış Appointment"    value={report.summary?.total_sales_appointments} />
-              <SummaryRow label="Toplam Alınan Ödeme Sayısı" value={report.summary?.total_payment_rows} />
-              <SummaryRow label="Toplam Gelir"                value={formatCurrency(totalPaidAmount)} />
-              <SummaryRow label="Toplam Kalan Tutar"          value={formatCurrency(totalRemainingAmount)} />
-            </div>
-          </ReportCard>
+          <SortableTableCard
+            title={<SectionTitle icon={Package} title="Ürün Kırılımı" />}
+            columns={PRODUCT_BREAKDOWN_COLUMNS}
+            rows={report.tables?.product_breakdown || []}
+            emptyText="Ödeme ürün kırılımı bulunamadı."
+            defaultSort={{ key: "total_sales_appointments", direction: "desc" }}
+            minWidth="980px"
+            footer={
+              <div className="reports-table-footer reports-table-footer--grid">
+                <SummaryRow label="Toplam Satış Appointment"    value={report.summary?.total_sales_appointments} />
+                <SummaryRow label="Toplam Alınan Ödeme Sayısı" value={report.summary?.total_payment_rows} />
+                <SummaryRow label="Toplam Gelir"                value={formatCurrency(totalPaidAmount)} />
+                <SummaryRow label="Toplam Kalan Tutar"          value={formatCurrency(totalRemainingAmount)} />
+              </div>
+            }
+          />
 
           <ReportCard title={<SectionTitle icon={BarChart3} title="Ürüne Göre Gelir" />}>
             {revenueChartData.length === 0 ? (

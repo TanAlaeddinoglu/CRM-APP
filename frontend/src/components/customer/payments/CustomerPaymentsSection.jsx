@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import "./paymentStyles.css";
 import { Plus } from "lucide-react";
 import { toast } from "react-hot-toast";
 import {
@@ -6,7 +7,7 @@ import {
   getAppointmentById,
   deleteAppointmentPayment,
 } from "../../../services/events";
-import PaymentItem from "./PaymentItem";
+import PaymentCustomerRow from "../../payment/PaymentCustomerRow";
 import AddPaymentModal from "../../payment/AddPaymentModal";
 
 const CustomerPaymentsSection = ({ customerId }) => {
@@ -54,15 +55,12 @@ const CustomerPaymentsSection = ({ customerId }) => {
     }
   };
 
-  const handleDelete = async (paymentId) => {
-    try {
-      await deleteAppointmentPayment(paymentId);
-      toast.success("Ödeme silindi.");
-      loadPayments();
-    } catch {
-      toast.error("Ödeme silinemedi.");
-    }
-  };
+  const grouped = payments.reduce((acc, p) => {
+    const key = p.appointment;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(p);
+    return acc;
+  }, {});
 
   return (
     <div className="events-container customer-payment-card">
@@ -79,19 +77,18 @@ const CustomerPaymentsSection = ({ customerId }) => {
         </button>
       </div>
 
-      <div className="events-list">
+      <div className="events-list customer-payments-list">
         {loading ? (
           <div className="event-skeleton">Yükleniyor...</div>
-        ) : payments.length === 0 ? (
+        ) : Object.keys(grouped).length === 0 ? (
           <div className="events-empty">Bu müşteri için henüz ödeme yok.</div>
         ) : (
-          payments.map((payment) => (
-            <PaymentItem
-              key={payment.id}
-              payment={payment}
-              appointment={appointments[payment.appointment]}
-              onDelete={handleDelete}
-              onSuccess={loadPayments}
+          Object.entries(grouped).map(([apptId, apptPayments]) => (
+            <PaymentCustomerRow
+              key={apptId}
+              appointment={appointments[Number(apptId)]}
+              payments={apptPayments}
+              onRefresh={loadPayments}
             />
           ))
         )}
@@ -105,6 +102,7 @@ const CustomerPaymentsSection = ({ customerId }) => {
             setAddModalOpen(false);
             loadPayments();
           }}
+          customerId={customerId}
         />
       )}
     </div>

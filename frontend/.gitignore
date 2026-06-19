@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# test coverage reports
+coverage/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,8 +25,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-cat >> .gitignore <<'EOF'
 
 # local env files
 .env
@@ -38,4 +39,3 @@ docker/.env.*
 !.env.*.example
 !db.env.example
 !db.env.*.example
-EOF

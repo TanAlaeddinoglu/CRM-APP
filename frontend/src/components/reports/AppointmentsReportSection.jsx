@@ -23,15 +23,12 @@ import {
 import { formatPercent } from "../../utils/reportUtils";
 import {
   EmptyReportState,
-  FilterGrid,
-  FilterPanel,
-  InputField,
   KpiGrid,
   ReportCard,
-  SelectField,
-  SortableReportTable,
+  SortableTableCard,
   TwoColumnGrid,
 } from "./ReportUI";
+import FilterBar from "../common/FilterBar.jsx";
 
 const CHART_HEIGHT = 280;
 
@@ -86,27 +83,21 @@ export default function AppointmentsReportSection({
   optionsLoading,
   userOptions,
   productOptions,
-  presetOptions,
   onSubmit,
   onReset,
 }) {
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
 
-    setFilters((prev) => {
-      const next = { ...prev, [name]: value };
-
-      if (name === "preset" && value) {
-        next.date_from = "";
-        next.date_to = "";
-      }
-
-      if ((name === "date_from" || name === "date_to") && value) {
-        next.preset = "";
-      }
-
-      return next;
-    });
+  const handleDateRangeChange = (key, from, to) => {
+    setFilters((prev) => ({
+      ...prev,
+      preset: key === "custom" ? "" : key,
+      date_from: from,
+      date_to: to,
+    }));
   };
 
   const trendData = (report?.charts?.trend || []).map((item) => ({
@@ -131,53 +122,13 @@ export default function AppointmentsReportSection({
 
   return (
     <div className="reports-section-stack">
-      <FilterPanel
-        title="Filtreler"
-        onSubmit={onSubmit}
-        onReset={onReset}
-        loading={loading}
-      >
-        <FilterGrid>
-          <SelectField
-            label="User"
-            name="user_id"
-            value={filters.user_id}
-            onChange={handleFilterChange}
-            options={userOptions}
-            placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"}
-          />
-          <SelectField
-            label="Product"
-            name="product_id"
-            value={filters.product_id}
-            onChange={handleFilterChange}
-            options={productOptions}
-            placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"}
-          />
-          <SelectField
-            label="Önerilen Aralık"
-            name="preset"
-            value={filters.preset}
-            onChange={handleFilterChange}
-            options={presetOptions}
-            placeholder="Aralık seç"
-          />
-          <InputField
-            label="Başlangıç Tarihi"
-            name="date_from"
-            type="date"
-            value={filters.date_from}
-            onChange={handleFilterChange}
-          />
-          <InputField
-            label="Bitiş Tarihi"
-            name="date_to"
-            type="date"
-            value={filters.date_to}
-            onChange={handleFilterChange}
-          />
-        </FilterGrid>
-      </FilterPanel>
+      <FilterBar.Panel title="Filtreler" onSubmit={onSubmit} onReset={onReset} loading={loading}>
+        <FilterBar.Grid>
+          <FilterBar.Select label="User" name="user_id" value={filters.user_id} onChange={handleFilterChange} options={userOptions} placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"} />
+          <FilterBar.Select label="Product" name="product_id" value={filters.product_id} onChange={handleFilterChange} options={productOptions} placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"} />
+          <FilterBar.DateRange label="Tarih Aralığı" value={filters.preset} onChange={handleDateRangeChange} />
+        </FilterBar.Grid>
+      </FilterBar.Panel>
 
       {!report ? (
         <EmptyReportState
@@ -200,29 +151,29 @@ export default function AppointmentsReportSection({
           />
 
           <TwoColumnGrid>
-            <ReportCard title={<SectionTitle icon={Package} title="Ürün Kırılımı" />}>
-              <SortableReportTable
-                columns={PRODUCT_BREAKDOWN_COLUMNS}
-                rows={report.tables?.product_breakdown || []}
-                emptyText="Ürün kırılımı bulunamadı."
-                defaultSort={{ key: "total", direction: "desc" }}
-              />
-              <div className="reports-table-footer">
-                <span className="reports-table-footer__label">Toplam Randevu</span>
-                <strong className="reports-table-footer__value">
-                  {report.summary?.total_appointments ?? "-"}
-                </strong>
-              </div>
-            </ReportCard>
+            <SortableTableCard
+              title={<SectionTitle icon={Package} title="Ürün Kırılımı" />}
+              columns={PRODUCT_BREAKDOWN_COLUMNS}
+              rows={report.tables?.product_breakdown || []}
+              emptyText="Ürün kırılımı bulunamadı."
+              defaultSort={{ key: "total", direction: "desc" }}
+              footer={
+                <div className="reports-table-footer">
+                  <span className="reports-table-footer__label">Toplam Randevu</span>
+                  <strong className="reports-table-footer__value">
+                    {report.summary?.total_appointments ?? "-"}
+                  </strong>
+                </div>
+              }
+            />
 
-            <ReportCard title={<SectionTitle icon={UserRound} title="Kullanıcı Performansı" />}>
-              <SortableReportTable
-                columns={USER_PERFORMANCE_COLUMNS}
-                rows={report.tables?.user_performance || []}
-                emptyText="Kullanıcı performans verisi bulunamadı."
-                defaultSort={{ key: "total", direction: "desc" }}
-              />
-            </ReportCard>
+            <SortableTableCard
+              title={<SectionTitle icon={UserRound} title="Kullanıcı Performansı" />}
+              columns={USER_PERFORMANCE_COLUMNS}
+              rows={report.tables?.user_performance || []}
+              emptyText="Kullanıcı performans verisi bulunamadı."
+              defaultSort={{ key: "total", direction: "desc" }}
+            />
           </TwoColumnGrid>
 
           <TwoColumnGrid>

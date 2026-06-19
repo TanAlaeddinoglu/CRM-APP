@@ -112,5 +112,8 @@ function getCustomerSummaryStatusClass(status, paidAmount) {
 }
 
 function formatAmount(value) {
-  return Number(value || 0).toFixed(2);
+  return new Intl.NumberFormat("tr-TR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
 }
