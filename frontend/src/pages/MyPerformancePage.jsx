@@ -24,14 +24,11 @@ import { getMyPerformanceReport } from "../services/report";
 import {
   ChartAxisTick,
   EmptyReportState,
-  FilterGrid,
-  FilterPanel,
-  InputField,
   KpiGrid,
   ReportCard,
-  SelectField,
   TwoColumnGrid,
 } from "../components/reports/ReportUI";
+import FilterBar from "../components/common/FilterBar.jsx";
 import { usePageTransition } from "../context/PageTransitionContext.jsx";
 import { normalizeParams } from "../utils/reportUtils";
 import "../assets/css/reports.css";
@@ -160,39 +157,13 @@ export default function MyPerformancePage() {
         <h1 className="h1 reports-page__title">Performansım</h1>
       </div>
 
-      <FilterPanel
-        title="Tarih Aralığı"
-        onSubmit={() => fetchReport(filters)}
-        onReset={resetReport}
-        loading={loading}
-      >
-        <FilterGrid>
-          <SelectField
-            label="Önerilen Aralık"
-            name="preset"
-            value={filters.preset}
-            onChange={handleFilterChange}
-            options={PRESET_OPTIONS}
-            placeholder="Özel tarih aralığı"
-          />
-
-          <InputField
-            label="Başlangıç Tarihi"
-            name="date_from"
-            type="date"
-            value={filters.date_from}
-            onChange={handleFilterChange}
-          />
-
-          <InputField
-            label="Bitiş Tarihi"
-            name="date_to"
-            type="date"
-            value={filters.date_to}
-            onChange={handleFilterChange}
-          />
-        </FilterGrid>
-      </FilterPanel>
+      <FilterBar.Panel title="Tarih Aralığı" onSubmit={() => fetchReport(filters)} onReset={resetReport} loading={loading}>
+        <FilterBar.Grid>
+          <FilterBar.Select label="Önerilen Aralık" name="preset" value={filters.preset} onChange={handleFilterChange} options={PRESET_OPTIONS} placeholder="Özel tarih aralığı" />
+          <FilterBar.DateInput label="Başlangıç Tarihi" name="date_from" value={filters.date_from} onChange={handleFilterChange} />
+          <FilterBar.DateInput label="Bitiş Tarihi" name="date_to" value={filters.date_to} onChange={handleFilterChange} />
+        </FilterBar.Grid>
+      </FilterBar.Panel>
 
       {!report ? (
         <EmptyReportState
@@ -218,7 +189,7 @@ export default function MyPerformancePage() {
             ]}
           />
 
-          <TopProductCard topProduct={report.top_product} />
+          <TopProductCard products={report.top_products} />
 
           <ReportCard
             title={

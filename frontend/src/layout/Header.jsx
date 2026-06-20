@@ -1,84 +1,24 @@
 import { useAuth } from "../context/AuthContext";
 import { logout } from "../services/auth";
 import { clearExportHistoryCache } from "../services/export";
+import {
+  getNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "../services/notifications";
 import { useNavigate, useLocation, useNavigationType } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Bell, ChevronLeft, ChevronRight } from "lucide-react";
 import HeaderCustomerSearch from "./HeaderCustomerSearch";
 import "../assets/css/header.css";
 
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    title: "Yeni event oluşturuldu",
-    message: "Ayşe Demir için kontrol randevusu eklendi.",
-    time: "2 dk önce",
-    isRead: false,
-  },
-  {
-    id: 2,
-    title: "Yaklaşan randevu",
-    message: "Mehmet Kaya randevusuna 1 saat kaldı.",
-    time: "8 dk önce",
-    isRead: false,
-  },
-  {
-    id: 3,
-    title: "Müşteri atandı",
-    message: "Zeynep Arslan kaydı sana atandı.",
-    time: "14 dk önce",
-    isRead: false,
-  },
-  {
-    id: 4,
-    title: "Ödeme güncellendi",
-    message: "Selin Yılmaz ödemesi tamamlandı.",
-    time: "25 dk önce",
-    isRead: true,
-  },
-  {
-    id: 5,
-    title: "Yeni müşteri eklendi",
-    message: "Onur Çetin havuza yeni müşteri ekledi.",
-    time: "40 dk önce",
-    isRead: true,
-  },
-  {
-    id: 6,
-    title: "Tag değişikliği",
-    message: "Müşteri etiketi sıcak lead olarak güncellendi.",
-    time: "55 dk önce",
-    isRead: true,
-  },
-  {
-    id: 7,
-    title: "Randevu yeniden planlandı",
-    message: "Elif Şahin randevusu yarın 11:30'a alındı.",
-    time: "1 sa önce",
-    isRead: true,
-  },
-  {
-    id: 8,
-    title: "Yeni not eklendi",
-    message: "Müşteri kartına yeni görüşme notu bırakıldı.",
-    time: "2 sa önce",
-    isRead: true,
-  },
-  {
-    id: 9,
-    title: "Müşteri arşivlendi",
-    message: "Kayıt pasif duruma alındı.",
-    time: "3 sa önce",
-    isRead: true,
-  },
-  {
-    id: 10,
-    title: "Event tamamlandı",
-    message: "Bugünkü bakım randevusu kapatıldı.",
-    time: "5 sa önce",
-    isRead: true,
-  },
-];
+function formatRelativeTime(isoString) {
+  const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+  if (diff < 60) return "Az önce";
+  if (diff < 3600) return `${Math.floor(diff / 60)} dk önce`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} sa önce`;
+  return `${Math.floor(diff / 86400)} gün önce`;
+}
 
 export default function Header() {
   const { user, setUser } = useAuth();
@@ -186,16 +126,50 @@ export default function Header() {
 
   /* USER DROPDOWN STATE (SADECE BU) */
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const [notificationMenuVisible, setNotificationMenuVisible] = useState(false);
   const userMenuRef = useRef(null);
   const notificationMenuRef = useRef(null);
 
   const firstLetter = user?.username?.[0]?.toUpperCase() || "?";
-  const unreadCount = notifications.filter(
-    (notification) => !notification.isRead
-  ).length;
+  const [olderWeeks, setOlderWeeks] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const loadNotifications = useCallback(() => {
+    getNotifications({ offset_weeks: 0 })
+      .then((res) => {
+        const data = res.data;
+        setNotifications(data);
+        setUnreadCount(data.filter((n) => !n.is_read).length);
+        setOlderWeeks(0);
+        setHasMore(true);
+      })
+      .catch(() => {});
+  }, []);
+
+  const loadOlderWeek = () => {
+    const nextOffset = olderWeeks + 1;
+    setIsLoadingMore(true);
+    getNotifications({ offset_weeks: nextOffset })
+      .then((res) => {
+        const older = res.data;
+        setNotifications((prev) => [...prev, ...older]);
+        setOlderWeeks(nextOffset);
+        if (older.length === 0) setHasMore(false);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingMore(false));
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    loadNotifications();
+    const interval = setInterval(loadNotifications, 30_000);
+    return () => clearInterval(interval);
+  }, [user, loadNotifications]);
 
   const openNotificationMenu = () => {
     setNotificationMenuVisible(true);
@@ -217,12 +191,27 @@ export default function Header() {
   };
 
   const handleMarkAllAsRead = () => {
-    setNotifications((prev) =>
-      prev.map((notification) => ({
-        ...notification,
-        isRead: true,
-      }))
-    );
+    markAllNotificationsRead()
+      .then(() => {
+        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+        setUnreadCount(0);
+      })
+      .catch(() => {});
+  };
+
+  const handleNotificationClick = (notification) => {
+    if (!notification.is_read) {
+      markNotificationRead(notification.id)
+        .then(() => {
+          setNotifications((prev) =>
+            prev.map((n) =>
+              n.id === notification.id ? { ...n, is_read: true } : n
+            )
+          );
+          setUnreadCount((prev) => Math.max(0, prev - 1));
+        })
+        .catch(() => {});
+    }
   };
 
   /* ================= ACTIONS ================= */
@@ -341,38 +330,54 @@ export default function Header() {
               </div>
 
               <div className="notification-list">
-                {notifications.map((notification) => (
-                  <button
-                    key={notification.id}
-                    type="button"
-                    className={`notification-item ${
-                      notification.isRead ? "read" : "unread"
-                    }`}
-                  >
-                    <div className="notification-item-main">
-                      <div className="notification-item-title-row">
-                        <span className="notification-item-title">
-                          {notification.title}
-                        </span>
-                        {!notification.isRead && (
-                          <span className="notification-unread-dot" />
-                        )}
+                {notifications.length === 0 ? (
+                  <div className="notification-empty">
+                    <span>Bildirim yok.</span>
+                  </div>
+                ) : (
+                  notifications.map((notification) => (
+                    <button
+                      key={notification.id}
+                      type="button"
+                      className={`notification-item ${
+                        notification.is_read ? "read" : "unread"
+                      }`}
+                      onClick={() => handleNotificationClick(notification)}
+                    >
+                      <div className="notification-item-main">
+                        <div className="notification-item-title-row">
+                          <span className="notification-item-title">
+                            {notification.title}
+                          </span>
+                          {!notification.is_read && (
+                            <span className="notification-unread-dot" />
+                          )}
+                        </div>
+                        <p className="notification-item-message">
+                          {notification.body}
+                        </p>
                       </div>
-                      <p className="notification-item-message">
-                        {notification.message}
-                      </p>
-                    </div>
-                    <span className="notification-item-time">
-                      {notification.time}
-                    </span>
-                  </button>
-                ))}
+                      <span className="notification-item-time">
+                        {formatRelativeTime(notification.created_at)}
+                      </span>
+                    </button>
+                  ))
+                )}
               </div>
 
               <div className="notification-menu-footer">
-                <button type="button" className="notification-footer-link">
-                  Eski bildirimleri yükle
-                </button>
+                {hasMore ? (
+                  <button
+                    type="button"
+                    className="notification-footer-link"
+                    onClick={loadOlderWeek}
+                    disabled={isLoadingMore}
+                  >
+                    {isLoadingMore ? "Yükleniyor…" : "Daha fazla yükle"}
+                  </button>
+                ) : (
+                  <span className="notification-footer-end">Tüm bildirimler yüklendi.</span>
+                )}
               </div>
             </div>
           )}

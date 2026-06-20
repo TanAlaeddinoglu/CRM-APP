@@ -277,7 +277,7 @@ export default function CustomerDetailInfo({
                                     : "Kullanıcı seçiniz"}
                             </option>
 
-                            {users.map((u) => (
+                            {users.filter((u) => u.is_active !== false).map((u) => (
                                 <option key={u.id} value={String(u.id)}>
                                     {u.username}
                                 </option>

@@ -34,7 +34,7 @@ describe('UserReportSection', () => {
 
   it('shows preset select with options', () => {
     render(<UserReportSection {...defaultProps} />)
-    expect(screen.getByText('7 Gün')).toBeInTheDocument()
+    expect(screen.getByText('Son 7 Gün')).toBeInTheDocument()
   })
 
   it('calls onSubmit when button clicked', async () => {
@@ -108,7 +108,7 @@ describe('UserReportSection', () => {
         negative_appointments: 3,
         conversion_rate: 70,
         rejection_rate: 15,
-        top_product: { product_name: 'Diabetes Paketi', count: 8 },
+        top_products: [{ product_id: 1, product_name: 'Diabetes Paketi', count: 8 }],
       },
       charts: {
         tag_distribution: [],
@@ -139,13 +139,13 @@ describe('UserReportSection', () => {
 
     it('renders selected user full name in user card', () => {
       const { container } = render(<UserReportSection {...defaultProps} report={fullReport} />)
-      const nameEl = container.querySelector('.reports-user-name')
+      const nameEl = container.querySelector('.reports-user-hero__name')
       expect(nameEl?.textContent).toBe('Ali Veli')
     })
 
     it('renders selected user username in user card', () => {
       const { container } = render(<UserReportSection {...defaultProps} report={fullReport} />)
-      const handleEl = container.querySelector('.reports-user-handle')
+      const handleEl = container.querySelector('.reports-user-hero__handle')
       expect(handleEl?.textContent).toBe('@aveli')
     })
 
@@ -161,7 +161,7 @@ describe('UserReportSection', () => {
 
     it('renders top product sale count', () => {
       render(<UserReportSection {...defaultProps} report={fullReport} />)
-      expect(screen.getByText('Satış: 8')).toBeInTheDocument()
+      expect(screen.getByText('8')).toBeInTheDocument()
     })
 
     it('shows empty chart text when trend data is empty', () => {
@@ -184,25 +184,25 @@ describe('UserReportSection', () => {
     it('clears date_from and date_to when preset is selected', async () => {
       const setFilters = vi.fn()
       const filtersWithDates = { preset: '', date_from: '2024-01-01', date_to: '2024-01-31', user_id: '' }
-      const { container } = render(
+      render(
         <UserReportSection {...defaultProps} filters={filtersWithDates} setFilters={setFilters} />
       )
-      const presetSelect = container.querySelector('[name="preset"]')
-      await userEvent.selectOptions(presetSelect, '7')
+      const presetSelect = screen.getByLabelText('Tarih Aralığı')
+      await userEvent.selectOptions(presetSelect, 'last7')
       const call = setFilters.mock.calls[0][0]
       const next = typeof call === 'function' ? call(filtersWithDates) : call
-      expect(next.date_from).toBe('')
-      expect(next.date_to).toBe('')
-      expect(next.preset).toBe('7')
+      expect(next.preset).toBe('last7')
+      expect(next.date_from).not.toBe('2024-01-01')
+      expect(next.date_to).not.toBe('2024-01-31')
     })
 
     it('clears preset when date_from is set', async () => {
       const setFilters = vi.fn()
-      const filtersWithPreset = { preset: '7', date_from: '', date_to: '', user_id: '' }
-      const { container } = render(
+      const filtersWithPreset = { preset: 'last7', date_from: '', date_to: '', user_id: '' }
+      render(
         <UserReportSection {...defaultProps} filters={filtersWithPreset} setFilters={setFilters} />
       )
-      const dateInput = container.querySelector('[name="date_from"]')
+      const dateInput = screen.getByLabelText('Başlangıç')
       await userEvent.type(dateInput, '2024-03-01')
       const call = setFilters.mock.calls[0][0]
       const next = typeof call === 'function' ? call(filtersWithPreset) : call

@@ -20,14 +20,11 @@ import {
 import {
   ChartAxisTick,
   EmptyReportState,
-  FilterGrid,
-  FilterPanel,
-  InputField,
   KpiGrid,
   ReportCard,
-  SelectField,
   TwoColumnGrid,
 } from "./ReportUI";
+import FilterBar from "../common/FilterBar.jsx";
 
 const MAIN_CHART_HEIGHT = 300;
 const SIDE_CHART_HEIGHT = 280;
@@ -42,27 +39,21 @@ export default function UserReportSection({
   loading,
   optionsLoading,
   userOptions,
-  presetOptions,
   onSubmit,
   onReset,
 }) {
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
 
-    setFilters((prev) => {
-      const next = { ...prev, [name]: value };
-
-      if (name === "preset" && value) {
-        next.date_from = "";
-        next.date_to = "";
-      }
-
-      if ((name === "date_from" || name === "date_to") && value) {
-        next.preset = "";
-      }
-
-      return next;
-    });
+  const handleDateRangeChange = (key, from, to) => {
+    setFilters((prev) => ({
+      ...prev,
+      preset: key === "custom" ? "" : key,
+      date_from: from,
+      date_to: to,
+    }));
   };
 
   const tagDistributionData    = report?.charts?.tag_distribution    || [];
@@ -80,28 +71,12 @@ export default function UserReportSection({
 
   return (
     <div className="reports-section-stack">
-      <FilterPanel title="Filtreler" onSubmit={onSubmit} onReset={onReset} loading={loading}>
-        <FilterGrid>
-          <SelectField
-            label="User"
-            name="user_id"
-            value={filters.user_id}
-            onChange={handleFilterChange}
-            options={userOptions}
-            placeholder={optionsLoading ? "Yükleniyor..." : "User seç"}
-          />
-          <SelectField
-            label="Önerilen Aralık"
-            name="preset"
-            value={filters.preset}
-            onChange={handleFilterChange}
-            options={presetOptions}
-            placeholder="Aralık seç"
-          />
-          <InputField label="Başlangıç Tarihi" name="date_from" type="date" value={filters.date_from} onChange={handleFilterChange} />
-          <InputField label="Bitiş Tarihi"     name="date_to"   type="date" value={filters.date_to}   onChange={handleFilterChange} />
-        </FilterGrid>
-      </FilterPanel>
+      <FilterBar.Panel title="Filtreler" onSubmit={onSubmit} onReset={onReset} loading={loading}>
+        <FilterBar.Grid>
+          <FilterBar.Select label="Kullanıcı" name="user_id" value={filters.user_id} onChange={handleFilterChange} options={userOptions} placeholder={optionsLoading ? "Yükleniyor..." : "User seç"} />
+          <FilterBar.DateRange label="Tarih Aralığı" value={filters.preset} onChange={handleDateRangeChange} />
+        </FilterBar.Grid>
+      </FilterBar.Panel>
 
       {!report ? (
         <EmptyReportState
@@ -127,10 +102,7 @@ export default function UserReportSection({
 
           <TwoColumnGrid>
             <SelectedUserCard user={report.target_user} />
-            <TopProductCard
-              productName={report.summary?.top_product?.product_name}
-              count={report.summary?.top_product?.count}
-            />
+            <TopProductCard products={report.summary?.top_products} />
           </TwoColumnGrid>
 
           <ReportCard title={<SectionTitle icon={CalendarCheck} title="Alınan Randevu Sayısı" />}>
@@ -212,49 +184,90 @@ function SelectedUserCard({ user }) {
   const initials = getInitials(fullName || username);
 
   return (
-    <ReportCard title={<SectionTitle icon={UserRound} title="Seçilen User" />}>
-      <div className="reports-user-grid">
-        <div className="reports-user-profile">
-          <div className="reports-user-avatar">{initials}</div>
-          <div className="reports-user-profile__info">
-            <div className="reports-user-name">{fullName || username}</div>
-            <div className="reports-user-handle">@{username}</div>
+    <ReportCard title={<SectionTitle icon={UserRound} title="Seçilen Kullanıcı" />}>
+      <div className="reports-user-card">
+        <div className="reports-user-hero">
+          <div className="reports-user-avatar-lg">{initials}</div>
+          <div className="reports-user-hero__info">
+            <div className="reports-user-hero__name">{fullName || username}</div>
+            <div className="reports-user-hero__handle">@{username}</div>
+            <span className="reports-role-badge reports-role-badge--light">
+              <Shield size={12} />
+              {role}
+            </span>
           </div>
         </div>
 
-        <div className="reports-info-grid">
-          <InfoRow label="Username" value={username} />
-          {fullName ? <InfoRow label="Ad Soyad" value={fullName} /> : null}
-          <InfoRow
-            label="Rol"
-            value={
-              <span className="reports-role-badge">
-                <Shield size={14} />
-                {role}
-              </span>
-            }
-          />
+        <div className="reports-user-meta">
+          <div className="reports-user-meta-item">
+            <span className="reports-user-meta-item__label">Username</span>
+            <span className="reports-user-meta-item__value">@{username}</span>
+          </div>
+          <div className="reports-user-meta-item">
+            <span className="reports-user-meta-item__label">Ad Soyad</span>
+            <span className="reports-user-meta-item__value">{fullName || "—"}</span>
+          </div>
         </div>
       </div>
     </ReportCard>
   );
 }
 
-function TopProductCard({ productName, count }) {
-  const hasProduct = !!productName;
+const PODIUM_META = [
+  { countColor: "#d97706", blockClass: "reports-podium__block--1" },
+  { countColor: "#64748b", blockClass: "reports-podium__block--2" },
+  { countColor: "#b45309", blockClass: "reports-podium__block--3" },
+];
+
+const PODIUM_ORDER = [1, 0, 2];
+
+const BADGE_ICON_COLORS = [
+  { stroke: "#92400e", text: "#92400e" },
+  { stroke: "#374151", text: "#374151" },
+  { stroke: "#451a03", text: "#451a03" },
+];
+
+const PODIUM_COUNT_COLORS = ["#d97706", "#64748b", "#b45309"];
+
+function PodiumBadge({ rank }) {
+  const { stroke, text } = BADGE_ICON_COLORS[rank - 1] || BADGE_ICON_COLORS[2];
+  return (
+    <div className={`reports-podium__badge reports-podium__badge--${rank}`}>
+      <svg viewBox="0 0 42 42" fill="none" width="42" height="42">
+        <path d="M11 16L15 11H27L31 16V23C31 29 25 33 21 34C17 33 11 29 11 23Z"
+          stroke={stroke} strokeWidth="1.6" fill="none" strokeLinejoin="round" />
+        <path d="M16 11L17 8H25L26 11"
+          stroke={stroke} strokeWidth="1.6" fill="none" strokeLinejoin="round" />
+        <text x="21" y="25" textAnchor="middle" fontSize="10" fontWeight="800"
+          fill={text} fontFamily="-apple-system,sans-serif">{rank}</text>
+      </svg>
+    </div>
+  );
+}
+
+function TopProductCard({ products }) {
+  const hasProducts = Array.isArray(products) && products.length > 0;
 
   return (
-    <ReportCard title={<SectionTitle icon={Trophy} title="Top Product" />}>
-      {hasProduct ? (
-        <div className="reports-top-product-grid">
-          <div className="reports-badge reports-semantic--success">
-            <Trophy size={16} />
-            En Çok Satan Ürün
-          </div>
-          <div className="reports-product-box">
-            <div className="reports-product-name">{productName}</div>
-            <div className="reports-count-badge">Satış: {count ?? 0}</div>
-          </div>
+    <ReportCard title={<SectionTitle icon={Trophy} title="En Çok Satan Ürünler" />}>
+      {hasProducts ? (
+        <div className="reports-podium">
+          {PODIUM_ORDER.map((dataIdx) => {
+            const p = products[dataIdx];
+            if (!p) return null;
+            const meta = PODIUM_META[dataIdx];
+            return (
+              <div key={p.product_id} className="reports-podium__col">
+                <PodiumBadge rank={dataIdx + 1} />
+                <div className="reports-podium__name">{p.product_name}</div>
+                <div className="reports-podium__count" style={{ color: meta.countColor }}>{p.count}</div>
+                <div className="reports-podium__count-label">satış</div>
+                <div className={`reports-podium__block ${meta.blockClass}`}>
+                  <span className="reports-podium__block-num">{dataIdx + 1}</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       ) : (
         <EmptyChart text="En çok satan ürün verisi bulunamadı." />

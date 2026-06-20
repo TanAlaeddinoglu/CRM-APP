@@ -29,6 +29,14 @@ export function normalizeParams(filters) {
   return params;
 }
 
+export function formatAmount(value) {
+  if (value === null || value === undefined || value === "") return "0";
+  return new Intl.NumberFormat("tr-TR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(value));
+}
+
 export function formatCurrency(value) {
   if (value === null || value === undefined || value === "") return "-";
 
@@ -50,7 +58,7 @@ export function formatPercent(value) {
 export function formatMetric(label, value) {
   if (value === null || value === undefined || value === "") return "-";
 
-  const currencyLabels = ["Gelir", "Tutar", "Kalan"];
+  const currencyLabels = ["Gelir", "Tutar", "Kalan", "Tahsil"];
   const percentLabels = ["%"];
 
   if (currencyLabels.some((word) => label.includes(word))) {

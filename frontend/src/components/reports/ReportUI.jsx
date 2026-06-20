@@ -1,6 +1,9 @@
-import React from "react";
-import { Filter, RefreshCcw, RotateCcw } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { RotateCcw } from "lucide-react";
 import { formatMetric, renderCellValue } from "../../utils/reportUtils";
+
+const KPI_MIN_WIDTH = 140;
+const KPI_GAP = 12;
 
 export function TabButton({ active, onClick, label, icon: Icon }) {
   return (
@@ -14,47 +17,6 @@ export function TabButton({ active, onClick, label, icon: Icon }) {
   );
 }
 
-export function FilterPanel({ title, onSubmit, onReset, loading, children }) {
-  return (
-    <section className="reports-filter-panel">
-      <div className="reports-filter-panel__header">
-        <div className="reports-filter-panel__icon">
-          <Filter size={18} />
-        </div>
-
-        <h2 className="reports-filter-panel__title">
-          {title}
-        </h2>
-      </div>
-
-      {children}
-
-      <div className="reports-filter-panel__actions">
-        <button
-          type="button"
-          className="btn-secondary reports-action-button"
-          onClick={onReset}
-        >
-          <RefreshCcw size={16} />
-          Temizle
-        </button>
-
-        <button
-          type="button"
-          className="btn-primary reports-submit-button"
-          onClick={onSubmit}
-          disabled={loading}
-        >
-          {loading ? "Yükleniyor..." : "Raporu Getir"}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-export function FilterGrid({ children }) {
-  return <div className="reports-filter-grid">{children}</div>;
-}
 
 export function EmptyReportState({ title, description, icon }) {
   return (
@@ -74,16 +36,41 @@ export function EmptyReportState({ title, description, icon }) {
 }
 
 export function KpiGrid({ items }) {
+  const containerRef = useRef(null);
+  const [cardWidth, setCardWidth] = useState(KPI_MIN_WIDTH);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const calculate = (width) => {
+      const count = items.length;
+      if (count === 0) return;
+      const fit = Math.floor((width + KPI_GAP) / (KPI_MIN_WIDTH + KPI_GAP));
+      const visible = Math.max(1, Math.min(fit, count));
+      const w = (width - (visible - 1) * KPI_GAP) / visible;
+      setCardWidth(Math.floor(w));
+    };
+
+    const ro = new ResizeObserver((entries) => {
+      calculate(entries[0].contentRect.width);
+    });
+    ro.observe(el);
+    calculate(el.getBoundingClientRect().width);
+
+    return () => ro.disconnect();
+  }, [items.length]);
+
   return (
-    <div className="reports-kpi-grid">
+    <div ref={containerRef} className="reports-kpi-scroll">
       {items.map(([label, value]) => (
-        <div key={label} className="reports-kpi-card">
-          <div className="reports-kpi-card__label">
-            {label}
-          </div>
-          <div className="reports-kpi-card__value">
-            {formatMetric(label, value)}
-          </div>
+        <div
+          key={label}
+          className="reports-kpi-card"
+          style={{ flex: `0 0 ${cardWidth}px`, minWidth: `${cardWidth}px` }}
+        >
+          <div className="reports-kpi-card__label">{label}</div>
+          <div className="reports-kpi-card__value">{formatMetric(label, value)}</div>
         </div>
       ))}
     </div>
@@ -103,6 +90,40 @@ export function ReportCard({ title, children }) {
         </h3>
       </div>
       {children}
+    </section>
+  );
+}
+
+export function SortableTableCard({ title, columns, rows, emptyText, defaultSort, showReset = true, minWidth, footer }) {
+  const initialSort = defaultSort || { key: columns[0]?.key, direction: "asc" };
+  const [sortConfig, setSortConfig] = React.useState(initialSort);
+
+  return (
+    <section className="reports-card">
+      <div className="reports-card__header">
+        <h3 className="reports-card__title">{title}</h3>
+        {showReset && rows.length > 0 && (
+          <button
+            type="button"
+            className="reports-sort-reset"
+            onClick={() => setSortConfig(initialSort)}
+            title="Varsayılan sıralamaya dön"
+          >
+            <RotateCcw size={14} />
+          </button>
+        )}
+      </div>
+      <SortableReportTable
+        columns={columns}
+        rows={rows}
+        emptyText={emptyText}
+        defaultSort={defaultSort}
+        showReset={false}
+        minWidth={minWidth}
+        sortConfig={sortConfig}
+        onSort={setSortConfig}
+      />
+      {footer}
     </section>
   );
 }
@@ -168,12 +189,18 @@ export function SortableReportTable({
   defaultSort = null,
   showReset = true,
   minWidth,
+  sortConfig: externalSortConfig,
+  onSort: externalOnSort,
 }) {
   const initialSort = defaultSort || {
     key: columns[0]?.key,
     direction: "asc",
   };
-  const [sortConfig, setSortConfig] = React.useState(initialSort);
+  const [internalSortConfig, setInternalSortConfig] = React.useState(initialSort);
+
+  const isControlled = externalSortConfig !== undefined;
+  const sortConfig = isControlled ? externalSortConfig : internalSortConfig;
+  const setSortConfig = isControlled ? externalOnSort : setInternalSortConfig;
 
   const sortedRows = React.useMemo(() => {
     return [...rows].sort((a, b) => {
@@ -226,7 +253,7 @@ export function SortableReportTable({
 
   return (
     <div>
-      {showReset && (
+      {showReset && !isControlled && (
         <div className="reports-sortable-table__actions">
           <button
             type="button"
@@ -320,19 +347,20 @@ export function ChartAxisTick({
 
 function SortableHeaderButton({ column, align, active, direction, onClick }) {
   const arrow = active ? (direction === "asc" ? "↑" : "↓") : "↕";
+  const centered = align === "right";
 
   return (
     <button
       type="button"
       className={[
         "reports-sort-header",
+        centered ? "reports-sort-header--center" : "",
         active ? "reports-sort-header--active" : "",
-        align === "right" ? "reports-sort-header--right" : "",
       ].filter(Boolean).join(" ")}
       onClick={onClick}
-      title={`${column.label} sıralama`}
+      title={column.label}
     >
-      <span>{column.label}</span>
+      <span className="reports-sort-header__label">{column.label}</span>
       <span aria-hidden="true" className="reports-sort-header__icon">
         {arrow}
       </span>
@@ -399,33 +427,4 @@ function truncateAxisLabel(label, maxLength) {
   }
 
   return `${label.slice(0, Math.max(1, maxLength - 3))}...`;
-}
-
-export function InputField({ label, ...props }) {
-  return (
-    <label className="reports-field">
-      <span className="reports-field__label">
-        {label}
-      </span>
-      <input {...props} className="reports-field__control" />
-    </label>
-  );
-}
-
-export function SelectField({ label, options, placeholder, ...props }) {
-  return (
-    <label className="reports-field">
-      <span className="reports-field__label">
-        {label}
-      </span>
-      <select {...props} className="reports-field__control">
-        <option value="">{placeholder}</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
 }

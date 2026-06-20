@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from notifications.models import EmailLog, MailConfiguration
+from notifications.mail.models import EmailLog, MailConfiguration
 
 from .contracts import MailConfigurationInput
 

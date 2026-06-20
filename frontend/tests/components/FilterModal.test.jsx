@@ -60,4 +60,24 @@ describe('FilterModal', () => {
     expect(screen.getByText('form')).toBeInTheDocument()
     expect(screen.getByText('import')).toBeInTheDocument()
   })
+
+  it('changes the source value and includes it in onApply', async () => {
+    const onApply = vi.fn()
+    render(<FilterModal initialFilters={initialFilters} onClose={vi.fn()} onApply={onApply} />)
+    const sourceSelect = screen.getAllByRole('combobox')[1]
+    await userEvent.selectOptions(sourceSelect, 'form')
+    await userEvent.click(screen.getByText('Uygula'))
+    expect(onApply).toHaveBeenCalledWith(expect.objectContaining({ source: 'form' }))
+  })
+
+  it('updates assigned_to and tag inputs and passes them to onApply', async () => {
+    const onApply = vi.fn()
+    render(<FilterModal initialFilters={initialFilters} onClose={vi.fn()} onApply={onApply} />)
+    await userEvent.type(screen.getByPlaceholderText('User ID'), '42')
+    await userEvent.type(screen.getByPlaceholderText('tag id veya null'), 'null')
+    await userEvent.click(screen.getByText('Uygula'))
+    expect(onApply).toHaveBeenCalledWith(
+      expect.objectContaining({ assigned_to: '42', tag: 'null' })
+    )
+  })
 })

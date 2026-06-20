@@ -7,7 +7,7 @@ from django.db import transaction
 
 from common.secrets import get_secret_store
 from notifications.exceptions import EmailDeliveryError
-from notifications.models import EmailLog, MailConfiguration
+from notifications.mail.models import EmailLog, MailConfiguration
 
 from .contracts import ResolvedMailConfiguration
 from .logs import mark_email_failed, mark_email_sent

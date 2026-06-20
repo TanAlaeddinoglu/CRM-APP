@@ -77,6 +77,34 @@ describe('TagStatistics', () => {
     getCustomerTagStats.mockRejectedValue(new Error('fail'))
     render(<TagStatistics />)
     await waitFor(() => expect(consoleSpy).toHaveBeenCalled())
+    expect(screen.getByText(/Toplam müşteri/)).toBeInTheDocument()
     consoleSpy.mockRestore()
+  })
+
+  it('falls back to empty stats when response data is missing', async () => {
+    useAuth.mockReturnValue({ user: { role: 'ADMIN' } })
+    getCustomerTagStats.mockResolvedValue({ data: null })
+    render(<TagStatistics />)
+    await waitFor(() => expect(screen.getByText(/Toplam müşteri/)).toBeInTheDocument())
+    // total defaults to 0
+    const totalItem = screen.getByText(/Toplam müşteri/).closest('.tag-stats-item')
+    expect(totalItem).toHaveTextContent('0')
+  })
+
+  it('tolerates a missing by_tag array', async () => {
+    useAuth.mockReturnValue({ user: { role: 'ADMIN' } })
+    getCustomerTagStats.mockResolvedValue({ data: { total: 4 } })
+    render(<TagStatistics />)
+    await waitFor(() => expect(screen.getByText(/Toplam müşteri/)).toBeInTheDocument())
+  })
+
+  it('defaults a null count to 0', async () => {
+    useAuth.mockReturnValue({ user: { role: 'ADMIN' } })
+    getCustomerTagStats.mockResolvedValue({
+      data: { total: 1, by_tag: [{ tag__tag_name: 'VIP', count: null }] },
+    })
+    render(<TagStatistics />)
+    const vipItem = await screen.findByText(/VIP/)
+    expect(vipItem.closest('.tag-stats-item')).toHaveTextContent('0')
   })
 })

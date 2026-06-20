@@ -241,7 +241,7 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.data["summary"]["conversion_rate"], 80.0)
         self.assertEqual(response.data["summary"]["rejection_rate"], 0.0)
         self.assertEqual(
-            response.data["summary"]["top_product"]["product_name"], "Kalinlastirma"
+            response.data["summary"]["top_products"][0]["product_name"], "Kalinlastirma"
         )
 
     def test_my_performance_requires_authentication(self):
@@ -262,8 +262,10 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.data["summary"]["negative"], 0)
         self.assertEqual(response.data["summary"]["conversion_rate"], 80.0)
         self.assertEqual(response.data["summary"]["rejection_rate"], 0.0)
-        self.assertEqual(response.data["top_product"]["product_name"], "Kalinlastirma")
-        self.assertEqual(response.data["top_product"]["count"], 2)
+        self.assertEqual(
+            response.data["top_products"][0]["product_name"], "Kalinlastirma"
+        )
+        self.assertEqual(response.data["top_products"][0]["count"], 2)
         self.assertEqual(
             response.data["appointment_status_distribution"],
             [
@@ -343,7 +345,8 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.data["summary"]["total_remaining_amount"], 600.0)
 
         product_rows = {
-            row["product_name"]: row for row in response.data["tables"]["product_breakdown"]
+            row["product_name"]: row
+            for row in response.data["tables"]["product_breakdown"]
         }
         self.assertEqual(product_rows["Sertlesme"]["total_sales_appointments"], 2)
         self.assertEqual(product_rows["Sertlesme"]["completed_appointments"], 1)
@@ -374,9 +377,7 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.data["summary"]["total_payment_rows"], 3)
         self.assertEqual(response.data["summary"]["total_paid_amount"], 350.0)
 
-        trend_days = {
-            row["day"] for row in response.data["charts"]["payment_trend"]
-        }
+        trend_days = {row["day"] for row in response.data["charts"]["payment_trend"]}
         self.assertNotIn(old_payment_date.date().isoformat(), trend_days)
 
     def test_product_price_distribution_includes_not_started_sales(self):

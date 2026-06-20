@@ -12,7 +12,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from accounts.authenticate import CustomAuthentication
 from notifications.exceptions import EmailDeliveryError
-from notifications.models import EmailLog
+from notifications.mail.models import EmailLog
 
 from .services import (
     send_email_notification,

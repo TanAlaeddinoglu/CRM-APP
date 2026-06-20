@@ -1,3 +1,10 @@
+function formatAmount(value) {
+  return new Intl.NumberFormat("tr-TR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
 function formatDate(dateString) {
   if (!dateString) return "-";
 
@@ -24,6 +31,7 @@ export default function PaymentHistoryTable({ rows }) {
         <tr>
           <th>Tarih</th>
           <th>Müşteri</th>
+          <th>Sorumlu</th>
           <th>Randevu</th>
           <th>Ödenen</th>
           <th>Kalan</th>
@@ -38,11 +46,13 @@ export default function PaymentHistoryTable({ rows }) {
 
             <td>{p.appointment?.customer ?? "-"}</td>
 
+            <td>{p.assigned_user_name ?? "-"}</td>
+
             <td>{p.appointment?.name ?? "-"}</td>
 
-            <td>{p.paid_amount} ₺</td>
+            <td>{formatAmount(p.paid_amount)} ₺</td>
 
-            <td>{p.remaining_amount} ₺</td>
+            <td>{formatAmount(p.remaining_amount)} ₺</td>
 
             <td>
               <PaymentStatusBadge

@@ -12,12 +12,10 @@ import {
 } from "recharts";
 import {
   EmptyReportState,
-  FilterGrid,
-  FilterPanel,
   ReportCard,
-  SelectField,
   TwoColumnGrid,
 } from "./ReportUI";
+import FilterBar from "../common/FilterBar.jsx";
 import { getCustomerTagStats } from "../../services/customer";
 import toast from "react-hot-toast";
 
@@ -72,18 +70,11 @@ export default function TagStatisticsReportSection({ userOptions, optionsLoading
 
   return (
     <div className="reports-section-stack">
-      <FilterPanel title="Filtreler" onSubmit={handleSubmit} onReset={handleReset} loading={loading}>
-        <FilterGrid>
-          <SelectField
-            label="Kullanıcı"
-            name="user_id"
-            value={selectedUserId}
-            onChange={(e) => setSelectedUserId(e.target.value)}
-            options={userOptions}
-            placeholder={optionsLoading ? "Yükleniyor..." : "Tüm kullanıcılar"}
-          />
-        </FilterGrid>
-      </FilterPanel>
+      <FilterBar.Panel title="Filtreler" onSubmit={handleSubmit} onReset={handleReset} loading={loading}>
+        <FilterBar.Grid>
+          <FilterBar.Select label="Kullanıcı" name="user_id" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} options={userOptions} placeholder={optionsLoading ? "Yükleniyor..." : "Tüm kullanıcılar"} />
+        </FilterBar.Grid>
+      </FilterBar.Panel>
 
       {!stats ? (
         <EmptyReportState
