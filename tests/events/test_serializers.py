@@ -304,3 +304,80 @@ def test_payment_serializer_validates_negative_values():
     assert not serializer.is_valid()
     assert "total_amount" in serializer.errors
     assert "paid_amount" in serializer.errors
+
+
+def test_appointment_payment_serializer_exposes_customer_pk():
+    user = User.objects.create_user(username="cpk", password="pass")
+    customer = _make_customer(user, "1300000099")
+    product = _make_product(user, "CPK")
+    appointment = Appointment.objects.create(
+        name="CPK Visit",
+        scheduled_for=timezone.now() + timedelta(days=1),
+        appointment_type=APPOINTMENT_TYPES[0][0],
+        customer=customer,
+        product=product,
+        created_by=user,
+    )
+    payment = AppointmentPayment.objects.create(
+        appointment=appointment,
+        total_amount=Decimal("100.00"),
+        paid_amount=Decimal("50.00"),
+        remaining_amount=Decimal("50.00"),
+        payment_status="kismi",
+        payment_date=timezone.now(),
+    )
+
+    data = AppointmentPaymentSerializer(payment).data
+    assert "customer_pk" in data
+    assert data["customer_pk"] == customer.pk
+
+
+def test_appointment_payment_serializer_exposes_customer_name():
+    user = User.objects.create_user(username="cname", password="pass")
+    customer = Customer.objects.create(
+        customer_name="Test",
+        customer_surname="Müşteri",
+        customer_phone="1300000098",
+        created_by=user,
+    )
+    product = _make_product(user, "CName")
+    appointment = Appointment.objects.create(
+        name="CName Visit",
+        scheduled_for=timezone.now() + timedelta(days=1),
+        appointment_type=APPOINTMENT_TYPES[0][0],
+        customer=customer,
+        product=product,
+        created_by=user,
+    )
+    payment = AppointmentPayment.objects.create(
+        appointment=appointment,
+        total_amount=Decimal("200.00"),
+        paid_amount=Decimal("200.00"),
+        remaining_amount=Decimal("0.00"),
+        payment_status="tamamlandi",
+        payment_date=timezone.now(),
+    )
+
+    data = AppointmentPaymentSerializer(payment).data
+    assert "customer_name" in data
+    assert "Test" in data["customer_name"]
+    assert "appointment_name" in data
+    assert data["appointment_name"] == "CName Visit"
+
+
+def test_appointment_serializer_exposes_customer_pk():
+    user = User.objects.create_user(username="apk", password="pass")
+    customer = _make_customer(user, "1300000097")
+    product = _make_product(user, "APK")
+    appointment = Appointment.objects.create(
+        name="APK Visit",
+        scheduled_for=timezone.now() + timedelta(days=1),
+        appointment_type=APPOINTMENT_TYPES[0][0],
+        customer=customer,
+        product=product,
+        created_by=user,
+    )
+
+    data = AppointmentSerializer(appointment).data
+    assert "customer_pk" in data
+    assert data["customer_pk"] == customer.pk

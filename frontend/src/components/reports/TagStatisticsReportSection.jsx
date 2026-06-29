@@ -11,8 +11,10 @@ import {
   Cell,
 } from "recharts";
 import {
+  ChartWhenVisible,
   EmptyReportState,
   ReportCard,
+  SectionTitle,
   TwoColumnGrid,
 } from "./ReportUI";
 import FilterBar from "../common/FilterBar.jsx";
@@ -90,7 +92,7 @@ export default function TagStatisticsReportSection({ userOptions, optionsLoading
         />
       ) : (
         <TwoColumnGrid>
-          <ReportCard title={<CardTitle icon={Tag} label="Etiket Dağılımı" />}>
+          <ReportCard title={<SectionTitle icon={Tag} title="Etiket Dağılımı" size="sm" />}>
             <div className="reports-list-rows">
               <TotalRow total={total} />
               <div className="reports-divider" />
@@ -100,8 +102,8 @@ export default function TagStatisticsReportSection({ userOptions, optionsLoading
             </div>
           </ReportCard>
 
-          <ReportCard title={<CardTitle icon={BarChart2} label="Dağılım Grafiği" />}>
-            <div className="reports-chart-wrap" style={{ height: `${chartHeight}px` }}>
+          <ReportCard title={<SectionTitle icon={BarChart2} title="Dağılım Grafiği" size="sm" />}>
+            <ChartWhenVisible height={chartHeight}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   layout="vertical"
@@ -113,30 +115,17 @@ export default function TagStatisticsReportSection({ userOptions, optionsLoading
                   <XAxis type="number" allowDecimals={false} tick={{ fontSize: 12, fill: "#64748b" }} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} />
                   <YAxis type="category" dataKey="name" width={130} tickFormatter={truncateLabel} tick={{ fontSize: 12, fill: "#374151", fontWeight: 600 }} axisLine={false} tickLine={false} />
                   <Tooltip content={<TagBarTooltip total={total} />} />
-                  <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18}>
+                  <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18} isAnimationActive={true} animationDuration={1400} animationEasing="ease-out" animationBegin={50}>
                     {tagRows.map((row, idx) => (
                       <Cell key={row.name} fill={PALETTE[idx % PALETTE.length]} />
                     ))}
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-            </div>
+            </ChartWhenVisible>
           </ReportCard>
         </TwoColumnGrid>
       )}
-    </div>
-  );
-}
-
-function CardTitle({ icon: Icon, label }) {
-  return (
-    <div className="reports-section-title">
-      <div className="reports-section-title__icon reports-section-title__icon--sm">
-        <Icon size={15} />
-      </div>
-      <span className="reports-section-title__text reports-section-title__text--sm">
-        {label}
-      </span>
     </div>
   );
 }

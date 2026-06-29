@@ -113,7 +113,9 @@ export default function AddPaymentModal({
         setSearchLoading(true);
 
         const res = await getAppointments({
-          search: query,
+          search: normalizeAppointmentSearchQuery(query),
+          excludeStatus: "olumsuz",
+          excludeAppointmentType: "hatirlatma",
           page: 1,
           page_size: 20,
         });
@@ -351,7 +353,7 @@ export default function AddPaymentModal({
             <div className="appointment-search-block">
               <input
                 type="text"
-                placeholder="Müşteri adı veya randevu adı ile ara"
+                placeholder="Müşteri adı, telefon veya randevu adı ile ara"
                 value={appointmentSearch}
                 onChange={(e) => {
                   setAppointmentSearch(e.target.value);
@@ -478,4 +480,9 @@ export default function AddPaymentModal({
       </div>
     </div>
   );
+}
+
+function normalizeAppointmentSearchQuery(query) {
+  const digits = String(query || "").replace(/\D/g, "");
+  return digits.length >= 6 ? digits : query;
 }

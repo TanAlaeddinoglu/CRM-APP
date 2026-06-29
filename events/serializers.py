@@ -19,6 +19,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     customer_id = serializers.PrimaryKeyRelatedField(
         source="customer", queryset=Customer.objects.all(), write_only=True
     )
+    customer_pk = serializers.SerializerMethodField(read_only=True)
     product_id = serializers.PrimaryKeyRelatedField(
         source="product", queryset=Product.objects.all(), write_only=True
     )
@@ -33,6 +34,9 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "created_by",
             "updated_by",
         ]
+
+    def get_customer_pk(self, obj):
+        return obj.customer_id if obj.customer else None
 
     def get_customer(self, obj):
         return obj.customer.full_name() if obj.customer else None
@@ -127,12 +131,26 @@ class AppointmentPaymentSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source="created_by.username")
     updated_by = serializers.ReadOnlyField(source="updated_by.username")
     assigned_user_name = serializers.SerializerMethodField(read_only=True)
+    customer_name = serializers.SerializerMethodField(read_only=True)
+    customer_pk = serializers.SerializerMethodField(read_only=True)
+    appointment_name = serializers.SerializerMethodField(read_only=True)
 
     def get_assigned_user_name(self, obj):
         user = getattr(getattr(obj.appointment, "customer", None), "assigned_to", None)
         if user is None:
             return None
         return user.get_full_name() or user.username
+
+    def get_customer_name(self, obj):
+        c = getattr(obj.appointment, "customer", None)
+        return c.full_name() if c else None
+
+    def get_customer_pk(self, obj):
+        c = getattr(obj.appointment, "customer", None)
+        return c.id if c else None
+
+    def get_appointment_name(self, obj):
+        return getattr(obj.appointment, "name", None)
 
     class Meta:
         model = AppointmentPayment

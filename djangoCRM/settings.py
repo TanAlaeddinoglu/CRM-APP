@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     "customer.apps.CustomerConfig",
     "events.apps.EventsConfig",
     "exporter.apps.ExporterConfig",
+    "importer.apps.ImporterConfig",
     "notifications.apps.NotificationsConfig",
     "products.apps.ProductsConfig",
     "reports.apps.ReportsConfig",
@@ -124,7 +125,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     # "PAGE_SIZE": 20,
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
         "accounts.authenticate.CustomAuthentication",
     ),
     "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),

@@ -23,14 +23,18 @@ import {
 import { getMyPerformanceReport } from "../services/report";
 import {
   ChartAxisTick,
+  ChartWhenVisible,
+  EmptyChart,
   EmptyReportState,
   KpiGrid,
   ReportCard,
+  SectionTitle,
   TwoColumnGrid,
 } from "../components/reports/ReportUI";
 import FilterBar from "../components/common/FilterBar.jsx";
+import PageCard from "../components/common/PageCard.jsx";
 import { usePageTransition } from "../context/PageTransitionContext.jsx";
-import { normalizeParams } from "../utils/reportUtils";
+import { normalizeParams, formatShortDate, formatPercent } from "../utils/reportUtils";
 import "../assets/css/reports.css";
 
 const PRESET_OPTIONS = [
@@ -152,6 +156,7 @@ export default function MyPerformancePage() {
   };
 
   return (
+    <PageCard>
     <div className="reports-page">
       <div className="reports-page__header">
         <h1 className="h1 reports-page__title">Performansım</h1>
@@ -200,9 +205,9 @@ export default function MyPerformancePage() {
             }
           >
             {appointmentByDayData.length === 0 ? (
-              <EmptyChartState text="Bu dönemde alınan randevu bulunamadı." />
+              <EmptyChart text="Bu dönemde alınan randevu bulunamadı." />
             ) : (
-              <div style={{ width: "100%", height: `${MAIN_CHART_HEIGHT}px` }}>
+              <ChartWhenVisible height={MAIN_CHART_HEIGHT}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={appointmentByDayData}
@@ -235,7 +240,7 @@ export default function MyPerformancePage() {
                     />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              </ChartWhenVisible>
             )}
           </ReportCard>
 
@@ -244,9 +249,9 @@ export default function MyPerformancePage() {
               title={<SectionTitle icon={ShoppingBag} title="Ürüne Göre Satış" />}
             >
               {salesByProductData.length === 0 ? (
-                <EmptyChartState text="Ürün bazlı satış verisi bulunamadı." />
+                <EmptyChart text="Ürün bazlı satış verisi bulunamadı." />
               ) : (
-                <div style={{ width: "100%", height: `${SIDE_CHART_HEIGHT}px` }}>
+                <ChartWhenVisible height={SIDE_CHART_HEIGHT}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={salesByProductData}
@@ -282,7 +287,7 @@ export default function MyPerformancePage() {
                       />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
+                </ChartWhenVisible>
               )}
             </ReportCard>
 
@@ -292,7 +297,7 @@ export default function MyPerformancePage() {
               }
             >
               {statusDistributionData.length === 0 ? (
-                <EmptyChartState text="Bu dönem için randevu durumu bulunamadı." />
+                <EmptyChart text="Bu dönem için randevu durumu bulunamadı." />
               ) : (
                 <div
                   style={{
@@ -302,7 +307,7 @@ export default function MyPerformancePage() {
                     alignItems: "center",
                   }}
                 >
-                  <div style={{ width: "100%", height: `${SIDE_CHART_HEIGHT}px` }}>
+                  <ChartWhenVisible height={SIDE_CHART_HEIGHT}>
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
@@ -326,7 +331,7 @@ export default function MyPerformancePage() {
                         <Tooltip content={<StatusTooltip />} />
                       </PieChart>
                     </ResponsiveContainer>
-                  </div>
+                  </ChartWhenVisible>
 
                   <div style={{ display: "grid", gap: "10px" }}>
                     {statusDistributionData.map((item) => (
@@ -340,45 +345,7 @@ export default function MyPerformancePage() {
         </div>
       )}
     </div>
-  );
-}
-
-function SectionTitle({ icon: Icon, title }) {
-  return (
-    <div
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "10px",
-      }}
-    >
-      <div
-        style={{
-          width: "32px",
-          height: "32px",
-          borderRadius: "10px",
-          background: "#eef5ff",
-          border: "1px solid #c7d7f3",
-          display: "grid",
-          placeItems: "center",
-          color: NAVY,
-          flexShrink: 0,
-        }}
-      >
-        {React.createElement(Icon, { size: 16 })}
-      </div>
-
-      <span
-        style={{
-          fontSize: "16px",
-          fontWeight: 800,
-          color: "#0f172a",
-          lineHeight: 1.2,
-        }}
-      >
-        {title}
-      </span>
-    </div>
+    </PageCard>
   );
 }
 
@@ -429,7 +396,7 @@ function TopProductCard({ topProduct }) {
           </div>
         </div>
       ) : (
-        <EmptyChartState text="Bu dönemde satış bulunamadı." />
+        <EmptyChart text="Bu dönemde satış bulunamadı." />
       )}
     </ReportCard>
   );
@@ -482,23 +449,6 @@ function StatusSummaryCard({ item }) {
       <div style={{ fontSize: "13px", color: "#64748b" }}>
         Adet: <strong style={{ color: "#0f172a" }}>{item.count}</strong>
       </div>
-    </div>
-  );
-}
-
-function EmptyChartState({ text }) {
-  return (
-    <div
-      style={{
-        background: "#f8fafc",
-        border: "1px dashed #d6e0ea",
-        borderRadius: "14px",
-        padding: "18px",
-        color: "#64748b",
-        fontSize: "14px",
-      }}
-    >
-      {text}
     </div>
   );
 }
@@ -561,24 +511,8 @@ function TooltipCard({ children }) {
   );
 }
 
-function formatShortDate(dateString) {
-  if (!dateString) return "-";
-
-  const parts = dateString.split("-");
-  if (parts.length !== 3) return dateString;
-
-  return `${parts[2]}.${parts[1]}`;
-}
-
 function roundPercent(value) {
   return Math.round(value * 100) / 100;
-}
-
-function formatPercent(value) {
-  return `${new Intl.NumberFormat("tr-TR", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(Number(value || 0))}%`;
 }
 
 function handleApiError(error) {

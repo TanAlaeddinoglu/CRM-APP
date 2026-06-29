@@ -146,12 +146,13 @@
 
 
 .info-item label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
   color: #6b7280;
   font-weight: 500;
   padding-top: 10px;
-
-
 }
 
 .info-item span {

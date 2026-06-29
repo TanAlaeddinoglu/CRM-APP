@@ -239,6 +239,9 @@ cython_debug/
 # Ruff stuff:
 .ruff_cache/
 
+# Local/demo data commands
+reports/management/commands/seed_demo_crm_data.py
+
 # PyPI configuration file
 .pypirc
 
@@ -260,3 +263,4 @@ docker/.env
 docker/.env.*
 !.env.example
 !.env.*.example
+.db.*

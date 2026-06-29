@@ -125,6 +125,28 @@ def resolve_date_range(validated_data):
     return start_dt, end_dt
 
 
+def count_working_days_excluding_sundays(start_dt, end_dt):
+    if end_dt <= start_dt:
+        return 0
+
+    day_count = max(1, ceil((end_dt - start_dt).total_seconds() / 86400))
+    local_end = timezone.localtime(end_dt)
+    end_date = local_end.date()
+
+    if local_end.time() == time.min and local_end.microsecond == 0:
+        end_date = (local_end - timedelta(microseconds=1)).date()
+
+    start_date = end_date - timedelta(days=day_count - 1)
+    working_days = 0
+
+    for offset in range(day_count):
+        current_date = start_date + timedelta(days=offset)
+        if current_date.weekday() != 6:
+            working_days += 1
+
+    return working_days
+
+
 def build_user_dashboard_summary(*, target_user, start_dt, end_dt):
     active_customer_count = Customer.objects.filter(
         assigned_to=target_user,
@@ -179,6 +201,8 @@ def build_user_dashboard_summary(*, target_user, start_dt, end_dt):
     pending_appointments = appointment_counts["pending_appointments"] or 0
     sales_appointments = appointment_counts["sales_appointments"] or 0
     negative_appointments = appointment_counts["negative_appointments"] or 0
+    working_day_count = count_working_days_excluding_sundays(start_dt, end_dt)
+    average_denominator = working_day_count or 1
 
     conversion_rate = (
         round((sales_appointments / total_appointments) * 100, 2)
@@ -239,6 +263,10 @@ def build_user_dashboard_summary(*, target_user, start_dt, end_dt):
             "active_customer_count": active_customer_count,
             "tag_change_count": tag_change_count,
             "total_appointments": total_appointments,
+            "working_day_count": working_day_count,
+            "daily_average_appointments": round(
+                total_appointments / average_denominator, 2
+            ),
             "pending_appointments": pending_appointments,
             "sales_appointments": sales_appointments,
             "negative_appointments": negative_appointments,
@@ -264,7 +292,6 @@ def build_my_performance_summary(*, target_user, start_dt, end_dt):
     summary = user_dashboard["summary"]
     charts = user_dashboard["charts"]
     total_appointments = summary["total_appointments"] or 0
-    day_count = max(1, ceil((end_dt - start_dt).total_seconds() / 86400))
 
     status_rows = [
         {
@@ -286,7 +313,8 @@ def build_my_performance_summary(*, target_user, start_dt, end_dt):
         "summary": {
             "active_data": summary["active_customer_count"],
             "total_appointments": total_appointments,
-            "daily_average_appointments": round(total_appointments / day_count, 2),
+            "working_day_count": summary["working_day_count"],
+            "daily_average_appointments": summary["daily_average_appointments"],
             "pending": summary["pending_appointments"],
             "sales": summary["sales_appointments"],
             "negative": summary["negative_appointments"],

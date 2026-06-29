@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
   extractList, buildUserLabel, normalizeParams,
   formatCurrency, formatPercent, formatMetric, renderCellValue,
+  formatShortDate, compactCurrency,
 } from '../../src/utils/reportUtils.js'
 
 describe('reportUtils', () => {
@@ -170,6 +171,80 @@ describe('reportUtils', () => {
 
     it('returns raw value for unrecognized labels', () => {
       expect(formatMetric('Randevu Sayısı', 42)).toBe(42)
+    })
+
+    it('formats "Tahsilat Oranı %" as percent not currency', () => {
+      const result = formatMetric('Tahsilat Oranı %', 45.38)
+      expect(result).toContain('%')
+      expect(result).not.toContain('₺')
+    })
+
+    it('formats "Toplam Ciro" as currency', () => {
+      const result = formatMetric('Toplam Ciro', 108000)
+      expect(result).toContain('₺')
+      expect(result).not.toContain('%')
+    })
+
+    it('formats "Bakiye" label as currency', () => {
+      const result = formatMetric('Kalan Bakiye', 500)
+      expect(result).toContain('₺')
+    })
+
+    it('formats "Ücret" label as currency', () => {
+      const result = formatMetric('Ücret', 250)
+      expect(result).toContain('₺')
+    })
+  })
+
+  describe('formatShortDate()', () => {
+    it('converts ISO date to DD.MM format', () => {
+      expect(formatShortDate('2024-06-15')).toBe('15.06')
+    })
+
+    it('returns dash for falsy input', () => {
+      expect(formatShortDate(null)).toBe('-')
+      expect(formatShortDate('')).toBe('-')
+      expect(formatShortDate(undefined)).toBe('-')
+    })
+
+    it('returns raw string if not a valid date format', () => {
+      expect(formatShortDate('invalid')).toBe('invalid')
+    })
+
+    it('handles single-digit days and months', () => {
+      expect(formatShortDate('2024-01-05')).toBe('05.01')
+    })
+  })
+
+  describe('compactCurrency()', () => {
+    it('returns millions with Mn suffix', () => {
+      const result = compactCurrency(2_500_000)
+      expect(result).toContain('Mn')
+      expect(result).toContain('₺')
+    })
+
+    it('returns thousands with B suffix', () => {
+      const result = compactCurrency(15_000)
+      expect(result).toContain('B')
+      expect(result).toContain('₺')
+    })
+
+    it('returns raw amount for values under 1000', () => {
+      const result = compactCurrency(500)
+      expect(result).toContain('500')
+      expect(result).toContain('₺')
+      expect(result).not.toContain('B')
+      expect(result).not.toContain('Mn')
+    })
+
+    it('handles null/undefined as 0', () => {
+      const result = compactCurrency(null)
+      expect(result).toContain('₺')
+    })
+
+    it('handles string numbers', () => {
+      const result = compactCurrency('3000000')
+      expect(result).toContain('Mn')
     })
   })
 
