@@ -50,13 +50,6 @@ export function deleteCustomer(id) {
 }
 
 // -----------------------------
-// BULK UPSERT (Excel duplicate "Kaydet")
-// -----------------------------
-export const bulkUpsertCustomers = (items = []) => {
-  return api.post("/customers/bulk/upsert/", { items });
-};
-
-// -----------------------------
 // BULK UPDATE (selection actions)
 // -----------------------------
 export const bulkUpdateCustomers = (items = []) => {
@@ -172,24 +165,52 @@ export async function resolveTagId(tagValue) {
 }
 
 // -----------------------------
-// EXCEL IMPORT
+// IMPORT (generic importer app)
 // -----------------------------
-export const importCustomersExcel = (file) => {
+
+/**
+ * Read raw column names + first 3 sample rows from an Excel file.
+ * Returns: { columns, sample_rows, suggested_mapping, target_fields }
+ * Does NOT create an ImportJob.
+ */
+export const getImportColumns = (file, modelKey = "customer") => {
   const formData = new FormData();
+  formData.append("model_key", modelKey);
+  formData.append("source_type", "excel");
   formData.append("file", file);
 
-  return api.post("/customers/import-excel/", formData, {
+  return api.post("/importer/columns/", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 };
 
-export const dryRunCustomersExcel = (file) => {
+/**
+ * Upload an Excel/CSV file and get a preview of rows (+ job_id).
+ * mapping: { [excelColumn]: customerField } — user-defined column mapping.
+ * Returns: { job_id, valid_count, invalid_count, duplicate_count, total, rows, valid_rows }
+ */
+export const previewImport = (file, modelKey = "customer", mapping = {}) => {
   const formData = new FormData();
+  formData.append("model_key", modelKey);
+  formData.append("source_type", "excel");
   formData.append("file", file);
 
-  return api.post("/customers/import-excel/dry-run/", formData, {
+  if (Object.keys(mapping).length > 0) {
+    formData.append("mapping", JSON.stringify(mapping));
+  }
+
+  return api.post("/importer/preview/", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
+};
+
+/**
+ * Import the ok rows for a previously previewed job.
+ * rows: user-edited ok rows in Customer field format.
+ * Returns: { success_count, error_count, skipped_count, created_count }
+ */
+export const startImport = (jobId, rows = []) => {
+  return api.post("/importer/start/", { job_id: jobId, rows });
 };
 
 // -----------------------------

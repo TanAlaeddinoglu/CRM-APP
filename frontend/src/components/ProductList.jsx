@@ -1,6 +1,7 @@
 // src/components/ProductList.jsx
 import {useEffect, useMemo, useState} from "react";
 import "../assets/css/ProductList.css";
+import PageCard from "./common/PageCard.jsx";
 import { Pencil, Plus, Search, Upload } from "lucide-react";
 import {getProducts, createProduct, updateProduct} from "../services/product";
 import {useAuth} from "../context/AuthContext";
@@ -122,7 +123,7 @@ export default function ProductList() {
     };
 
     return (
-        <div className="product-list-container">
+        <PageCard className="product-list-container">
             <div className="product-list-header">
                 <div className="product-list-heading">
                     <h2 className="product-list-title">Ürün Kataloğu</h2>
@@ -255,6 +256,6 @@ export default function ProductList() {
                     onSave={handleEditSave}
                 />
             )}
-        </div>
+        </PageCard>
     );
 }

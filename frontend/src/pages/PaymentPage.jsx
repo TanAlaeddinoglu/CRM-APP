@@ -10,6 +10,7 @@ import AddPaymentModal from "../components/payment/AddPaymentModal.jsx";
 import ExportActionButton from "../components/export/ExportActionButton.jsx";
 import LoadingIndicator from "../components/common/LoadingIndicator.jsx";
 import FilterBar from "../components/common/FilterBar.jsx";
+import PageCard from "../components/common/PageCard.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { usePageTransition } from "../context/PageTransitionContext.jsx";
 import { Plus, Upload } from "lucide-react";
@@ -199,6 +200,7 @@ export default function PaymentPage() {
   };
 
   return (
+    <PageCard>
     <div className="payment-page-wrapper">
       <div className="page-header">
         <h1 className="h1">Ödemeler</h1>
@@ -395,6 +397,7 @@ export default function PaymentPage() {
         onSuccess={refreshPayments}
       />
     </div>
+    </PageCard>
   );
 }
 

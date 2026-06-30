@@ -86,7 +86,7 @@ describe('AddPaymentModal', () => {
   describe('free search mode', () => {
     it('warns when fewer than 2 characters are typed', async () => {
       render(<AddPaymentModal isOpen onClose={vi.fn()} />)
-      const input = screen.getByPlaceholderText('Müşteri adı veya randevu adı ile ara')
+      const input = screen.getByPlaceholderText('Müşteri adı, telefon veya randevu adı ile ara')
       await userEvent.type(input, 'a')
       expect(await screen.findByText('Arama için en az 2 karakter gir.')).toBeInTheDocument()
       expect(getAppointments).not.toHaveBeenCalled()
@@ -97,7 +97,7 @@ describe('AddPaymentModal', () => {
         data: { results: [{ id: 1, customer: 'Ali Veli', status: 'satis', product: 'Paket A' }] },
       })
       render(<AddPaymentModal isOpen onClose={vi.fn()} />)
-      await userEvent.type(screen.getByPlaceholderText('Müşteri adı veya randevu adı ile ara'), 'ali')
+      await userEvent.type(screen.getByPlaceholderText('Müşteri adı, telefon veya randevu adı ile ara'), 'ali')
       await waitFor(() => {
         expect(getAppointments).toHaveBeenCalledWith(expect.objectContaining({ search: 'ali' }))
       }, { timeout: 1000 })
@@ -107,7 +107,7 @@ describe('AddPaymentModal', () => {
     it('shows "no results" when search returns nothing', async () => {
       getAppointments.mockResolvedValue({ data: { results: [] } })
       render(<AddPaymentModal isOpen onClose={vi.fn()} />)
-      await userEvent.type(screen.getByPlaceholderText('Müşteri adı veya randevu adı ile ara'), 'xyz')
+      await userEvent.type(screen.getByPlaceholderText('Müşteri adı, telefon veya randevu adı ile ara'), 'xyz')
       expect(await screen.findByText('Sonuç bulunamadı.', {}, { timeout: 1000 })).toBeInTheDocument()
     })
   })
@@ -118,7 +118,7 @@ describe('AddPaymentModal', () => {
         data: { results: [{ id: 1, customer: 'Ali Veli', status: 'beklemede', product: 'Paket A' }] },
       })
       render(<AddPaymentModal isOpen onClose={vi.fn()} />)
-      await userEvent.type(screen.getByPlaceholderText('Müşteri adı veya randevu adı ile ara'), 'ali')
+      await userEvent.type(screen.getByPlaceholderText('Müşteri adı, telefon veya randevu adı ile ara'), 'ali')
       const result = await screen.findByText('Ali Veli', {}, { timeout: 1000 })
       await userEvent.click(result)
       expect(toast.error).toHaveBeenCalledWith(
@@ -132,7 +132,7 @@ describe('AddPaymentModal', () => {
         data: { results: [{ id: 1, customer: 'Ali Veli', status: 'satis', product: 'Paket A' }] },
       })
       render(<AddPaymentModal isOpen onClose={vi.fn()} />)
-      await userEvent.type(screen.getByPlaceholderText('Müşteri adı veya randevu adı ile ara'), 'ali')
+      await userEvent.type(screen.getByPlaceholderText('Müşteri adı, telefon veya randevu adı ile ara'), 'ali')
       const result = await screen.findByText('Ali Veli', {}, { timeout: 1000 })
       await userEvent.click(result)
       await waitFor(() => {

@@ -24,6 +24,7 @@ import PaymentReportSection from "../../components/reports/PaymentReportSection"
 import ProductPriceDistributionReportSection from "../../components/reports/ProductPriceDistributionReportSection";
 import TagStatisticsReportSection from "../../components/reports/TagStatisticsReportSection";
 import { usePageTransition } from "../../context/PageTransitionContext.jsx";
+import PageCard from "../../components/common/PageCard.jsx";
 import {
   buildUserLabel,
   extractList,
@@ -215,6 +216,7 @@ export default function ReportsPage() {
   };
 
   return (
+    <PageCard>
     <div className="reports-page">
       <div className="reports-page__header">
         <h1 className="h1 reports-page__title">
@@ -323,6 +325,7 @@ export default function ReportsPage() {
         )}
       </div>
     </div>
+    </PageCard>
   );
 }
 

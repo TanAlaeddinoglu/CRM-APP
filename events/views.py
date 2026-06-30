@@ -116,6 +116,7 @@ class AppointmentPaymentsViewSet(viewsets.ModelViewSet):
         "appointment__customer__customer_phone",
         "appointment__customer__assigned_to__username",
     ]
+    filterset_fields = ["payment_status"]
     ordering_fields = [
         "payment_date",
         "appointment__customer__assigned_to__username",

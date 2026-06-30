@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   CalendarDays,
   Package,
   UserRound,
   Activity,
   PieChart,
+  ArrowUpRight,
+  Info,
+  Search,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -20,17 +23,36 @@ import {
   YAxis,
 } from "recharts";
 
-import { formatPercent } from "../../utils/reportUtils";
+import { formatPercent, formatShortDate } from "../../utils/reportUtils";
 import {
+  ChartWhenVisible,
+  EmptyChart,
   EmptyReportState,
   KpiGrid,
+  LegendChip,
+  RateBadge,
+  RateProgress,
   ReportCard,
+  SectionTitle,
   SortableTableCard,
   TwoColumnGrid,
 } from "./ReportUI";
 import FilterBar from "../common/FilterBar.jsx";
+import { getAppointments } from "../../services/appointment";
 
 const CHART_HEIGHT = 280;
+
+const STATUS_API_MAP = {
+  Beklemede: "beklemede",
+  Satış:     "satis",
+  Olumsuz:   "olumsuz",
+};
+
+const STATUS_INFO = {
+  Beklemede: "Sonucu henüz girilmemiş, bekleyen randevular.",
+  Satış:     "Ürün satışıyla sonuçlanan başarılı randevular.",
+  Olumsuz:   "Olumsuz sonuçlanan veya iptal edilen randevular.",
+};
 
 const SEMANTIC_STYLES = {
   success: { fill: "#16a34a" },
@@ -86,6 +108,8 @@ export default function AppointmentsReportSection({
   onSubmit,
   onReset,
 }) {
+  const [drillDownStatus, setDrillDownStatus] = useState(null);
+
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
@@ -181,7 +205,7 @@ export default function AppointmentsReportSection({
               {trendData.length === 0 ? (
                 <EmptyChart text="Trend verisi bulunamadı." />
               ) : (
-                <div className="reports-chart-wrap" style={{ height: `${CHART_HEIGHT}px` }}>
+                <ChartWhenVisible height={CHART_HEIGHT}>
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart
                       data={trendData}
@@ -202,7 +226,7 @@ export default function AppointmentsReportSection({
                         width={40}
                       />
                       <Tooltip content={<TrendTooltip />} />
-                      <Bar dataKey="total" name="Toplam Randevu" fill="#cbd5e1" radius={[8, 8, 0, 0]} barSize={34} />
+                      <Bar dataKey="total" name="Toplam Randevu" fill="#cbd5e1" radius={[8, 8, 0, 0]} barSize={34} isAnimationActive={true} animationDuration={1400} animationEasing="ease-out" animationBegin={50} />
                       <Line
                         type="monotone"
                         dataKey="sales"
@@ -211,10 +235,13 @@ export default function AppointmentsReportSection({
                         strokeWidth={3}
                         dot={{ r: 4, fill: SEMANTIC_STYLES.info.fill }}
                         activeDot={{ r: 6 }}
+                        isAnimationActive={true}
+                        animationDuration={1800}
+                        animationEasing="ease-out"
                       />
                     </ComposedChart>
                   </ResponsiveContainer>
-                </div>
+                </ChartWhenVisible>
               )}
 
               {trendData.length > 0 && (
@@ -225,12 +252,25 @@ export default function AppointmentsReportSection({
               )}
             </ReportCard>
 
-            <ReportCard title={<SectionTitle icon={PieChart} title="Status Dağılımı" />}>
+            <ReportCard
+              title={
+                <div className="reports-section-title">
+                  <div className="reports-section-title__icon">
+                    <PieChart size={16} />
+                  </div>
+                  <span className="reports-section-title__text">Status Dağılımı</span>
+                  <span className="reports-section-title__hint">
+                    <ArrowUpRight size={12} />
+                    Detay için tıklayın
+                  </span>
+                </div>
+              }
+            >
               {statusDistributionData.length === 0 ? (
                 <EmptyChart text="Status dağılımı verisi bulunamadı." />
               ) : (
                 <div className="reports-pie-grid">
-                  <div className="reports-chart-wrap" style={{ height: `${CHART_HEIGHT}px` }}>
+                  <ChartWhenVisible height={CHART_HEIGHT}>
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
                         <Pie
@@ -243,6 +283,9 @@ export default function AppointmentsReportSection({
                           dataKey="value"
                           nameKey="name"
                           labelLine={false}
+                          isAnimationActive={true}
+                          animationDuration={1200}
+                          animationEasing="ease-out"
                         >
                           {statusDistributionData.map((entry) => (
                             <Cell
@@ -254,11 +297,15 @@ export default function AppointmentsReportSection({
                         <Tooltip content={<StatusTooltip />} />
                       </RechartsPieChart>
                     </ResponsiveContainer>
-                  </div>
+                  </ChartWhenVisible>
 
                   <div className="reports-pie-legend">
                     {statusDistributionData.map((item) => (
-                      <StatusSummaryCard key={item.name} item={item} />
+                      <StatusSummaryCard
+                        key={item.name}
+                        item={item}
+                        onClick={() => setDrillDownStatus(item.name)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -267,61 +314,37 @@ export default function AppointmentsReportSection({
           </TwoColumnGrid>
         </div>
       )}
-    </div>
-  );
-}
 
-function SectionTitle({ icon: Icon, title }) {
-  return (
-    <div className="reports-section-title">
-      <div className="reports-section-title__icon">
-        {React.createElement(Icon, { size: 16 })}
-      </div>
-      <span className="reports-section-title__text">{title}</span>
-    </div>
-  );
-}
-
-function RateBadge({ value }) {
-  const numeric = Number(value ?? 0);
-  const semantic = getRateSemantic(numeric);
-
-  return (
-    <span className={`reports-rate-badge reports-semantic--${semantic}`}>
-      {formatPercent(numeric)}
-    </span>
-  );
-}
-
-function RateProgress({ value }) {
-  const numeric = Number(value ?? 0);
-  const semantic = getRateSemantic(numeric);
-  const fill = { success: "#16a34a", warning: "#f59e0b", danger: "#dc2626" }[semantic];
-
-  return (
-    <div className="reports-rate-progress">
-      <div className="reports-rate-progress__track">
-        <div
-          className="reports-rate-progress__bar"
-          style={{ width: `${Math.max(0, Math.min(100, numeric))}%`, background: fill }}
+      {drillDownStatus && (
+        <AppointmentDrillDownModal
+          status={drillDownStatus}
+          filters={filters}
+          onClose={() => setDrillDownStatus(null)}
         />
-      </div>
-      <span className="reports-rate-progress__value" style={{ color: fill }}>
-        {formatPercent(numeric)}
-      </span>
+      )}
     </div>
   );
 }
 
-function StatusSummaryCard({ item }) {
+function StatusSummaryCard({ item, onClick }) {
   const semantic = STATUS_META[item.name]?.semantic || "info";
   const fill = STATUS_META[item.name]?.fill || SEMANTIC_STYLES.info.fill;
 
   return (
-    <div className={`reports-status-card reports-semantic--${semantic}`}>
+    <div
+      className={`reports-status-card reports-semantic--${semantic}`}
+      onClick={onClick}
+      style={{ cursor: "pointer" }}
+    >
       <div className="reports-status-card__header">
         <span className="reports-status-dot" style={{ background: fill }} />
         {item.name}
+        {STATUS_INFO[item.name] && (
+          <span className="reports-status-info" onClick={(e) => e.stopPropagation()}>
+            <Info size={13} />
+            <span className="reports-status-info__tooltip">{STATUS_INFO[item.name]}</span>
+          </span>
+        )}
       </div>
       <div className="reports-status-card__meta">
         Oran: <strong>{formatPercent(item.percent)}</strong>
@@ -331,19 +354,6 @@ function StatusSummaryCard({ item }) {
       </div>
     </div>
   );
-}
-
-function LegendChip({ color, label }) {
-  return (
-    <div className="reports-legend-chip">
-      <span className="reports-legend-chip__dot" style={{ background: color }} />
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function EmptyChart({ text }) {
-  return <div className="reports-empty-chart">{text}</div>;
 }
 
 function TrendTooltip({ active, payload, label }) {
@@ -372,15 +382,95 @@ function StatusTooltip({ active, payload }) {
   );
 }
 
-function getRateSemantic(value) {
-  if (value >= 70) return "success";
-  if (value >= 40) return "warning";
-  return "danger";
-}
+function AppointmentDrillDownModal({ status, filters, onClose }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
-function formatShortDate(dateString) {
-  if (!dateString) return "-";
-  const parts = dateString.split("-");
-  if (parts.length !== 3) return dateString;
-  return `${parts[2]}.${parts[1]}`;
+  useEffect(() => {
+    setLoading(true);
+    const params = { status: STATUS_API_MAP[status], page_size: 100 };
+    if (filters.user_id)   params.user_id   = filters.user_id;
+    if (filters.date_from) params.date_from = filters.date_from;
+    if (filters.date_to)   params.date_to   = filters.date_to;
+
+    getAppointments(params)
+      .then((res) => setRows(res.data?.results ?? res.data ?? []))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
+  }, [status, filters]);
+
+  const fill = STATUS_META[status]?.fill || "#6b7280";
+
+  const visible = search.trim()
+    ? rows.filter((a) => {
+        const q = search.toLowerCase();
+        return (
+          (a.customer || "").toLowerCase().includes(q) ||
+          (a.appointment_type || "").toLowerCase().includes(q)
+        );
+      })
+    : rows;
+
+  return (
+    <div className="drill-modal-overlay" onClick={onClose}>
+      <div className="drill-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="drill-modal__header">
+          <span className="drill-modal__dot" style={{ background: fill }} />
+          <h3 className="drill-modal__title">{status} Randevuları</h3>
+          <div className="drill-modal__search">
+            <Search size={14} />
+            <input
+              placeholder="Müşteri veya tür ara…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <button className="drill-modal__close" onClick={onClose}>✕</button>
+        </div>
+
+        {loading ? (
+          <p className="drill-modal__empty">Yükleniyor…</p>
+        ) : visible.length === 0 ? (
+          <p className="drill-modal__empty">
+            {rows.length === 0 ? "Bu dönemde kayıt bulunamadı." : "Arama sonucu bulunamadı."}
+          </p>
+        ) : (
+          <div className="drill-modal__body">
+            <table className="drill-modal__table">
+              <thead>
+                <tr>
+                  <th>Müşteri</th>
+                  <th>Randevu</th>
+                  <th>Tür</th>
+                  <th>Tarih</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((a) => (
+                  <tr
+                    key={a.id}
+                    onClick={() =>
+                      a.customer_pk &&
+                      window.open(`/customers/${a.customer_pk}`, "_blank")
+                    }
+                  >
+                    <td>
+                      <span className={a.customer_pk ? "drill-modal__customer-link" : ""}>
+                        {a.customer || "-"}
+                      </span>
+                    </td>
+                    <td>{a.name || "-"}</td>
+                    <td>{a.appointment_type || "-"}</td>
+                    <td>{a.date ? a.date.slice(0, 10) : "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

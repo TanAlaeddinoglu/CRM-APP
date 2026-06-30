@@ -1,6 +1,7 @@
 import React from "react";
 import { BarChart3, CalendarDays, RotateCcw } from "lucide-react";
-import { KpiGrid, SortableReportTable } from "./ReportUI";
+import { KpiGrid, RateProgress, SortableReportTable } from "./ReportUI";
+import { formatCurrency } from "../../utils/reportUtils";
 import FilterBar from "../common/FilterBar.jsx";
 
 const PRICE_DISTRIBUTION_COLUMNS = [
@@ -17,7 +18,7 @@ const PRICE_DISTRIBUTION_COLUMNS = [
     type: "number",
     width: "12%",
     align: "right",
-    render: (row) => formatMoney(row.sale_price),
+    render: (row) => formatCurrency(row.sale_price),
   },
   {
     key: "sale_count",
@@ -40,7 +41,7 @@ const PRICE_DISTRIBUTION_COLUMNS = [
     type: "number",
     width: "13%",
     align: "right",
-    render: (row) => formatMoney(row.expected_total),
+    render: (row) => formatCurrency(row.expected_total),
   },
   {
     key: "collected_total",
@@ -48,7 +49,7 @@ const PRICE_DISTRIBUTION_COLUMNS = [
     type: "number",
     width: "13%",
     align: "right",
-    render: (row) => formatMoney(row.collected_total),
+    render: (row) => formatCurrency(row.collected_total),
   },
   {
     key: "remaining_total",
@@ -56,7 +57,7 @@ const PRICE_DISTRIBUTION_COLUMNS = [
     type: "number",
     width: "13%",
     align: "right",
-    render: (row) => formatMoney(row.remaining_total),
+    render: (row) => formatCurrency(row.remaining_total),
   },
   {
     key: "collection_rate",
@@ -64,7 +65,7 @@ const PRICE_DISTRIBUTION_COLUMNS = [
     type: "number",
     width: "11%",
     align: "right",
-    render: (row) => <CollectionRateCell value={row.collection_rate} />,
+    render: (row) => <RateProgress value={row.collection_rate} />,
   },
 ];
 
@@ -211,36 +212,3 @@ function EmptyState({ icon, title, text }) {
   );
 }
 
-function CollectionRateCell({ value }) {
-  const numericValue = Number(value || 0);
-  const safeValue = Math.max(0, Math.min(100, numericValue));
-  const barColor = getCollectionBarColor(numericValue);
-
-  return (
-    <div className="reports-collection-rate">
-      <div className="reports-collection-rate__track">
-        <div
-          className="reports-collection-rate__bar"
-          style={{ width: `${safeValue}%`, background: barColor }}
-        />
-      </div>
-      <span className="reports-collection-rate__label" style={{ color: barColor }}>
-        %{numericValue.toFixed(1)}
-      </span>
-    </div>
-  );
-}
-
-function getCollectionBarColor(value) {
-  if (value >= 80) return "#16a34a";
-  if (value >= 50) return "#f59e0b";
-  return "#dc2626";
-}
-
-function formatMoney(value) {
-  const number = Number(value || 0);
-  return `${number.toLocaleString("tr-TR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} ₺`;
-}

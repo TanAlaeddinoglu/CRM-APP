@@ -41,11 +41,11 @@ class Customer(models.Model):
     customer_email = models.EmailField(max_length=50, null=True, blank=True)
     email_normalized = models.EmailField(editable=False)
     customer_phone = models.CharField(
-        max_length=13,
+        max_length=15,
         blank=True,
         validators=[
             RegexValidator(
-                regex=r"^[\+]?[0-9]{10,13}$", message="Provide a valid phone number."
+                regex=r"^[0-9]{11,15}$", message="Geçersiz telefon numarası. Örnek: 905551234567"
             )
         ],
     )
