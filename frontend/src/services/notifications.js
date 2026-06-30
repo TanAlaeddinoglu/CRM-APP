@@ -13,6 +13,14 @@ export function markAllNotificationsRead() {
   return api.post("/notifications/mark-all-read/");
 }
 
+export function deleteNotification(id) {
+  return api.delete(`/notifications/${id}/delete/`);
+}
+
+export function deleteAllNotifications() {
+  return api.delete("/notifications/delete-all/");
+}
+
 export function getUnreadCount() {
   return api.get("/notifications/unread-count/");
 }

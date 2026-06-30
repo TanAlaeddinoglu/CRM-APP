@@ -1,7 +1,9 @@
-from django.urls import path
+from django.urls import include, path
 
 from .mail.views import MailConfigurationTestView, MailConfigurationView, SendEmailView
 from .views.notification import (
+    NotificationDeleteAllView,
+    NotificationDeleteView,
     NotificationListView,
     NotificationMarkAllReadView,
     NotificationMarkReadView,
@@ -36,6 +38,16 @@ urlpatterns = [
         NotificationMarkAllReadView.as_view(),
         name="notification-mark-all-read",
     ),
+    path(
+        "delete-all/",
+        NotificationDeleteAllView.as_view(),
+        name="notification-delete-all",
+    ),
+    path(
+        "<int:pk>/delete/",
+        NotificationDeleteView.as_view(),
+        name="notification-delete",
+    ),
     # rules (admin)
     path(
         "rules/",
@@ -49,4 +61,6 @@ urlpatterns = [
     ),
     # types (read-only)
     path("types/", NotificationTypeListView.as_view(), name="notification-type-list"),
+    # reminders (timer rules, admin)
+    path("reminders/", include("notifications.reminders.urls")),
 ]

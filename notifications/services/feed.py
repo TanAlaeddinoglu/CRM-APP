@@ -6,7 +6,9 @@ from notifications.models import Notification
 class NotificationFeedService:
     @staticmethod
     def list_for_user(user, *, is_read=None, created_after=None, created_before=None):
-        qs = Notification.objects.filter(recipient=user)
+        qs = Notification.objects.filter(recipient=user).select_related(
+            "target_content_type"
+        )
         if is_read is not None:
             qs = qs.filter(is_read=is_read)
         if created_after is not None:
@@ -37,3 +39,14 @@ class NotificationFeedService:
     @staticmethod
     def unread_count(user) -> int:
         return int(Notification.objects.filter(recipient=user, is_read=False).count())
+
+    @staticmethod
+    def delete(notification: Notification, user) -> None:
+        if notification.recipient_id != user.pk:
+            raise PermissionError("Cannot delete another user's notification.")
+        notification.delete()
+
+    @staticmethod
+    def delete_all(user) -> int:
+        deleted, _ = Notification.objects.filter(recipient=user).delete()
+        return int(deleted)

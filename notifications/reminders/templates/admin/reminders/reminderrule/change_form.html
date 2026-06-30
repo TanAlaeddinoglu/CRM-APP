@@ -1,0 +1,25 @@
+{% extends "admin/change_form.html" %}
+
+{% block after_related_objects %}
+{{ block.super }}
+
+{# Beyaz liste verisi: JS koşul satırlarını ve değer seçeneklerini bundan üretir. #}
+{{ reminder_allowed_fields|json_script:"reminder-allowed-fields-data" }}
+
+<div class="module reminder-allowed-fields" id="reminder-allowed-fields">
+  <h2>İzin verilen alanlar</h2>
+  <p class="help">
+    Bir koşul eklemek için aşağıdaki alanlardan birine tıklayın. Seçilen alan
+    yukarıdaki “Koşullar” bölümüne aynı görünümle eklenir; ardından değerini seçin.
+    Birden çok koşul daima <strong>VE (AND)</strong> ile birleşir.
+  </p>
+  <div class="reminder-field-picker" id="reminder-field-picker">
+    {% for field in reminder_allowed_fields %}
+      <button type="button" class="reminder-field-chip"
+              data-field-name="{{ field.name }}">
+        {{ field.label }}
+      </button>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

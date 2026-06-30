@@ -10,7 +10,15 @@ def test_dispatch_task_calls_dispatcher(monkeypatch):
     calls = []
 
     def mock_dispatch(
-        self, event_key, payload, recipient_ids, content_type_id, object_id
+        self,
+        event_key,
+        payload,
+        recipient_ids,
+        content_type_id,
+        object_id,
+        channels=None,
+        system_only=False,
+        notification_rule_id=None,
     ):
         calls.append(
             {
@@ -69,7 +77,15 @@ def test_dispatch_task_with_none_recipient_ids(monkeypatch):
     calls = []
 
     def mock_dispatch(
-        self, event_key, payload, recipient_ids, content_type_id, object_id
+        self,
+        event_key,
+        payload,
+        recipient_ids,
+        content_type_id,
+        object_id,
+        channels=None,
+        system_only=False,
+        notification_rule_id=None,
     ):
         calls.append(recipient_ids)
 

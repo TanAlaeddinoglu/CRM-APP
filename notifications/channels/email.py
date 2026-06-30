@@ -5,10 +5,12 @@ class EmailChannel(BaseChannel):
     def send(
         self, rule, recipient, title: str, body: str, payload: dict, target
     ) -> None:
-        from notifications.mail.services import send_email_notification
+        # E-postası olmayan alıcı için boş gönderim denemesi yapma.
+        if not getattr(recipient, "email", None):
+            return
 
-        send_email_notification(
-            subject=title,
-            body=body,
-            to_emails=[recipient.email],
-        )
+        # Asenkron: her e-posta kendi Celery task'inde, kendi retry'ıyla gider;
+        # dispatch task'i ve in_app üretimi SMTP'yi beklemez.
+        from notifications.tasks import send_notification_email_task
+
+        send_notification_email_task.delay(recipient.pk, title, body)

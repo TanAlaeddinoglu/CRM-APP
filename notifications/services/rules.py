@@ -58,18 +58,12 @@ class NotificationRuleService:
         body_template=None,
         is_active=None
     ) -> NotificationRule:
-        if rule.is_system_default:
-            if any(
-                v is not None
-                for k, v in {
-                    "name": name,
-                    "title_template": title_template,
-                    "body_template": body_template,
-                }.items()
-            ):
-                raise RuleNotEditableError(
-                    "System default rules can only have channels and is_active updated."
-                )
+        # Sistem varsayılan kurallarında yalnızca ad değiştirilemez;
+        # şablon ve durum/kanal düzenlemesi serbesttir.
+        if rule.is_system_default and name is not None:
+            raise RuleNotEditableError(
+                "System default rules cannot have their name changed."
+            )
 
         if name is not None:
             rule.name = name
