@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import "../assets/css/ProductList.css";
 import "../assets/css/TagList.css";
+import PageCard from "./common/PageCard.jsx";
 import { useAuth } from "../context/AuthContext";
 import { getTags, createTag, updateTag, deleteTag } from "../services/tag";
 import { toast } from "react-hot-toast";
@@ -150,7 +151,7 @@ export default function TagList() {
      UI
   ========================= */
   return (
-    <div className="tag-catalog-card">
+    <PageCard className="tag-catalog-card">
       {/* HEADER */}
       <div className="tag-catalog-header">
         <div className="tag-catalog-heading">
@@ -304,6 +305,6 @@ export default function TagList() {
           onDelete={handleDeleteTag}
         />
       )}
-    </div>
+    </PageCard>
   );
 }

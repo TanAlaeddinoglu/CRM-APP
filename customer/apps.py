@@ -20,3 +20,7 @@ class CustomerConfig(AppConfig):
         post_save.connect(on_customer_post_save, sender=Customer)
         post_save.connect(on_tag_post_save, sender=Tag)
         post_delete.connect(on_tag_post_delete, sender=Tag)
+        # Register CustomerImporter with the global importer registry.
+        # Import is deferred to ready() to ensure all models are loaded first.
+        from customer.importers.registry import register
+        register()

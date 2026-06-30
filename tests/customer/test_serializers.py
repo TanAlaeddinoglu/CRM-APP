@@ -44,13 +44,13 @@ def test_customer_serializer_rejects_duplicate_phone():
     Customer.objects.create(
         customer_name="Dup",
         customer_surname="Phone",
-        customer_phone="1111111111",
+        customer_phone="901111111111",
     )
     serializer = CustomerSerializer(
         data={
             "customer_name": "New",
             "customer_surname": "User",
-            "customer_phone": "1111111111",
+            "customer_phone": "901111111111",
         }
     )
     assert not serializer.is_valid()
@@ -68,7 +68,7 @@ def test_customer_serializer_create_sets_creator_and_tag():
         data={
             "customer_name": "C",
             "customer_surname": "D",
-            "customer_phone": "+1234567890",
+            "customer_phone": "+905551234567",
         },
         context={"request": request, "tag": tag},
     )
@@ -79,7 +79,7 @@ def test_customer_serializer_create_sets_creator_and_tag():
     assert customer.updated_by == user
     assert customer.tag_id == tag.id
     assert customer.assigned_to_id == user.id
-    assert customer.customer_phone == "1234567890"
+    assert customer.customer_phone == "905551234567"
     assert CustomerTagHistory.objects.filter(customer=customer).count() == 1
 
 
@@ -87,19 +87,19 @@ def test_customer_serializer_update_strips_plus_from_phone():
     customer = Customer.objects.create(
         customer_name="Plus",
         customer_surname="Update",
-        customer_phone="8888888888",
+        customer_phone="908888888888",
     )
 
     serializer = CustomerSerializer(
         customer,
-        data={"customer_phone": "+9988776655"},
+        data={"customer_phone": "+90987654321"},
         partial=True,
     )
 
     assert serializer.is_valid(), serializer.errors
     updated = serializer.save()
 
-    assert updated.customer_phone == "9988776655"
+    assert updated.customer_phone == "90987654321"
 
 
 def test_customer_serializer_create_pool_skips_tag():
@@ -108,7 +108,7 @@ def test_customer_serializer_create_pool_skips_tag():
         data={
             "customer_name": "Pool",
             "customer_surname": "User",
-            "customer_phone": "2222222222",
+            "customer_phone": "902222222222",
             "status": "pool",
             "tag_id": tag.id,
         }
@@ -123,7 +123,7 @@ def test_customer_serializer_update_archives():
     customer = Customer.objects.create(
         customer_name="Arch",
         customer_surname="Ive",
-        customer_phone="3333333333",
+        customer_phone="903333333333",
     )
     serializer = CustomerSerializer(
         customer,
@@ -143,7 +143,7 @@ def test_customer_serializer_update_assign_without_tag_raises():
     customer = Customer.objects.create(
         customer_name="No",
         customer_surname="Tag",
-        customer_phone="4444444444",
+        customer_phone="904444444444",
     )
     serializer = CustomerSerializer(
         customer,
@@ -161,7 +161,7 @@ def test_customer_serializer_update_clearing_tag_moves_to_pool():
     customer = Customer.objects.create(
         customer_name="Keep",
         customer_surname="Tag",
-        customer_phone="5555555555",
+        customer_phone="905555555555",
         assigned_to=user,
         tag=tag,
         status="active",
@@ -195,7 +195,7 @@ def test_customer_tag_history_serializer_fields():
     customer = Customer.objects.create(
         customer_name="His",
         customer_surname="Tory",
-        customer_phone="6666666666",
+        customer_phone="906666666666",
         assigned_to=user,
     )
     history = CustomerTagHistory.objects.create(
@@ -216,7 +216,7 @@ def test_notes_serializer_sets_created_and_updated_by():
     customer = Customer.objects.create(
         customer_name="Note",
         customer_surname="User",
-        customer_phone="7777777777",
+        customer_phone="907777777777",
     )
     factory = APIRequestFactory()
     create_request = factory.post("/notes/")

@@ -17,11 +17,15 @@ import {
   Tooltip,
 } from "recharts";
 
+import { formatShortDate } from "../../utils/reportUtils";
 import {
   ChartAxisTick,
+  ChartWhenVisible,
+  EmptyChart,
   EmptyReportState,
   KpiGrid,
   ReportCard,
+  SectionTitle,
   TwoColumnGrid,
 } from "./ReportUI";
 import FilterBar from "../common/FilterBar.jsx";
@@ -63,10 +67,13 @@ export default function UserReportSection({
     short_day: formatShortDate(item.day),
   }));
 
-  const selectedDayCount          = getSelectedDayCount(filters);
-  const averageDailyAppointments  = calculateAverageDailyAppointments(
-    report?.summary?.total_appointments,
-    selectedDayCount
+  const selectedWorkingDayCount = getSelectedWorkingDayCount(filters);
+  const averageDailyAppointments = formatAverageDailyAppointments(
+    report?.summary?.daily_average_appointments ??
+      calculateAverageDailyAppointments(
+        report?.summary?.total_appointments,
+        selectedWorkingDayCount
+      )
   );
 
   return (
@@ -109,17 +116,17 @@ export default function UserReportSection({
             {appointmentsTrendData.length === 0 ? (
               <EmptyChart text="Randevu trend verisi bulunamadı." />
             ) : (
-              <div className="reports-chart-wrap" style={{ height: `${MAIN_CHART_HEIGHT}px` }}>
+              <ChartWhenVisible height={MAIN_CHART_HEIGHT}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={appointmentsTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                     <XAxis dataKey="short_day" tick={{ fontSize: 12, fill: "#64748b" }} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#64748b" }} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} width={40} />
                     <Tooltip content={<AppointmentsTrendTooltip />} />
-                    <Bar dataKey="total" fill={INFO_FILL} radius={[8, 8, 0, 0]} barSize={36} />
+                    <Bar dataKey="total" fill={INFO_FILL} radius={[8, 8, 0, 0]} barSize={36} isAnimationActive={true} animationDuration={1400} animationEasing="ease-out" animationBegin={50} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              </ChartWhenVisible>
             )}
           </ReportCard>
 
@@ -128,17 +135,17 @@ export default function UserReportSection({
               {tagDistributionData.length === 0 ? (
                 <EmptyChart text="Etiket değişim verisi bulunamadı." />
               ) : (
-                <div className="reports-chart-wrap" style={{ height: `${SIDE_CHART_HEIGHT}px` }}>
+                <ChartWhenVisible height={SIDE_CHART_HEIGHT}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={tagDistributionData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                       <XAxis dataKey="tag_name" tick={<TagAxisTick />} interval={0} height={110} axisLine={{ stroke: "#e2e8f0" }} tickLine={false} />
                       <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#94a3b8" }} width={36} axisLine={false} tickLine={false} />
                       <Tooltip content={<TagTooltip />} />
-                      <Bar dataKey="count" fill={TAG_CHANGE_COLOR} radius={[8, 8, 0, 0]} barSize={34} />
+                      <Bar dataKey="count" fill={TAG_CHANGE_COLOR} radius={[8, 8, 0, 0]} barSize={34} isAnimationActive={true} animationDuration={1400} animationEasing="ease-out" animationBegin={50} />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
+                </ChartWhenVisible>
               )}
             </ReportCard>
 
@@ -146,33 +153,22 @@ export default function UserReportSection({
               {salesByProductData.length === 0 ? (
                 <EmptyChart text="Ürün bazlı satış verisi bulunamadı." />
               ) : (
-                <div className="reports-chart-wrap" style={{ height: `${SIDE_CHART_HEIGHT}px` }}>
+                <ChartWhenVisible height={SIDE_CHART_HEIGHT}>
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={salesByProductData} margin={{ top: 10, right: 10, left: 0, bottom: 30 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                       <XAxis dataKey="product_name" tick={<ChartAxisTick />} tickMargin={10} interval={0} height={52} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} />
                       <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "#64748b" }} width={40} axisLine={{ stroke: "#cbd5e1" }} tickLine={false} />
                       <Tooltip content={<ProductTooltip />} />
-                      <Bar dataKey="count" fill={SUCCESS_FILL} radius={[8, 8, 0, 0]} barSize={34} />
+                      <Bar dataKey="count" fill={SUCCESS_FILL} radius={[8, 8, 0, 0]} barSize={34} isAnimationActive={true} animationDuration={1400} animationEasing="ease-out" animationBegin={50} />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
+                </ChartWhenVisible>
               )}
             </ReportCard>
           </TwoColumnGrid>
         </div>
       )}
-    </div>
-  );
-}
-
-function SectionTitle({ icon: Icon, title }) {
-  return (
-    <div className="reports-section-title">
-      <div className="reports-section-title__icon">
-        {React.createElement(Icon, { size: 16 })}
-      </div>
-      <span className="reports-section-title__text">{title}</span>
     </div>
   );
 }
@@ -285,10 +281,6 @@ function InfoRow({ label, value }) {
   );
 }
 
-function EmptyChart({ text }) {
-  return <div className="reports-empty-chart">{text}</div>;
-}
-
 const TAG_TICK_MAX = 13;
 
 function TagAxisTick({ x, y, payload }) {
@@ -370,26 +362,68 @@ function ProductTooltip({ active, payload, label }) {
   );
 }
 
-function getSelectedDayCount(filters) {
+function getSelectedWorkingDayCount(filters) {
   if (filters?.date_from && filters?.date_to) {
-    const start = new Date(filters.date_from);
-    const end   = new Date(filters.date_to);
-    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end >= start) {
-      return Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    const start = parseDateInput(filters.date_from);
+    const end = parseDateInput(filters.date_to);
+
+    if (start && end && end >= start) {
+      const diffDays = Math.floor((end.getTime() - start.getTime()) / 86400000) + 1;
+      return countWorkingDaysFromEnd(end, diffDays);
     }
   }
   if (filters?.preset) {
     const presetDays = Number(filters.preset);
-    if (!Number.isNaN(presetDays) && presetDays > 0) return presetDays;
+    if (!Number.isNaN(presetDays) && presetDays > 0) {
+      return countWorkingDaysFromEnd(new Date(), presetDays);
+    }
   }
   return 1;
 }
 
 function calculateAverageDailyAppointments(totalAppointments, selectedDayCount) {
   const total = Number(totalAppointments || 0);
-  const days  = Number(selectedDayCount  || 1);
-  if (days <= 0) return "0";
-  return (total / days).toFixed(2);
+  const days = Number(selectedDayCount || 1);
+
+  if (days <= 0) return 0;
+  return total / days;
+}
+
+function formatAverageDailyAppointments(value) {
+  const numberValue = Number(value || 0);
+  return numberValue.toFixed(2);
+}
+
+function parseDateInput(value) {
+  const parts = String(value || "")
+    .split("-")
+    .map((part) => Number(part));
+
+  if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
+    return null;
+  }
+
+  const [year, month, day] = parts;
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function countWorkingDaysFromEnd(endDate, dayCount) {
+  const days = Math.max(1, Number(dayCount || 1));
+  const end = new Date(
+    Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+  );
+  let workingDays = 0;
+
+  for (let offset = 0; offset < days; offset += 1) {
+    const current = new Date(end);
+    current.setUTCDate(end.getUTCDate() - offset);
+
+    if (current.getUTCDay() !== 0) {
+      workingDays += 1;
+    }
+  }
+
+  return workingDays;
 }
 
 function getInitials(text) {
@@ -399,9 +433,3 @@ function getInitials(text) {
   return parts.slice(0, 2).map((p) => p[0]?.toUpperCase() || "").join("");
 }
 
-function formatShortDate(dateString) {
-  if (!dateString) return "-";
-  const parts = dateString.split("-");
-  if (parts.length !== 3) return dateString;
-  return `${parts[2]}.${parts[1]}`;
-}

@@ -1,6 +1,7 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APITestCase
@@ -9,6 +10,23 @@ from accounts.models import CustomUser
 from customer.models import Customer, CustomerTagHistory, Tag
 from events.models import Appointment, AppointmentPayment
 from products.models import Product
+from reports.services import count_working_days_excluding_sundays
+
+
+class WorkingDayCalculationTests(TestCase):
+    def test_working_day_count_excludes_sundays_for_explicit_date_range(self):
+        tz = timezone.get_current_timezone()
+        start_dt = timezone.make_aware(datetime(2026, 6, 1, 0, 0), tz)
+        end_dt = timezone.make_aware(datetime(2026, 6, 15, 0, 0), tz)
+
+        self.assertEqual(count_working_days_excluding_sundays(start_dt, end_dt), 12)
+
+    def test_working_day_count_preserves_preset_day_count_shape(self):
+        tz = timezone.get_current_timezone()
+        end_dt = timezone.make_aware(datetime(2026, 6, 9, 15, 0), tz)
+        start_dt = end_dt - timedelta(days=14)
+
+        self.assertEqual(count_working_days_excluding_sundays(start_dt, end_dt), 12)
 
 
 class ReportEndpointTests(APITestCase):
@@ -235,6 +253,14 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.data["summary"]["active_customer_count"], 2)
         self.assertEqual(response.data["summary"]["tag_change_count"], 2)
         self.assertEqual(response.data["summary"]["total_appointments"], 5)
+        self.assertGreaterEqual(response.data["summary"]["working_day_count"], 1)
+        self.assertEqual(
+            response.data["summary"]["daily_average_appointments"],
+            round(
+                5 / max(1, response.data["summary"]["working_day_count"]),
+                2,
+            ),
+        )
         self.assertEqual(response.data["summary"]["pending_appointments"], 1)
         self.assertEqual(response.data["summary"]["sales_appointments"], 4)
         self.assertEqual(response.data["summary"]["negative_appointments"], 0)
@@ -257,6 +283,14 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["summary"]["active_data"], 2)
         self.assertEqual(response.data["summary"]["total_appointments"], 5)
+        self.assertGreaterEqual(response.data["summary"]["working_day_count"], 1)
+        self.assertEqual(
+            response.data["summary"]["daily_average_appointments"],
+            round(
+                5 / max(1, response.data["summary"]["working_day_count"]),
+                2,
+            ),
+        )
         self.assertEqual(response.data["summary"]["pending"], 1)
         self.assertEqual(response.data["summary"]["sales"], 4)
         self.assertEqual(response.data["summary"]["negative"], 0)

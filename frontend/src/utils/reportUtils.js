@@ -58,18 +58,32 @@ export function formatPercent(value) {
 export function formatMetric(label, value) {
   if (value === null || value === undefined || value === "") return "-";
 
-  const currencyLabels = ["Gelir", "Tutar", "Kalan", "Tahsil"];
   const percentLabels = ["%"];
-
-  if (currencyLabels.some((word) => label.includes(word))) {
-    return formatCurrency(value);
-  }
+  const currencyLabels = ["Gelir", "Tutar", "Kalan", "Tahsil", "Ciro", "Bakiye", "Ücret", "Ödeme"];
 
   if (percentLabels.some((word) => label.includes(word))) {
     return formatPercent(value);
   }
 
+  if (currencyLabels.some((word) => label.includes(word))) {
+    return formatCurrency(value);
+  }
+
   return value;
+}
+
+export function formatShortDate(dateString) {
+  if (!dateString) return "-";
+  const parts = dateString.split("-");
+  if (parts.length !== 3) return dateString;
+  return `${parts[2]}.${parts[1]}`;
+}
+
+export function compactCurrency(value) {
+  const numeric = Number(value || 0);
+  if (numeric >= 1_000_000) return `₺${(numeric / 1_000_000).toFixed(1)} Mn`;
+  if (numeric >= 1_000)     return `₺${(numeric / 1_000).toFixed(numeric >= 10_000 ? 0 : 1)} B`;
+  return `₺${numeric}`;
 }
 
 export function renderCellValue(key, value) {

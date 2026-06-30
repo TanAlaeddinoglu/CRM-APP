@@ -20,6 +20,7 @@ import {
   scheduleExportHistoryCacheExpiry,
 } from "../services/export";
 import LoadingIndicator from "../components/common/LoadingIndicator.jsx";
+import PageCard from "../components/common/PageCard.jsx";
 import { usePageTransition } from "../context/PageTransitionContext.jsx";
 import "../assets/css/ExportHistory.css";
 
@@ -457,6 +458,7 @@ export default function ExportHistoryPage() {
   };
 
   return (
+    <PageCard>
     <div className="export-history-page">
       <div className="export-history-header">
         <div>
@@ -688,5 +690,6 @@ export default function ExportHistoryPage() {
 
       <ExportDetailModal job={selectedJob} onClose={() => setSelectedJob(null)} />
     </div>
+    </PageCard>
   );
 }

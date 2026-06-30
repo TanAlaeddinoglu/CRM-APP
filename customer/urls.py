@@ -1,6 +1,5 @@
 from django.urls import path
 
-from .customerBulkViews import CustomerBulkView
 from .views import (
     AdminCustomerViewSet,
     UserCustomerViewSet,
@@ -10,34 +9,10 @@ from .views import (
     CustomerTagStatsAdminView,
     CustomerTagStatsMeView,
 )
-from .bulkViews import (
-    CustomerBulkUpsertView,
-    CustomerExcelDryRunView,
-    CustomerExcelUploadView,
-)
+from .bulkViews import CustomerBulkView
 
 urlpatterns = [
-    path(
-        "bulk/",
-        CustomerBulkView.as_view(),
-        name="customer-bulk",
-    ),
-    path(
-        "import-excel/dry-run/",
-        CustomerExcelDryRunView.as_view(),
-        name="customer-import-excel-dry-run",
-    ),
-    path(
-        "import-excel/",
-        CustomerExcelUploadView.as_view(),
-        name="customer-import-excel",
-    ),
-    # ✅ bulk upsert (duplicate ekranı “Kaydet”)
-    path(
-        "bulk/upsert/",
-        CustomerBulkUpsertView.as_view(),
-        name="customer-bulk-upsert",
-    ),
+    path("bulk/", CustomerBulkView.as_view(), name="customer-bulk"),
     path(
         "",
         AdminCustomerViewSet.as_view({"get": "list", "post": "create"}),

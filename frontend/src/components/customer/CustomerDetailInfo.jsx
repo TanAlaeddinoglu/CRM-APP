@@ -1,7 +1,7 @@
 // src/components/customer/CustomerDetailInfo.jsx
 import {useEffect, useMemo, useState} from "react";
 import {toast} from "react-hot-toast";
-import {SquarePen} from "lucide-react";
+import { SquarePen, Mail, Phone, MapPin, UserRound, CircleDot, Tag } from "lucide-react";
 
 import "../../assets/css/CustomerDetailPage.css";
 
@@ -235,6 +235,7 @@ export default function CustomerDetailInfo({
                 {/* EMAIL */}
                 <Info
                     label="E-posta"
+                    icon={Mail}
                     value={form.customer_email}
                     edit={isEditing && isAdmin}
                     onChange={(v) => handleChange("customer_email", v)}
@@ -243,6 +244,7 @@ export default function CustomerDetailInfo({
                 {/* TELEFON */}
                 <Info
                     label="Telefon"
+                    icon={Phone}
                     value={form.customer_phone}
                     edit={isEditing && isAdmin}
                     onChange={(v) => handleChange("customer_phone", v)}
@@ -251,6 +253,7 @@ export default function CustomerDetailInfo({
                 {/* ŞEHİR */}
                 <Info
                     label="Şehir"
+                    icon={MapPin}
                     value={form.city}
                     edit={isEditing && isAdmin}
                     onChange={(v) => handleChange("city", v)}
@@ -258,7 +261,7 @@ export default function CustomerDetailInfo({
 
                 {/* ASSIGNED USER */}
                 <div className="info-item">
-                    <label>Atanan Kullanıcı</label>
+                    <label><UserRound size={13} /> Atanan Kullanıcı</label>
 
                     {!isEditing ? (
                         <span>{customer.assigned_to || "-"}</span>
@@ -288,7 +291,7 @@ export default function CustomerDetailInfo({
 
                 {/* STATUS */}
                 <div className="info-item">
-                    <label>Durum</label>
+                    <label><CircleDot size={13} /> Durum</label>
 
                     {!isEditing ? (
                         <span>{customer.status}</span>
@@ -318,7 +321,7 @@ export default function CustomerDetailInfo({
 
                 {/* TAG */}
                 <div className="info-item">
-                    <label>Tag</label>
+                    <label><Tag size={13} /> Tag</label>
 
                     {!isEditing ? (
                         <span>{customer.tag || "-"}</span>
@@ -389,10 +392,13 @@ export default function CustomerDetailInfo({
 }
 
 /* ---------- INFO ITEM ---------- */
-function Info({label, value, edit, disabled = false, onChange}) {
+function Info({ label, icon: Icon, value, edit, disabled = false, onChange }) {
     return (
         <div className="info-item">
-            <label>{label}</label>
+            <label>
+                {Icon && <Icon size={13} />}
+                {label}
+            </label>
             {!edit ? (
                 <span>{value || "-"}</span>
             ) : (

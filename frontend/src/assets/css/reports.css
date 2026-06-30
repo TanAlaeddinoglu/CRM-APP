@@ -1,7 +1,7 @@
 .reports-page {
   display: grid;
   gap: 10px;
-  padding-bottom: 32px;
+  padding: 20px 20px 32px;
 }
 
 .reports-page__header {
@@ -430,6 +430,29 @@
   }
 }
 
+/* KPI card stagger animation */
+.reports-kpi-scroll--in .reports-kpi-card {
+  animation: reportsFadeSlide 500ms ease-out both;
+}
+.reports-kpi-scroll--in .reports-kpi-card:nth-child(1) { animation-delay: 0ms; }
+.reports-kpi-scroll--in .reports-kpi-card:nth-child(2) { animation-delay: 55ms; }
+.reports-kpi-scroll--in .reports-kpi-card:nth-child(3) { animation-delay: 110ms; }
+.reports-kpi-scroll--in .reports-kpi-card:nth-child(4) { animation-delay: 165ms; }
+.reports-kpi-scroll--in .reports-kpi-card:nth-child(5) { animation-delay: 220ms; }
+.reports-kpi-scroll--in .reports-kpi-card:nth-child(6) { animation-delay: 275ms; }
+.reports-kpi-scroll--in .reports-kpi-card:nth-child(7) { animation-delay: 330ms; }
+.reports-kpi-scroll--in .reports-kpi-card:nth-child(8) { animation-delay: 385ms; }
+
+/* ReportCard alt başlık scroll animasyonu */
+.reports-card__header--in {
+  animation: reportsFadeSlide 500ms ease-out both;
+}
+
+/* Tablo satırı stagger animasyonu */
+.reports-table-body--in tr {
+  animation: reportsFadeSlide 400ms ease-out both;
+}
+
 .reports-section-stack--loose {
   gap: 20px;
 }
@@ -695,11 +718,25 @@
   font-size: 15px;
 }
 
+.reports-section-title__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-left: 4px;
+}
+
 /* ================================
    CHART WRAPPER
 ================================ */
 .reports-chart-wrap {
   width: 100%;
+}
+
+.reports-chart-wrap--in {
+  animation: reportsFadeSlide 600ms ease-out both;
 }
 
 .recharts-wrapper:focus,
@@ -730,6 +767,11 @@
   border-radius: 14px;
   padding: 12px 14px;
   background: var(--sem-bg, #eef5ff);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.reports-status-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
 .reports-status-card__header {
@@ -1274,4 +1316,174 @@
   min-width: 28px;
   text-align: right;
   flex-shrink: 0;
+}
+
+/* ================================
+   DRILL-DOWN MODAL
+================================ */
+.drill-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: reportsFadeSlide 200ms ease-out both;
+}
+
+.drill-modal {
+  background: #fff;
+  border-radius: 16px;
+  width: min(1000px, 95vw);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
+}
+
+.drill-modal__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.drill-modal__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.drill-modal__title {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+}
+
+.drill-modal__close {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.drill-modal__close:hover { background: #f1f5f9; color: #0f172a; }
+
+.drill-modal__body {
+  overflow-y: auto;
+  flex: 1;
+}
+
+.drill-modal__empty {
+  padding: 32px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.drill-modal__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.drill-modal__table th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8fafc;
+  position: sticky;
+  top: 0;
+}
+.drill-modal__table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+}
+.drill-modal__table tbody tr { cursor: pointer; }
+.drill-modal__table tbody tr:hover td { background: #eff6ff; }
+
+/* Arama kutusu */
+.drill-modal__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 5px 10px;
+  margin-right: 8px;
+}
+.drill-modal__search input {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: #1e293b;
+  outline: none;
+  width: 180px;
+}
+.drill-modal__search svg { color: #94a3b8; flex-shrink: 0; }
+
+/* Müşteri linki — görsel link, satır tıklanabilir */
+.drill-modal__customer-link {
+  color: #2563eb;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+/* ================================
+   STATUS CARD INFO ICON
+================================ */
+.reports-status-info {
+  position: relative;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  color: #94a3b8;
+  cursor: default;
+  flex-shrink: 0;
+}
+.reports-status-info:hover { color: #64748b; }
+
+.reports-status-info__tooltip {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  padding: 7px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  z-index: 20;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+.reports-status-info__tooltip::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  right: 6px;
+  border: 5px solid transparent;
+  border-bottom-color: #1e293b;
+  border-top: none;
+}
+.reports-status-info:hover .reports-status-info__tooltip { display: block; }
+
+.reports-section-stack .filter-bar__field {
+  max-width: 280px;
 }

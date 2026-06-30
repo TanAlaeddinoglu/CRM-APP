@@ -1,10 +1,5 @@
 .product-list-container {
-  margin-top: 12px;
   padding: 18px;
-  background: #ffffff;
-  border: 1px solid #e6edf5;
-  border-radius: 20px;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
 }
 
 /* Header area */
