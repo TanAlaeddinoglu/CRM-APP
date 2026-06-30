@@ -15,6 +15,8 @@ class NotificationsConfig(AppConfig):
         from notifications.services.rules import NotificationRuleService
 
         for type_def in registry.all():
+            if type_def.category == "reminder":
+                continue
             try:
                 NotificationRuleService.ensure_default_rule(type_def.key)
             except Exception:

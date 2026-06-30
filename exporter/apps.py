@@ -6,6 +6,8 @@ class ExporterConfig(AppConfig):
     name = "exporter"
 
     def ready(self):
+        from django.db.models.signals import post_save, pre_save
+
         from .registry.appointment_payment_registry import (
             AppointmentPaymentExportRegistry,
         )
@@ -21,3 +23,12 @@ class ExporterConfig(AppConfig):
         ProductExportRegistry.register()
         TagExportRegistry.register()
         UserExportRegistry.register()
+
+        from .models import ExportJob
+        from exporter.notifications.signals import (
+            on_exportjob_post_save,
+            on_exportjob_pre_save,
+        )
+
+        pre_save.connect(on_exportjob_pre_save, sender=ExportJob)
+        post_save.connect(on_exportjob_post_save, sender=ExportJob)

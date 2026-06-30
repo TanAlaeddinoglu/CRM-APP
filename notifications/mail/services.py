@@ -7,7 +7,7 @@ from datetime import timedelta
 from typing import cast
 
 from django.conf import settings
-from django.core.mail import EmailMessage, get_connection
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
@@ -22,6 +22,7 @@ from notifications.mail.models import (
 from .contracts import MailConfigurationInput
 from .logs import mark_email_failed, mark_email_sent
 from .runtime import EmailDeliveryService
+from .templating import render_email_html
 
 
 def build_config_fingerprint(config: MailConfigurationInput) -> str:
@@ -117,12 +118,15 @@ def test_mail_configuration(
         status=EmailLog.Status.PENDING,
     )
 
-    message = EmailMessage(
+    message = EmailMultiAlternatives(
         subject=email_log.subject,
         body=email_log.body,
         from_email=config.default_from_email,
         to=[recipient_email],
         connection=build_test_connection(config),
+    )
+    message.attach_alternative(
+        render_email_html(title=email_log.subject, body=email_log.body), "text/html"
     )
 
     try:

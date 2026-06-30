@@ -7,6 +7,7 @@ from notifications.channels import channel_registry
 from notifications.exceptions import UnknownNotificationTypeError
 from notifications.models import NotificationRule
 from notifications.registry import registry
+from notifications.utils import render_template
 
 logger = logging.getLogger(__name__)
 
@@ -21,6 +22,9 @@ class NotificationDispatchService:
         recipient_ids: list[int] | None,
         content_type_id: int | None,
         object_id: int | None,
+        channels: list[str] | None = None,
+        system_only: bool = False,
+        notification_rule_id: int | None = None,
     ) -> None:
         try:
             type_def = registry.get(event_key)
@@ -52,11 +56,23 @@ class NotificationDispatchService:
         if not recipients:
             return
 
-        rules = list(
-            NotificationRule.objects.filter(type_key=event_key, is_active=True)
-        )
+        if notification_rule_id is not None:
+            # Belirli bir kural doğrudan belirtilmiş (ör. hatırlatma gönderimi).
+            rules = list(
+                NotificationRule.objects.filter(pk=notification_rule_id, is_active=True)
+            )
+        else:
+            rules_qs = NotificationRule.objects.filter(
+                type_key=event_key, is_active=True
+            )
+            if system_only:
+                rules_qs = rules_qs.filter(is_system_default=True)
+            rules = list(rules_qs)
         if not rules:
             return
+
+        total_attempts = 0
+        total_failures = 0
 
         for rule in rules:
             title = self._render(
@@ -66,29 +82,36 @@ class NotificationDispatchService:
                 rule.body_template or type_def.default_body_template, payload
             )
 
-            for channel_code in rule.channels:
+            # Çağıran kanal listesi verdiyse kuralın kanallarını geçersiz kıl
+            # (ör. hatırlatma kuralları kendi kanallarını taşır; şablonlar yine
+            # tipin sistem kuralından gelir).
+            rule_channels = channels if channels is not None else rule.channels
+            for channel_code in rule_channels:
                 try:
                     channel = channel_registry.get(channel_code)
                 except Exception:
                     logger.warning("Channel not found: %s", channel_code)
                     continue
 
-                for recipient in recipients:
-                    try:
-                        channel.send(rule, recipient, title, body, payload, target)
-                    except Exception:
-                        logger.exception(
-                            "Channel %s failed for recipient %s, rule %s",
-                            channel_code,
-                            recipient.pk,
-                            rule.pk,
-                        )
+                total_attempts += len(recipients)
+                try:
+                    failures = channel.send_bulk(
+                        rule, recipients, title, body, payload, target
+                    )
+                except Exception:
+                    logger.exception(
+                        "Channel %s failed entirely for rule %s", channel_code, rule.pk
+                    )
+                    failures = len(recipients)
+                total_failures += failures
+
+        if total_failures == total_attempts and total_attempts > 0:
+            raise RuntimeError(
+                f"All {total_failures} notification deliveries failed for event {event_key}"
+            )
 
     def _render(self, template: str, payload: dict) -> str:
-        try:
-            return template.format(**payload)
-        except (KeyError, ValueError):
-            return template
+        return str(render_template(template, payload))
 
     def _resolve_target(self, content_type_id: int | None, object_id: int | None):
         if content_type_id is None or object_id is None:

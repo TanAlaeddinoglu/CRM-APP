@@ -82,7 +82,15 @@ function PaymentStatusBadge({ status, paidAmount }) {
 
   return (
     <span className={`payment-status ${normalized}`}>
-      {status || "-"}
+      {getPaymentStatusLabel(normalized)}
     </span>
   );
+}
+
+function getPaymentStatusLabel(status) {
+  if (status === "tamamlandi") return "Tamamlandı";
+  if (status === "kismi") return "Kısmi";
+  if (status === "iptal") return "İptal";
+
+  return status || "-";
 }

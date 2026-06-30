@@ -12,6 +12,7 @@ from notifications.serializers.notification import NotificationSerializer
 from notifications.services.feed import NotificationFeedService
 
 WEEK = timedelta(days=7)
+MAX_PER_WEEK = 200
 
 
 class NotificationListView(APIView):
@@ -44,7 +45,7 @@ class NotificationListView(APIView):
             created_after=created_after,
             created_before=created_before,
         )
-        serializer = NotificationSerializer(qs, many=True)
+        serializer = NotificationSerializer(qs[:MAX_PER_WEEK], many=True)
         return Response(serializer.data)
 
 
@@ -59,6 +60,28 @@ class NotificationMarkReadView(APIView):
             return Response(status=status.HTTP_404_NOT_FOUND)
         NotificationFeedService.mark_read(notification, request.user)
         return Response(NotificationSerializer(notification).data)
+
+
+class NotificationDeleteView(APIView):
+    authentication_classes = [CustomAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, pk):
+        try:
+            notification = Notification.objects.get(pk=pk, recipient=request.user)
+        except Notification.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        NotificationFeedService.delete(notification, request.user)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class NotificationDeleteAllView(APIView):
+    authentication_classes = [CustomAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        count = NotificationFeedService.delete_all(request.user)
+        return Response({"deleted": count})
 
 
 class NotificationMarkAllReadView(APIView):

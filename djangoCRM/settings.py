@@ -76,8 +76,10 @@ INSTALLED_APPS = [
     "events.apps.EventsConfig",
     "exporter.apps.ExporterConfig",
     "notifications.apps.NotificationsConfig",
+    "notifications.reminders.apps.RemindersConfig",
     "products.apps.ProductsConfig",
     "reports.apps.ReportsConfig",
+    "django_celery_beat",
     "rest_framework_simplejwt.token_blacklist",
     "drf_spectacular",
     "rest_framework",
@@ -227,6 +229,7 @@ EMAIL_TIMEOUT = int(env_str("EMAIL_TIMEOUT", "10") or "10")
 MAIL_CONFIG_TEST_SESSION_TTL_SECONDS = int(
     env_str("MAIL_CONFIG_TEST_SESSION_TTL_SECONDS", "600") or "600"
 )
+MAIL_BRAND_NAME = env_str("MAIL_BRAND_NAME", "CRM") or "CRM"
 SERVER_EMAIL = env_str("DEFAULT_FROM_EMAIL")
 DEFAULT_FROM_EMAIL = SERVER_EMAIL
 
@@ -278,7 +281,19 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60
-CELERY_RESULT_EXPIRES = 60 * 60 * 24 * 15  # CELERY RESULTLARIN RAM DEN SILINECEGI SURE
+CELERY_RESULT_EXPIRES = 60 * 60 * 24 * 7  # 7 gün sonra Redis'ten otomatik silinir
+
+# DATA RETENTION — ortama göre .env üzerinden ezilir
+NOTIFICATION_RETENTION_DAYS = int(env_str("NOTIFICATION_RETENTION_DAYS", "7") or "7")
+REMINDER_CANCELLED_RETENTION_DAYS = int(
+    env_str("REMINDER_CANCELLED_RETENTION_DAYS", "7") or "7"
+)
+REMINDER_SENT_RETENTION_DAYS = int(
+    env_str("REMINDER_SENT_RETENTION_DAYS", "30") or "30"
+)
+REMINDER_STALE_PROCESSING_HOURS = int(
+    env_str("REMINDER_STALE_PROCESSING_HOURS", "1") or "1"
+)
 
 # LOCAL de calisirken commente al HTTP ve HSTS yi
 # HTTP SETTINGS

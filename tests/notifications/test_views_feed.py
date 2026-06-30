@@ -162,3 +162,53 @@ def test_mark_all_read_returns_marked_count(regular_client, regular_user, rule):
     response = regular_client.post(MARK_ALL_READ_URL)
     assert response.status_code == status.HTTP_200_OK
     assert response.data["marked_read"] == 2
+
+
+# ── DELETE /api/notifications/<pk>/delete/ ───────────────────────────────────
+
+DELETE_ALL_URL = "/api/notifications/delete-all/"
+
+
+def delete_url(pk):
+    return f"/api/notifications/{pk}/delete/"
+
+
+def test_delete_requires_auth(api_client, regular_user, rule):
+    n = make_notification(regular_user, rule)
+    response = api_client.delete(delete_url(n.pk))
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_delete_removes_own_notification(regular_client, regular_user, rule):
+    n = make_notification(regular_user, rule)
+    response = regular_client.delete(delete_url(n.pk))
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert not Notification.objects.filter(pk=n.pk).exists()
+
+
+def test_delete_another_users_notification_returns_404(
+    regular_client, second_user, rule
+):
+    n = make_notification(second_user, rule)
+    response = regular_client.delete(delete_url(n.pk))
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert Notification.objects.filter(pk=n.pk).exists()
+
+
+# ── DELETE /api/notifications/delete-all/ ────────────────────────────────────
+
+
+def test_delete_all_requires_auth(api_client):
+    response = api_client.delete(DELETE_ALL_URL)
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_delete_all_removes_only_own(regular_client, regular_user, second_user, rule):
+    make_notification(regular_user, rule)
+    make_notification(regular_user, rule)
+    other = make_notification(second_user, rule)
+    response = regular_client.delete(DELETE_ALL_URL)
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data["deleted"] == 2
+    assert Notification.objects.filter(recipient=regular_user).count() == 0
+    assert Notification.objects.filter(pk=other.pk).exists()

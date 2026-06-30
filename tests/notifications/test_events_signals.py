@@ -165,13 +165,31 @@ def test_appointment_created_admin_no_assigned_to_no_notification(
 # ── appointment_status_updated ────────────────────────────────────────────────
 
 
-def test_appointment_status_change_triggers_notification(
-    regular_user, customer, product
+def test_appointment_status_change_by_user_notifies_admins(
+    regular_user, admin_user, customer, product
 ):
     appointment = make_appointment(customer, product, created_by=regular_user)
     Notification.objects.all().delete()  # created bildirimlerini temizle
 
     appointment.status = "satis"
+    appointment.updated_by = regular_user
+    appointment.save()
+
+    assert Notification.objects.filter(
+        type_key="events.appointment_status_updated",
+        recipient=admin_user,
+    ).exists()
+
+
+def test_appointment_status_change_by_admin_notifies_assigned_to(
+    admin_user, regular_user, customer, product
+):
+    # customer.assigned_to = regular_user (fixture'da set edildi)
+    appointment = make_appointment(customer, product, created_by=admin_user)
+    Notification.objects.all().delete()
+
+    appointment.status = "satis"
+    appointment.updated_by = admin_user
     appointment.save()
 
     assert Notification.objects.filter(
@@ -186,6 +204,7 @@ def test_appointment_status_unchanged_no_notification(regular_user, customer, pr
 
     # Status değişmeden save
     appointment.notes = "Not eklendi"
+    appointment.updated_by = regular_user
     appointment.save()
 
     assert (

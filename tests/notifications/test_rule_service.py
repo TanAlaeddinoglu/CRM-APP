@@ -109,9 +109,10 @@ def test_update_system_default_name_raises(system_rule):
         NotificationRuleService.update(system_rule, name="Yeni isim")
 
 
-def test_update_system_default_title_template_raises(system_rule):
-    with pytest.raises(RuleNotEditableError):
-        NotificationRuleService.update(system_rule, title_template="Yeni şablon")
+def test_update_system_default_title_template_allowed(system_rule):
+    # Sistem kuralları için şablon düzenlenmesine artık izin verilir.
+    updated = NotificationRuleService.update(system_rule, title_template="Yeni şablon")
+    assert updated.title_template == "Yeni şablon"
 
 
 def test_update_system_default_channels_allowed(system_rule):

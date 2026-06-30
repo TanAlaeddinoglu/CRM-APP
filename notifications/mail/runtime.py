@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.core.mail import EmailMessage, get_connection
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.db import transaction
 
 from common.secrets import get_secret_store
@@ -12,6 +12,7 @@ from notifications.mail.models import EmailLog, MailConfiguration
 from .contracts import ResolvedMailConfiguration
 from .logs import mark_email_failed, mark_email_sent
 from .metadata import build_email_metadata, build_resolution_failure_metadata
+from .templating import render_email_html
 
 
 class MailConfigurationResolver:
@@ -148,7 +149,7 @@ class EmailDeliveryService:
         )
 
         try:
-            message = EmailMessage(
+            message = EmailMultiAlternatives(
                 subject=subject,
                 body=body,
                 from_email=resolved_from_email,
@@ -156,6 +157,9 @@ class EmailDeliveryService:
                 cc=cc_emails,
                 bcc=bcc_emails,
                 connection=self.connection_factory.build(resolved_config),
+            )
+            message.attach_alternative(
+                render_email_html(title=subject, body=body), "text/html"
             )
             for attachment in attachments:
                 message.attach(

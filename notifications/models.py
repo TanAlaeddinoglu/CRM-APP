@@ -38,6 +38,16 @@ class NotificationRule(models.Model):
 
     class Meta:
         ordering = ["type_key", "-is_system_default", "name"]
+        constraints = [
+            # Her bildirim tipi için yalnızca bir sistem varsayılan kuralı olabilir.
+            # get_or_create'in eşzamanlı iki süreç tarafından çağrılması durumunda
+            # ikinci INSERT IntegrityError fırlatır; Django bunu GET ile yakalar.
+            models.UniqueConstraint(
+                fields=["type_key"],
+                condition=models.Q(is_system_default=True),
+                name="notifications_notificationrule_unique_system_default",
+            )
+        ]
 
     def __str__(self):
         return f"{self.type_key} — {self.name}"

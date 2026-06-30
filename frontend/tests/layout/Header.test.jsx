@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import Header from '../../src/layout/Header.jsx'
+import { NotificationProvider } from '../../src/context/NotificationContext.jsx'
 
 const navigateMock = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -20,6 +21,8 @@ vi.mock('../../src/services/notifications.js', () => ({
   getNotifications: vi.fn(),
   markAllNotificationsRead: vi.fn(),
   markNotificationRead: vi.fn(),
+  deleteNotification: vi.fn(),
+  deleteAllNotifications: vi.fn(),
 }))
 vi.mock('../../src/layout/HeaderCustomerSearch.jsx', () => ({
   default: () => <div data-testid="customer-search" />,
@@ -32,6 +35,8 @@ import {
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  deleteAllNotifications,
+  deleteNotification,
 } from '../../src/services/notifications.js'
 
 const adminUser = { username: 'ahmet', role: 'Admin', is_staff: true, email: 'a@b.com' }
@@ -52,6 +57,8 @@ beforeEach(() => {
   getNotifications.mockResolvedValue({ data: notifications })
   markAllNotificationsRead.mockResolvedValue({})
   markNotificationRead.mockResolvedValue({})
+  deleteNotification.mockResolvedValue({})
+  deleteAllNotifications.mockResolvedValue({})
   logout.mockResolvedValue({})
 })
 
@@ -60,7 +67,9 @@ afterEach(() => vi.restoreAllMocks())
 function renderHeader() {
   return render(
     <MemoryRouter>
-      <Header />
+      <NotificationProvider>
+        <Header />
+      </NotificationProvider>
     </MemoryRouter>
   )
 }
@@ -92,22 +101,25 @@ describe('Header', () => {
       renderHeader()
       await waitFor(() => expect(getNotifications).toHaveBeenCalled())
       await userEvent.click(screen.getByLabelText('Bildirimler'))
+      // Unread tab is default — "Yeni randevu" (unread) appears here
       expect(await screen.findByText('Yeni randevu')).toBeInTheDocument()
-      expect(screen.getByText('Ödeme alındı')).toBeInTheDocument()
+      // "Ödeme alındı" is read — switch to history tab
+      await userEvent.click(screen.getByRole('button', { name: 'Geçmiş' }))
+      expect(await screen.findByText('Ödeme alındı')).toBeInTheDocument()
     })
 
     it('shows empty state when there are no notifications', async () => {
       getNotifications.mockResolvedValue({ data: [] })
       renderHeader()
       await userEvent.click(screen.getByLabelText('Bildirimler'))
-      expect(await screen.findByText('Bildirim yok.')).toBeInTheDocument()
+      expect(await screen.findByText('Okunmamış bildirim yok.')).toBeInTheDocument()
     })
 
     it('marks all as read and clears the badge', async () => {
       renderHeader()
       await waitFor(() => expect(getNotifications).toHaveBeenCalled())
       await userEvent.click(screen.getByLabelText('Bildirimler'))
-      await userEvent.click(await screen.findByText('Tümünü oku'))
+      await userEvent.click(await screen.findByLabelText('Tümünü oku'))
       await waitFor(() => expect(markAllNotificationsRead).toHaveBeenCalled())
     })
 
@@ -123,6 +135,8 @@ describe('Header', () => {
       renderHeader()
       await waitFor(() => expect(getNotifications).toHaveBeenCalled())
       await userEvent.click(screen.getByLabelText('Bildirimler'))
+      // Switch to history tab where read notifications are shown
+      await userEvent.click(await screen.findByRole('button', { name: 'Geçmiş' }))
       await userEvent.click(await screen.findByText('Ödeme alındı'))
       expect(markNotificationRead).not.toHaveBeenCalled()
     })

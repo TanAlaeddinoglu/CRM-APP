@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable, Optional
 
 from .exceptions import UnknownNotificationTypeError
@@ -14,6 +14,16 @@ class NotificationTypeDefinition:
     default_body_template: str
     # callable(target, payload) -> list[User]
     recipient_resolver: Optional[Callable[..., list]] = None
+    # Kullanıcıya gösterilecek kısa açıklama (ne zaman, kime gider)
+    description: str = ""
+    # Şablonlarda kullanılabilecek değişkenler: [{"key": str, "label": str}, ...]
+    variables: tuple = field(default_factory=tuple)
+    # "general" (normal bildirim kanalı) | "reminder" (zamanlayıcı bölümü)
+    # Yeni tipler bu alanı doldurunca frontend otomatik olarak doğru bölüme yerleştirir.
+    category: str = "general"
+
+    def variable_keys(self) -> set:
+        return {v["key"] for v in self.variables}
 
 
 class NotificationTypeRegistry:
@@ -30,6 +40,9 @@ class NotificationTypeRegistry:
         default_title_template: str,
         default_body_template: str,
         recipient_resolver=None,
+        description: str = "",
+        variables=None,
+        category: str = "general",
     ) -> None:
         self._types[key] = NotificationTypeDefinition(
             key=key,
@@ -39,6 +52,9 @@ class NotificationTypeRegistry:
             default_title_template=default_title_template,
             default_body_template=default_body_template,
             recipient_resolver=recipient_resolver,
+            description=description,
+            variables=tuple(variables or ()),
+            category=category,
         )
 
     def get(self, key: str) -> NotificationTypeDefinition:

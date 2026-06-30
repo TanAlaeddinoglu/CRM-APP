@@ -65,6 +65,26 @@ def test_dispatch_empty_recipient_ids_skips(rule, regular_user):
     assert Notification.objects.count() == 0
 
 
+def test_dispatch_channels_override_supersedes_rule_channels(regular_user):
+    # Kural e-posta kanalında olsa da override in_app verilirse in_app kullanılır.
+    NotificationRule.objects.create(
+        type_key="events.appointment_created",
+        name="Email rule",
+        channels=["email"],
+        is_active=True,
+        is_system_default=False,
+    )
+    NotificationDispatchService().dispatch(
+        event_key="events.appointment_created",
+        payload={},
+        recipient_ids=[regular_user.pk],
+        content_type_id=None,
+        object_id=None,
+        channels=["in_app"],
+    )
+    assert Notification.objects.filter(recipient=regular_user).count() == 1
+
+
 # ── Resolver path (recipient_ids=None) ───────────────────────────────────────
 
 
@@ -173,10 +193,11 @@ def test_dispatch_falls_back_to_type_def_template_when_rule_template_null(
     assert "Randevu A" in n.title
 
 
-def test_dispatch_template_missing_key_returns_template_as_is(rule, regular_user):
+def test_dispatch_template_missing_key_renders_empty(rule, regular_user):
+    # Güvenli render: eksik anahtar boş string olur (str.format'ın aksine).
     svc = NotificationDispatchService()
-    result = svc._render("{missing_key}", {})
-    assert result == "{missing_key}"
+    result = svc._render("merhaba {missing_key}!", {})
+    assert result == "merhaba !"
 
 
 # ── Channel hataları diğer recipient'ları durdurmaz ──────────────────────────

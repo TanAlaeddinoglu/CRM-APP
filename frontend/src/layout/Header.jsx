@@ -1,24 +1,22 @@
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
 import { logout } from "../services/auth";
 import { clearExportHistoryCache } from "../services/export";
-import {
-  getNotifications,
-  markAllNotificationsRead,
-  markNotificationRead,
-} from "../services/notifications";
 import { useNavigate, useLocation, useNavigationType } from "react-router-dom";
-import { useState, useRef, useEffect, useCallback } from "react";
-import { Bell, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import {
+  Bell,
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+  PanelRightOpen,
+  Trash2,
+} from "lucide-react";
 import HeaderCustomerSearch from "./HeaderCustomerSearch";
+import NotificationTabbedList from "../components/notifications/NotificationTabbedList";
+import ConfirmModal from "../components/common/ConfirmModal";
+import { getNotificationUrl } from "../utils/notificationUrl";
 import "../assets/css/header.css";
-
-function formatRelativeTime(isoString) {
-  const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
-  if (diff < 60) return "Az önce";
-  if (diff < 3600) return `${Math.floor(diff / 60)} dk önce`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)} sa önce`;
-  return `${Math.floor(diff / 86400)} gün önce`;
-}
 
 export default function Header() {
   const { user, setUser } = useAuth();
@@ -126,50 +124,26 @@ export default function Header() {
 
   /* USER DROPDOWN STATE (SADECE BU) */
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const [notificationMenuVisible, setNotificationMenuVisible] = useState(false);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const userMenuRef = useRef(null);
   const notificationMenuRef = useRef(null);
 
+  const {
+    notifications,
+    unreadCount,
+    hasMore,
+    isLoadingMore,
+    loadOlderWeek,
+    markRead,
+    markAllRead,
+    removeNotification,
+    removeAll,
+    openPanel,
+  } = useNotifications();
+
   const firstLetter = user?.username?.[0]?.toUpperCase() || "?";
-  const [olderWeeks, setOlderWeeks] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  const loadNotifications = useCallback(() => {
-    getNotifications({ offset_weeks: 0 })
-      .then((res) => {
-        const data = res.data;
-        setNotifications(data);
-        setUnreadCount(data.filter((n) => !n.is_read).length);
-        setOlderWeeks(0);
-        setHasMore(true);
-      })
-      .catch(() => {});
-  }, []);
-
-  const loadOlderWeek = () => {
-    const nextOffset = olderWeeks + 1;
-    setIsLoadingMore(true);
-    getNotifications({ offset_weeks: nextOffset })
-      .then((res) => {
-        const older = res.data;
-        setNotifications((prev) => [...prev, ...older]);
-        setOlderWeeks(nextOffset);
-        if (older.length === 0) setHasMore(false);
-      })
-      .catch(() => {})
-      .finally(() => setIsLoadingMore(false));
-  };
-
-  useEffect(() => {
-    if (!user) return;
-    loadNotifications();
-    const interval = setInterval(loadNotifications, 30_000);
-    return () => clearInterval(interval);
-  }, [user, loadNotifications]);
 
   const openNotificationMenu = () => {
     setNotificationMenuVisible(true);
@@ -190,28 +164,16 @@ export default function Header() {
     openNotificationMenu();
   };
 
-  const handleMarkAllAsRead = () => {
-    markAllNotificationsRead()
-      .then(() => {
-        setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-        setUnreadCount(0);
-      })
-      .catch(() => {});
+  const handleExpandToPanel = () => {
+    closeNotificationMenu();
+    openPanel();
   };
 
-  const handleNotificationClick = (notification) => {
-    if (!notification.is_read) {
-      markNotificationRead(notification.id)
-        .then(() => {
-          setNotifications((prev) =>
-            prev.map((n) =>
-              n.id === notification.id ? { ...n, is_read: true } : n
-            )
-          );
-          setUnreadCount((prev) => Math.max(0, prev - 1));
-        })
-        .catch(() => {});
-    }
+  const handleNotificationActivate = (notification) => {
+    markRead(notification);
+    closeNotificationMenu();
+    const url = getNotificationUrl(notification);
+    if (url) navigate(url);
   };
 
   /* ================= ACTIONS ================= */
@@ -269,6 +231,7 @@ export default function Header() {
 
   /* ================= RENDER ================= */
   return (
+    <>
     <header className="main-header">
 
       {/* Sol grup: geri/ileri + search */}
@@ -320,65 +283,46 @@ export default function Header() {
             >
               <div className="notification-menu-header">
                 <strong>Bildirimler</strong>
-                <button
-                  type="button"
-                  className="notification-header-action"
-                  onClick={handleMarkAllAsRead}
-                >
-                  Tümünü oku
-                </button>
-              </div>
-
-              <div className="notification-list">
-                {notifications.length === 0 ? (
-                  <div className="notification-empty">
-                    <span>Bildirim yok.</span>
-                  </div>
-                ) : (
-                  notifications.map((notification) => (
-                    <button
-                      key={notification.id}
-                      type="button"
-                      className={`notification-item ${
-                        notification.is_read ? "read" : "unread"
-                      }`}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <div className="notification-item-main">
-                        <div className="notification-item-title-row">
-                          <span className="notification-item-title">
-                            {notification.title}
-                          </span>
-                          {!notification.is_read && (
-                            <span className="notification-unread-dot" />
-                          )}
-                        </div>
-                        <p className="notification-item-message">
-                          {notification.body}
-                        </p>
-                      </div>
-                      <span className="notification-item-time">
-                        {formatRelativeTime(notification.created_at)}
-                      </span>
-                    </button>
-                  ))
-                )}
-              </div>
-
-              <div className="notification-menu-footer">
-                {hasMore ? (
+                <div className="notification-menu-header-actions">
                   <button
                     type="button"
-                    className="notification-footer-link"
-                    onClick={loadOlderWeek}
-                    disabled={isLoadingMore}
+                    className="notification-icon-action"
+                    onClick={markAllRead}
+                    aria-label="Tümünü oku"
+                    title="Tümünü oku"
                   >
-                    {isLoadingMore ? "Yükleniyor…" : "Daha fazla yükle"}
+                    <CheckCheck size={16} strokeWidth={2} />
                   </button>
-                ) : (
-                  <span className="notification-footer-end">Tüm bildirimler yüklendi.</span>
-                )}
+                  <button
+                    type="button"
+                    className="notification-icon-action danger"
+                    onClick={() => setConfirmDeleteAll(true)}
+                    aria-label="Tümünü sil"
+                    title="Tümünü sil"
+                  >
+                    <Trash2 size={15} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="notification-expand-btn"
+                    onClick={handleExpandToPanel}
+                    aria-label="Paneli genişlet"
+                    title="Paneli genişlet"
+                  >
+                    <PanelRightOpen size={16} strokeWidth={2.2} />
+                  </button>
+                </div>
               </div>
+
+              <NotificationTabbedList
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onNotificationClick={handleNotificationActivate}
+                onDelete={removeNotification}
+                hasMore={hasMore}
+                isLoadingMore={isLoadingMore}
+                onLoadMore={loadOlderWeek}
+              />
             </div>
           )}
         </div>
@@ -421,5 +365,16 @@ export default function Header() {
       </div>
 
     </header>
+
+    <ConfirmModal
+      open={confirmDeleteAll}
+      title="Tüm Bildirimleri Sil"
+      description="Tüm bildirimler kalıcı olarak silinecek. Onaylıyor musun?"
+      confirmText="Evet, Sil"
+      cancelText="Vazgeç"
+      onCancel={() => setConfirmDeleteAll(false)}
+      onConfirm={() => { setConfirmDeleteAll(false); removeAll(); }}
+    />
+    </>
   );
 }

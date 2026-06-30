@@ -127,11 +127,12 @@
   align-items: center;
   background: #ffffff;
   border: 1px solid #e5e7eb;
+  border-left: 3px solid var(--color-primary);
   border-radius: 10px;
   display: flex;
   gap: 16px;
   justify-content: space-between;
-  padding: 14px;
+  padding: 14px 14px 14px 12px;
   text-align: left;
   transition: border-color 150ms ease, box-shadow 150ms ease, background 150ms ease;
   width: 100%;
@@ -186,8 +187,18 @@
   background: #16a34a;
 }
 
+.settings-toggle-option.active:first-child:hover {
+  background: #15803d;
+  color: #ffffff;
+}
+
 .settings-toggle-option.active:last-child {
   background: #dc2626;
+}
+
+.settings-toggle-option.active:last-child:hover {
+  background: #b91c1c;
+  color: #ffffff;
 }
 
 .settings-field-actions {
@@ -321,6 +332,25 @@
   transform: translateY(1px);
 }
 
+.settings-inline-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.settings-inline-warning svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 .settings-empty-state {
   align-items: center;
   background: #ffffff;
@@ -434,10 +464,11 @@
 /* ── Notification Rule Modal (nrm) ──────────────────────────────────────── */
 .nrm-box {
   width: 100%;
-  max-width: 440px;
-  border-radius: 14px;
+  max-width: 460px;
+  border-radius: 16px;
   padding: 0;
   overflow: hidden;
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.14), 0 4px 16px rgba(2, 6, 23, 0.08);
 }
 
 .nrm-header {
@@ -477,6 +508,8 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px 20px;
+  max-height: calc(100vh - 160px);
+  overflow-y: auto;
 }
 
 .nrm-channel-tag {
@@ -538,6 +571,63 @@
   padding: 1px 6px;
 }
 
+.nrm-required {
+  font-size: 11px;
+  font-weight: 600;
+  color: #b91c1c;
+  background: #fee2e2;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.nrm-input-error {
+  border-color: #dc2626 !important;
+}
+
+.nrm-error-text {
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #dc2626;
+}
+
+.nrm-hint {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.nrm-token-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.nrm-token {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border: 1px solid #dbeafe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.nrm-token:hover:not(:disabled) {
+  background: #dbeafe;
+  border-color: #bfdbfe;
+}
+
+.nrm-token:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .nrm-input {
   background: #fff;
   border: 1px solid var(--color-border);
@@ -566,6 +656,47 @@
   font-family: inherit;
 }
 
+/* contentEditable şablon alanı (token pill'leri içerir) */
+.nrm-template-field {
+  min-height: 38px;
+  cursor: text;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.nrm-template-field.nrm-textarea {
+  min-height: 58px;
+}
+
+.nrm-template-field.is-disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+  cursor: default;
+}
+
+.nrm-template-field:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+/* Alan içindeki görsel değişken token'ı */
+.nrm-token-chip {
+  display: inline-block;
+  padding: 1px 8px;
+  margin: 0 1px;
+  border-radius: 6px;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 600;
+  user-select: none;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
 .nrm-footer {
   display: flex;
   justify-content: flex-end;
@@ -575,15 +706,30 @@
 }
 
 /* ── Kural satırı — kompakt ─────────────────────────────────────────── */
+.settings-rule-group-header {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  padding: 6px 2px 2px;
+}
+
+.settings-rule-group-header:not(:first-child) {
+  margin-top: 8px;
+  border-top: 1px solid #eef2f7;
+}
+
 .settings-rule-row {
   align-items: center;
   background: #ffffff;
   border: 1px solid #e5e7eb;
+  border-left: 3px solid var(--color-primary);
   border-radius: 8px;
   display: flex;
   gap: 10px;
   justify-content: space-between;
-  padding: 8px 10px;
+  padding: 8px 10px 8px 8px;
   transition: border-color 120ms ease, background 120ms ease;
 }
 
@@ -674,6 +820,79 @@
   color: #dc2626;
 }
 
+/* Kural satırı sarmalayıcı */
+.settings-rule-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Bilgi ikonu */
+.settings-rule-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  color: #94a3b8;
+  cursor: help;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.settings-rule-info:hover,
+.settings-rule-info:focus-visible {
+  background: rgba(37, 99, 235, 0.1);
+  color: #2563eb;
+  outline: none;
+}
+
+/* Body'ye portal edilen tooltip (kırpılmaz) */
+.hover-tip {
+  position: fixed;
+  z-index: 9999;
+
+  width: max-content;
+  max-width: 260px;
+  padding: 8px 10px;
+  border-radius: 8px;
+
+  background: #0f172a;
+  color: #f8fafc;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.18);
+  pointer-events: none;
+}
+
+.hover-tip-top {
+  transform: translate(-50%, -100%);
+}
+
+.hover-tip-bottom {
+  transform: translate(-50%, 0);
+}
+
+.hover-tip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+}
+
+.hover-tip-top::after {
+  top: 100%;
+  border-top-color: #0f172a;
+}
+
+.hover-tip-bottom::after {
+  bottom: 100%;
+  border-bottom-color: #0f172a;
+}
+
 .settings-rule-meta {
   display: flex;
   flex-wrap: wrap;
@@ -742,6 +961,13 @@
   accent-color: var(--color-primary);
 }
 
+.settings-checkbox-row input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--color-primary);
+}
+
 @keyframes settingsFadeSlide {
   from {
     opacity: 0;
@@ -801,5 +1027,368 @@
 
   .settings-icon-button {
     height: 40px;
+  }
+}
+
+/* ── Zamanlayıcı (hatırlatma) kuralı formu ─────────────────────────────────── */
+
+/* Modal genişletme — her iki mod için sabit geniş boyut */
+.nrm-box--wide {
+  max-width: 780px;
+  min-width: min(780px, 92vw);
+}
+
+/* Normal ↔ Zamanlayıcı geçişinde hafif belirme animasyonu */
+@keyframes nrmFadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.nrm-content-anim {
+  animation: nrmFadeIn 200ms ease;
+}
+
+/* Kaydırılabilir modal gövdesi — içerik taşmasını önler */
+.nrm-body--scroll {
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  padding-right: 18px; /* kaydırma çubuğu için boşluk */
+}
+
+/* İki sütunlu grid — Koşullar ve Hatırlatma zamanları yan yana */
+.rrm-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Bölüm kartı */
+.rrm-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Bölüm başlığı */
+.rrm-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #475569;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 2px;
+}
+
+/* Chip tabanlı çoklu seçici (Kanallar, Alıcılar) */
+.rrm-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.rrm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1.5px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, color 150ms, box-shadow 150ms;
+  line-height: 1;
+}
+
+.rrm-chip:hover:not(:disabled) {
+  border-color: var(--color-primary, #2563eb);
+  color: var(--color-primary, #2563eb);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+.rrm-chip.active {
+  background: var(--color-primary, #2563eb);
+  border-color: var(--color-primary, #2563eb);
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+}
+
+/* Seçili chip hover'da metin rengini beyaz tutar */
+.rrm-chip.active:hover:not(:disabled) {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+
+.rrm-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Durum satırı — aktif/pasif toggle */
+.rrm-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 4px 8px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.rrm-status-row .settings-toggle-group {
+  padding: 1px;
+}
+
+.rrm-status-row .settings-toggle-option {
+  font-size: 11px;
+  padding: 5px 8px;
+}
+
+/* Kural satırı altı başlık */
+.settings-rule-subtitle {
+  font-size: 11px;
+  color: var(--color-text-light, #6b7280);
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+/* Koşul ve zaman satırları */
+.rrm-cond-row,
+.rrm-offset-row {
+  display: flex;
+  align-items: stretch; /* tüm elemanlar satır yüksekliğini paylaşır */
+  gap: 5px;
+  margin-bottom: 4px;
+}
+
+.rrm-cond-row .nrm-input,
+.rrm-offset-row .nrm-input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;        /* tutarlı yükseklik */
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* Koşul "=" badge — tam ortalı */
+.rrm-cond-eq {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 26px;
+  height: 34px;       /* input ile aynı yükseklik */
+  border-radius: 6px;
+  background: #e2e8f0;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 12px;
+  user-select: none;
+}
+
+/* Koşul satırı içindeki silme butonu — ortalı */
+.rrm-cond-row .settings-rule-action-btn,
+.rrm-offset-row .settings-rule-action-btn {
+  flex-shrink: 0;
+  height: 34px;
+  width: 28px;
+  align-self: center;
+}
+
+.rrm-offset-row .rrm-amount {
+  flex: 0 0 56px;
+  width: 56px;
+}
+
+/* Dropdown'lara ok oku rengi + padding iyileştirmesi */
+.rrm-cond-row select.nrm-input,
+.rrm-offset-row select.nrm-input {
+  padding-right: 28px;
+  appearance: auto;
+  cursor: pointer;
+}
+
+/* Ekle butonu */
+.rrm-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1.5px dashed #cbd5e1;
+  background: transparent;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 150ms, color 150ms, background 150ms;
+  align-self: flex-start;
+}
+
+.rrm-add-btn:hover:not(:disabled) {
+  border-color: var(--color-primary, #2563eb);
+  color: var(--color-primary, #2563eb);
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.rrm-add-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* rrm-check artık kullanılmıyor — chip group ile değiştirildi */
+
+/* Şablon sıfırlama ikonu — section-title içinde sağa itilmiş küçük düğme */
+.nrm-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 3px 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.nrm-reset-btn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+  color: #334155;
+}
+
+.nrm-reset-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Zamanlayıcı form satırları: 3 adet rrm-two-col bloğunu dikey yığar ve aralarına boşluk koyar */
+.rrm-form-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Zamanlayıcı bölümü — NotificationRule grup başlığı ve içindeki ReminderRule'lar */
+.rrm-notif-rule-group {
+  margin-bottom: 8px;
+}
+
+.rrm-notif-rule-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px 8px 10px;
+  background: #f8fafc;
+  border: 1px solid #dbeafe;
+  border-left: 3px solid #3b82f6;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.rrm-notif-rule-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e3a8a;
+  flex: 1;
+}
+
+.rrm-notif-rule-add-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid #93c5fd;
+  border-radius: 6px;
+  background: #fff;
+  color: #2563eb;
+  cursor: pointer;
+  transition: background 140ms, color 140ms;
+  flex-shrink: 0;
+}
+
+.rrm-notif-rule-add-btn:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #60a5fa;
+}
+
+.rrm-notif-rule-empty {
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Dikey gövde: gradient ile çizilir, son kartın merkezinde biter (18px kart yüksekliğinin yarısı). */
+.rrm-reminder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 14px;
+  margin-left: 18px;
+  padding-top: 3px;
+  background-image: linear-gradient(#bfdbfe, #bfdbfe);
+  background-repeat: no-repeat;
+  background-position: 0 0;
+  background-size: 2px calc(100% - 18px);
+}
+
+/* Her kart: yatay kol ile dikey gövdeyi bağlar */
+.rrm-reminder-row {
+  position: relative;
+}
+
+.rrm-reminder-row::before {
+  content: "";
+  position: absolute;
+  left: -14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 2px;
+  background: #bfdbfe;
+}
+
+.rrm-reminder-row .settings-rule-row {
+  background: #f8fbff;
+  border-color: #dbeafe;
+  border-left-color: #3b82f6;
+}
+
+.rrm-reminder-row .settings-rule-name-group strong {
+  font-size: 13px;
+}
+
+.rrm-reminder-row .settings-rule-subtitle {
+  color: #64748b;
+}
+
+@media (max-width: 640px) {
+  .rrm-two-col {
+    grid-template-columns: 1fr;
+  }
+  .nrm-box--wide {
+    max-width: 100%;
   }
 }
