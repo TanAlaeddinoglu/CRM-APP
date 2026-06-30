@@ -206,10 +206,14 @@ def test_dispatch_template_missing_key_renders_empty(rule, regular_user):
 def test_dispatch_channel_failure_does_not_stop_other_recipients(
     rule, regular_user, second_user, monkeypatch
 ):
+    # InAppChannel.send_bulk artık bulk_create kullanıyor (atomik).
+    # Per-recipient izolasyonu BaseChannel.send_bulk'un loop'unda yaşıyor;
+    # onu test etmek için InAppChannel.send_bulk'u base implementasyona yönlendiriyoruz.
+    from notifications.channels.base import BaseChannel
+    from notifications.channels.in_app import InAppChannel
+
     call_count = [0]
-    original_send = __import__(
-        "notifications.channels.in_app", fromlist=["InAppChannel"]
-    ).InAppChannel.send
+    original_send = InAppChannel.send
 
     def flaky_send(self, r, recipient, title, body, payload, target):
         call_count[0] += 1
@@ -218,6 +222,10 @@ def test_dispatch_channel_failure_does_not_stop_other_recipients(
         original_send(self, r, recipient, title, body, payload, target)
 
     monkeypatch.setattr("notifications.channels.in_app.InAppChannel.send", flaky_send)
+    monkeypatch.setattr(
+        "notifications.channels.in_app.InAppChannel.send_bulk",
+        BaseChannel.send_bulk,
+    )
 
     dispatch(recipient_ids=[regular_user.pk, second_user.pk])
     # İlk recipient hata verdi ama ikincisi başarılı olmalı
