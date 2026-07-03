@@ -1,0 +1,292 @@
+.filter-bar {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  margin-bottom: 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+}
+
+.filter-bar__search,
+.filter-bar__select {
+  height: 36px;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  border-radius: 12px;
+  border: 1px solid #dbe3ef;
+  background: #ffffff;
+  transition: all 0.18s ease;
+}
+
+.filter-bar__search::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.filter-bar__search:hover,
+.filter-bar__select:hover {
+  border-color: #c7d2e3;
+  color: #0f254f;
+}
+
+.filter-bar__search:focus,
+.filter-bar__select:focus {
+  outline: none;
+  border-color: #0f254f;
+  box-shadow: 0 0 0 3px rgba(15, 37, 79, 0.08);
+  color: #0f254f;
+}
+
+.filter-bar__reset {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 800;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.18s ease;
+}
+
+.filter-bar__reset:hover {
+  border-color: #fca5a5;
+  background: #fff1f2;
+  color: #b91c1c;
+}
+
+.filter-bar__reset:active {
+  transform: scale(0.97);
+}
+
+/* ================================
+   PANEL (card) — reports pages
+================================ */
+.filter-bar-panel {
+  border-radius: 22px;
+  padding: 22px;
+  display: grid;
+  gap: 18px;
+  background: #ffffff;
+  border: 1px solid #e6edf5;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.05);
+}
+
+.filter-bar-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.filter-bar-panel__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: #eef5fc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f254f;
+  flex-shrink: 0;
+}
+
+.filter-bar-panel__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.filter-bar-panel__actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.filter-bar-submit-btn {
+  min-width: 140px;
+}
+
+.filter-bar-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ================================
+   GRID — inside panel
+================================ */
+.filter-bar-grid {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+/* ================================
+   LABELED FIELD — inside panel
+================================ */
+.filter-bar__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+
+.filter-bar__field-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.filter-bar__field-control {
+  height: 46px;
+  border-radius: 14px;
+  border: 1px solid #cbd5e1;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #0f172a;
+  background: #ffffff;
+  width: 100%;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.filter-bar__field-control:hover {
+  border-color: #94a3b8;
+}
+
+.filter-bar__field-control:focus {
+  outline: none;
+  border-color: #0f254f;
+  box-shadow: 0 0 0 3px rgba(15, 37, 79, 0.08);
+}
+
+/* ================================
+   DATE RANGE DROPDOWN
+================================ */
+.date-range-dropdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #f8fafc;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+  flex-wrap: wrap;
+}
+
+.date-range-dropdown__select {
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid #dbe3ef;
+  padding: 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  background: #ffffff;
+  cursor: pointer;
+  min-width: 150px;
+  transition: all 0.18s ease;
+}
+
+.date-range-dropdown__select:hover {
+  border-color: #c7d2e3;
+  color: #0f254f;
+}
+
+.date-range-dropdown__select:focus {
+  outline: none;
+  border-color: #0f254f;
+  box-shadow: 0 0 0 3px rgba(15, 37, 79, 0.08);
+  color: #0f254f;
+}
+
+.date-range-dropdown__custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.date-range-dropdown__date-input {
+  height: 36px;
+  border-radius: 12px;
+  border: 1px solid #dbe3ef;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+  background: #ffffff;
+  min-width: 130px;
+  transition: all 0.18s ease;
+}
+
+.date-range-dropdown__date-input:hover {
+  border-color: #c7d2e3;
+  color: #0f254f;
+}
+
+.date-range-dropdown__date-input:focus {
+  outline: none;
+  border-color: #0f254f;
+  box-shadow: 0 0 0 3px rgba(15, 37, 79, 0.08);
+  color: #0f254f;
+}
+
+.date-range-dropdown__date-input--error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.date-range-dropdown__sep {
+  color: #94a3b8;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.date-range-dropdown__error {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 600;
+  flex-basis: 100%;
+  padding: 2px 4px;
+}
+
+/* Strips DateRangeDropdown's own pill container when nested inside FilterBar */
+.date-range-dropdown--inline {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.filter-bar__field-control--error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.filter-bar__field-error {
+  font-size: 12px;
+  color: #ef4444;
+  font-weight: 600;
+  margin-top: -4px;
+}
+
+@media (max-width: 768px) {
+  .filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

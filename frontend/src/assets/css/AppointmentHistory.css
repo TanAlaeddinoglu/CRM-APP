@@ -26,35 +26,6 @@
   margin-bottom: 14px;
 }
 
-/* ================================
-   FILTER BAR
-================================ */
-.filter-bar {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-
-.filter-bar input {
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  font-size: 14px;
-  color: #111827;
-  background: #ffffff;
-  min-width: 180px;
-}
-
-.filter-bar input::placeholder {
-  color: #9ca3af;
-}
-
-.filter-bar input:focus {
-  outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-}
 
 /* ================================
    TABLE WRAPPER
@@ -180,46 +151,7 @@
     min-width: 700px;
   }
 
-  .filter-bar {
-    flex-direction: column;
-  }
 }
-/* ================================
-   FILTER BAR
-================================ */
-.filter-bar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-
-  margin-bottom: 10px;
-}
-
-/* INPUTS & SELECT */
-.filter-bar input,
-.filter-bar select {
-  height: 36px;
-  padding: 6px 10px;
-
-  font-size: 14px;
-  color: #111827;
-
-  border-radius: 10px;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-
-  transition: border-color 150ms ease,
-              box-shadow 150ms ease;
-}
-
-.filter-bar input:focus,
-.filter-bar select:focus {
-  outline: none;
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
-}
-
 /* ================================
    QUICK FILTER BUTTONS
 ================================ */
@@ -249,33 +181,6 @@
   transform: scale(0.97);
 }
 
-/* ================================
-   RESET FILTER BUTTON
-================================ */
-.btn-reset {
-  height: 36px;
-  padding: 0 14px;
-
-  font-size: 13px;
-  font-weight: 600;
-
-  border-radius: 10px;
-  border: 1px solid #fecaca;
-
-  background: #fef2f2;
-  color: #b91c1c;
-
-  cursor: pointer;
-  transition: all 150ms ease;
-}
-
-.btn-reset:hover {
-  background: #fee2e2;
-}
-
-.btn-reset:active {
-  transform: scale(0.97);
-}
 
 /* ================================
    RESULT COUNT

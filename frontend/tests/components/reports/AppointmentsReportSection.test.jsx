@@ -148,24 +148,25 @@ describe('AppointmentsReportSection', () => {
     it('clears dates when preset is selected', async () => {
       const setFilters = vi.fn()
       const filtersWithDates = { preset: '', date_from: '2024-01-01', date_to: '2024-01-31', user_id: '', product_id: '' }
-      const { container } = render(
+      render(
         <AppointmentsReportSection {...defaultProps} filters={filtersWithDates} setFilters={setFilters} />
       )
-      const presetSelect = container.querySelector('[name="preset"]')
-      await userEvent.selectOptions(presetSelect, '7')
+      const presetSelect = screen.getByLabelText('Tarih Aralığı')
+      await userEvent.selectOptions(presetSelect, 'last7')
       const call = setFilters.mock.calls[0][0]
       const next = typeof call === 'function' ? call(filtersWithDates) : call
-      expect(next.date_from).toBe('')
-      expect(next.date_to).toBe('')
+      expect(next.preset).toBe('last7')
+      expect(next.date_from).not.toBe('2024-01-01')
+      expect(next.date_to).not.toBe('2024-01-31')
     })
 
     it('clears preset when date_to is set', async () => {
       const setFilters = vi.fn()
-      const filtersWithPreset = { preset: '7', date_from: '', date_to: '', user_id: '', product_id: '' }
-      const { container } = render(
+      const filtersWithPreset = { preset: 'last7', date_from: '', date_to: '', user_id: '', product_id: '' }
+      render(
         <AppointmentsReportSection {...defaultProps} filters={filtersWithPreset} setFilters={setFilters} />
       )
-      const dateInput = container.querySelector('[name="date_to"]')
+      const dateInput = screen.getByLabelText('Bitiş')
       await userEvent.type(dateInput, '2024-03-31')
       const call = setFilters.mock.calls[0][0]
       const next = typeof call === 'function' ? call(filtersWithPreset) : call

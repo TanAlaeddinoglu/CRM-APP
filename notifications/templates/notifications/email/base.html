@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }}</title>
+</head>
+<body style="margin:0; padding:0; background:#f1f5f9;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f1f5f9; padding:24px 0;">
+    <tr>
+      <td align="center" style="padding:0 12px;">
+        <table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0" style="width:100%; max-width:520px; background:#ffffff; border-radius:14px; overflow:hidden; border:1px solid #e5e7eb; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+          <tr>
+            <td style="background:#16223E; padding:18px 28px;">
+              <span style="color:#ffffff; font-size:15px; font-weight:600; letter-spacing:.3px;">{{ brand }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:28px;">
+              <h1 style="margin:0 0 10px; font-size:18px; line-height:1.35; color:#0f172a; font-weight:600;">{{ title }}</h1>
+              <div style="margin:0; font-size:14px; line-height:1.6; color:#334155;">{{ body|linebreaksbr }}</div>
+              {% if cta_url %}
+              <a href="{{ cta_url }}" style="display:inline-block; margin-top:20px; padding:10px 18px; background:#16223E; color:#ffffff; text-decoration:none; border-radius:8px; font-size:14px; font-weight:600;">{{ cta_label }}</a>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:14px 28px; border-top:1px solid #eef2f7; background:#fafbfc;">
+              <span style="font-size:12px; color:#94a3b8;">Bu e-posta {{ brand }} bildirim sistemi tarafından otomatik gönderildi.</span>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

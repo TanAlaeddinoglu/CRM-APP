@@ -29,6 +29,7 @@ urlpatterns = [
     path("api/events/", include("events.urls")),
     path("api/reports/", include("reports.urls")),
     path("api/notifications/", include("notifications.urls")),
+    path("api/importer/", include("importer.urls")),
     path("api/admin/", admin.site.urls),
 ]
 #

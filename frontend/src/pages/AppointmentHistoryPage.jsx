@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getAppointments } from "../services/appointment";
+import { getAppointments, updateAppointment, deleteAppointment } from "../services/appointment";
 import AppointmentDetailModal from "../components/AppointmentDetailModal";
+import EventModal from "../components/customer/events/EventModal.jsx";
 import ExportActionButton from "../components/export/ExportActionButton.jsx";
 import LoadingIndicator from "../components/common/LoadingIndicator.jsx";
+import FilterBar from "../components/common/FilterBar.jsx";
 import { useAuth } from "../context/AuthContext";
 import { usePageTransition } from "../context/PageTransitionContext.jsx";
 import { isAdmin } from "../utils/roles.js";
@@ -39,6 +41,7 @@ export default function AppointmentHistoryPage() {
   const [search, setSearch] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [datePreset, setDatePreset] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState(() => {
     const requestedType = location.state?.initialTypeFilter;
@@ -47,8 +50,10 @@ export default function AppointmentHistoryPage() {
       : "";
   });
 
-  const [selectedAppointment, setSelectedAppointment] =
-    useState(null);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [editAppointment, setEditAppointment] = useState(null);
+  const [showEventModal, setShowEventModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const navigate = useNavigate();
 
@@ -73,7 +78,7 @@ export default function AppointmentHistoryPage() {
         setTotalCount(res.data?.count || 0);
       })
       .finally(() => setLoading(false));
-  }, [page, pageSize, statusFilter, typeFilter, dateFrom, dateTo, search]);
+  }, [page, pageSize, statusFilter, typeFilter, dateFrom, dateTo, search, refreshKey]);
 
   useEffect(() => {
     setPage(1);
@@ -87,31 +92,6 @@ export default function AppointmentHistoryPage() {
 
     setTypeFilter((current) => (current === requestedType ? current : requestedType));
   }, [location.state]);
-
-  /* =========================
-     QUICK FILTERS
-  ========================= */
-  const applyTodayFilter = () => {
-    const today = new Date();
-    const iso = today.toISOString().slice(0, 10);
-    setDateFrom(iso);
-    setDateTo(iso);
-  };
-
-  const applyWeekFilter = () => {
-    const now = new Date();
-
-    const start = new Date(now);
-    start.setDate(now.getDate() - now.getDay() + 1); // Pazartesi
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    end.setHours(23, 59, 59, 999);
-
-    setDateFrom(start.toISOString().slice(0, 10));
-    setDateTo(end.toISOString().slice(0, 10));
-  };
 
   /* =========================
      FILTER + SORT
@@ -151,76 +131,41 @@ export default function AppointmentHistoryPage() {
       </div>
 
       {/* ================= FILTER BAR ================= */}
-        <div className="filter-bar">
-            <input
-                type="text"
-                placeholder="Randevu / müşteri ara"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-            />
-
-            <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-            >
-                {STATUS_OPTIONS.map((s) => (
-                    <option key={s.value} value={s.value}>
-                        {s.label}
-                    </option>
-                ))}
-            </select>
-
-            <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-            >
-                {TYPE_OPTIONS.map((t) => (
-                    <option key={t.value} value={t.value}>
-                        {t.label}
-                    </option>
-                ))}
-            </select>
-
-            <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-            />
-
-            <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-            />
-
-            {/* QUICK FILTERS */}
-            <button
-                className="btn-ghost"
-                onClick={applyTodayFilter}
-            >
-                Bugün
-            </button>
-
-            <button
-                className="btn-ghost"
-                onClick={applyWeekFilter}
-            >
-                Bu Hafta
-            </button>
-            <button
-                className="btn-reset"
-                onClick={() => {
-                    setSearch("");
-                    setStatusFilter("");
-                    setTypeFilter("");
-                    setDateFrom("");
-                    setDateTo("");
-                }}
-            >
-                Filtreleri Temizle
-            </button>
-
-        </div>
+      <FilterBar>
+        <FilterBar.Search
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Randevu / müşteri ara"
+        />
+        <FilterBar.Select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          options={STATUS_OPTIONS}
+        />
+        <FilterBar.Select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          options={TYPE_OPTIONS}
+        />
+        <FilterBar.DateRange
+          value={datePreset}
+          onChange={(key, from, to) => {
+            setDatePreset(key);
+            setDateFrom(from);
+            setDateTo(to);
+          }}
+        />
+        <FilterBar.Reset
+          onClick={() => {
+            setSearch("");
+            setStatusFilter("");
+            setTypeFilter("");
+            setDateFrom("");
+            setDateTo("");
+            setDatePreset("");
+          }}
+        />
+      </FilterBar>
 
         {/* ================= COUNT ================= */}
         <div className="result-count">
@@ -313,6 +258,36 @@ export default function AppointmentHistoryPage() {
       <AppointmentDetailModal
         appointment={selectedAppointment}
         onClose={() => setSelectedAppointment(null)}
+        onEdit={(appt) => {
+          setSelectedAppointment(null);
+          setEditAppointment(appt);
+          setShowEventModal(true);
+        }}
+      />
+
+      {/* ================= EDIT MODAL ================= */}
+      <EventModal
+        isOpen={showEventModal}
+        event={editAppointment}
+        customerId={editAppointment?.customer_id}
+        onClose={() => {
+          setShowEventModal(false);
+          setEditAppointment(null);
+        }}
+        onSave={(payload) =>
+          updateAppointment(editAppointment.id, payload).then(() => {
+            setShowEventModal(false);
+            setEditAppointment(null);
+            setRefreshKey((k) => k + 1);
+          })
+        }
+        onDelete={(id) =>
+          deleteAppointment(id).then(() => {
+            setShowEventModal(false);
+            setEditAppointment(null);
+            setRefreshKey((k) => k + 1);
+          })
+        }
       />
     </div>
   );

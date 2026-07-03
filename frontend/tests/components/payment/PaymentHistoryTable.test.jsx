@@ -59,13 +59,13 @@ describe('PaymentHistoryTable', () => {
     expect(dashes.length).toBeGreaterThan(0)
   })
 
-  it('renders kismi status badge (raw status value displayed)', () => {
+  it('renders Kısmi status badge', () => {
     render(<PaymentHistoryTable rows={rows} />)
-    expect(screen.getByText('kismi')).toBeInTheDocument()
+    expect(screen.getByText('Kısmi')).toBeInTheDocument()
   })
 
-  it('renders tamamlandi status badge (raw status value displayed)', () => {
+  it('renders Tamamlandı status badge', () => {
     render(<PaymentHistoryTable rows={rows} />)
-    expect(screen.getByText('tamamlandi')).toBeInTheDocument()
+    expect(screen.getByText('Tamamlandı')).toBeInTheDocument()
   })
 })

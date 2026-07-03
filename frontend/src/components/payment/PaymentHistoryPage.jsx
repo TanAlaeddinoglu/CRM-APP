@@ -7,6 +7,7 @@ import {
 import PaymentHistoryTable from "./PaymentHistoryTable";
 import ExportActionButton from "../export/ExportActionButton.jsx";
 import LoadingIndicator from "../common/LoadingIndicator.jsx";
+import FilterBar from "../common/FilterBar.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { usePageTransition } from "../../context/PageTransitionContext.jsx";
 import { Upload } from "lucide-react";
@@ -28,6 +29,7 @@ export default function PaymentHistoryPage() {
   const [debouncedCustomerFilter, setDebouncedCustomerFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [datePreset, setDatePreset] = useState("");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -202,29 +204,21 @@ export default function PaymentHistoryPage() {
         </div>
       </div>
 
-      <div className="payment-history-filters">
-  <input
-    className="payment-history-search"
-    type="text"
-    placeholder="Müşteri adına göre filtrele"
-    value={customerFilter}
-    onChange={(e) => setCustomerFilter(e.target.value)}
-  />
-
-  <input
-    className="payment-history-date"
-    type="date"
-    value={dateFrom}
-    onChange={(e) => setDateFrom(e.target.value)}
-  />
-
-  <input
-    className="payment-history-date"
-    type="date"
-    value={dateTo}
-    onChange={(e) => setDateTo(e.target.value)}
-  />
-</div>
+      <FilterBar>
+        <FilterBar.Search
+          value={customerFilter}
+          onChange={(e) => setCustomerFilter(e.target.value)}
+          placeholder="Müşteri adına göre filtrele"
+        />
+        <FilterBar.DateRange
+          value={datePreset}
+          onChange={(key, from, to) => {
+            setDatePreset(key);
+            setDateFrom(from);
+            setDateTo(to);
+          }}
+        />
+      </FilterBar>
       {loading ? (
         <LoadingIndicator inline label="Ödeme geçmişi yükleniyor" />
       ) : (

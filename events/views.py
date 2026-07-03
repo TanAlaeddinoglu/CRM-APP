@@ -116,6 +116,7 @@ class AppointmentPaymentsViewSet(viewsets.ModelViewSet):
         "appointment__customer__customer_phone",
         "appointment__customer__assigned_to__username",
     ]
+    filterset_fields = ["payment_status"]
     ordering_fields = [
         "payment_date",
         "appointment__customer__assigned_to__username",
@@ -125,14 +126,23 @@ class AppointmentPaymentsViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        preset = self.request.query_params.get("preset")
-        customer_id = self.request.query_params.get("customer")
+        params = self.request.query_params
+        preset = params.get("preset")
+        customer_id = params.get("customer")
+        date_from = params.get("date_from")
+        date_to = params.get("date_to")
 
         if preset:
             if preset not in self.payment_preset_values:
                 raise ValidationError({"preset": ["Geçerli değerler: 7, 14, 30."]})
             start_dt = timezone.now() - timedelta(days=int(preset))
             qs = qs.filter(payment_date__gte=start_dt)
+
+        if date_from:
+            qs = qs.filter(payment_date__date__gte=date_from)
+
+        if date_to:
+            qs = qs.filter(payment_date__date__lte=date_to)
 
         if customer_id:
             qs = qs.filter(appointment__customer_id=customer_id)

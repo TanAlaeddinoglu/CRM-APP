@@ -6,6 +6,7 @@ import re
 from accounts.models import CustomUser
 from customer.models import Customer, Tag, CustomerTagHistory, Notes
 from common.utils import DEFAULT_TAG_ID
+from customer.helpers import normalize_phone_number
 from customer.services import move_to_customer_pool
 from products.serializers import CustomerProductsSerializer
 
@@ -13,58 +14,19 @@ from products.serializers import CustomerProductsSerializer
 NULLISH = {"", "null", "none", "undefined"}
 
 
-def normalize_customer_phone(value):
-    """
-    Ülke kodu tahmini YOK.
-    - p:+... -> +...
-    - 00...  -> +...
-    - + ile geldiyse + korunur
-    - + yoksa digits döner
-    - 8-15 digit arası kabul
-    """
-    if value is None:
-        return None
-
-    s = str(value).strip()
-    if not s or s.lower() in NULLISH:
-        return None
-
-    s = s.replace("p:", "").strip()
-
-    # excel numeric
-    if re.fullmatch(r"\d+(\.0)?", s):
-        s = s.split(".")[0]
-
-    if s.startswith("00"):
-        s = "+" + s[2:]
-
-    has_plus = s.startswith("+")
-    digits = re.sub(r"\D", "", s)
-
-    if not digits:
-        return None
-
-    if not (8 <= len(digits) <= 15):
-        return None
-
-    return ("+" + digits) if has_plus else digits
-
-
 def phone_candidates(phone_value: str):
-    """
-    DB karışık (+905.. / 905..) olduğu için iki varyant üret.
-    """
-    p = normalize_customer_phone(phone_value)
+    p = normalize_phone_number(phone_value)
     if not p:
         return set()
-    digits = p.lstrip("+")
-    return {digits, "+" + digits}
+    return {p, "+" + p}
 
 
 class CustomerSerializer(serializers.ModelSerializer):
     """Serialize customer records including creator metadata."""
 
     customer_surname = serializers.CharField(allow_blank=True, required=False)
+    # Ham girişi (+ ve boşluk dahil) kabul et; validate() normalize eder
+    customer_phone = serializers.CharField(required=False, allow_blank=True)
     created_by = serializers.ReadOnlyField(source="created_by.username")
     updated_by = serializers.ReadOnlyField(source="updated_by.username")
     assigned_to = serializers.SerializerMethodField()
@@ -135,14 +97,15 @@ class CustomerSerializer(serializers.ModelSerializer):
                 {"customer_phone": ["Phone number is required."]}
             )
 
-        normalized = normalize_customer_phone(phone_number)
+        normalized = normalize_phone_number(phone_number)
         if not normalized:
+            raw_digits = re.sub(r"\D", "", str(phone_number or ""))
+            if len(raw_digits) == 10:
+                raise serializers.ValidationError(
+                    {"customer_phone": ["Ülke kodu ile girin. Örnek: 905551234567"]}
+                )
             raise serializers.ValidationError(
-                {
-                    "customer_phone": [
-                        "Phone number is invalid. Examples: +43..., 0043..., 90..., p:+90..."
-                    ]
-                }
+                {"customer_phone": ["Geçersiz telefon numarası. Örnek: 905551234567 veya 00905551234567"]}
             )
 
         cand = phone_candidates(normalized)

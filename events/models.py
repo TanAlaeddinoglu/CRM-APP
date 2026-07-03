@@ -11,10 +11,18 @@ from products.models import Product
 
 
 class Appointment(models.Model):
+    # Hatırlatma kuralı koşullarında izin verilen alanların açık beyaz listesi.
+    # Yeni alan eklemek için yalnızca bu demeti genişletin (introspection YOK).
+    REMINDER_CONDITION_FIELDS = ("appointment_type", "status")
+
     name = models.CharField(max_length=100, null=False, blank=False)
     scheduled_for = models.DateTimeField(null=False, blank=False)
     appointment_type = models.CharField(
-        max_length=50, choices=APPOINTMENT_TYPES, null=False, blank=False
+        max_length=50,
+        choices=APPOINTMENT_TYPES,
+        null=False,
+        blank=False,
+        verbose_name="Randevu Türü",
     )
     customer = models.ForeignKey(
         Customer,
@@ -35,6 +43,7 @@ class Appointment(models.Model):
         max_length=20,
         choices=APPOINTMENT_STATUS,
         default=APPOINTMENT_STATUS[0][0],
+        verbose_name="Durum",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

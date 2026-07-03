@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.conf import settings
 
-from notifications.models import MailConfiguration
+from notifications.mail.models import MailConfiguration
 
 from .contracts import ResolvedMailConfiguration
 

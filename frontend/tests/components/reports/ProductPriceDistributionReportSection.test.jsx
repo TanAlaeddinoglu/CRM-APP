@@ -106,7 +106,7 @@ describe('ProductPriceDistributionReportSection', () => {
 
     it('renders summary card "Genel Tahsilat Oranı"', () => {
       render(<ProductPriceDistributionReportSection {...defaultProps} report={fullReport} />)
-      expect(screen.getByText('Genel Tahsilat Oranı')).toBeInTheDocument()
+      expect(screen.getByText('Tahsilat Oranı %')).toBeInTheDocument()
     })
 
     it('renders total sales count value', () => {

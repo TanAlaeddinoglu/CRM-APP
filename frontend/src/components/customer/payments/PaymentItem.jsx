@@ -12,6 +12,9 @@ const STATUS_LABELS = {
 const PaymentItem = ({ payment, appointment, onDelete, onSuccess }) => {
   const [addModalOpen, setAddModalOpen] = useState(false);
 
+  const formatAmount = (value) =>
+    new Intl.NumberFormat("tr-TR", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value || 0));
+
   const formatDate = (value) => {
     if (!value) return "-";
     return new Date(value).toLocaleDateString("tr-TR", {
@@ -51,18 +54,18 @@ const PaymentItem = ({ payment, appointment, onDelete, onSuccess }) => {
 
           <span className="payment-row-item">
             <span className="payment-row-label">Ödenen:</span>
-            <span className="payment-row-amount">{payment.paid_amount} ₺</span>
+            <span className="payment-row-amount">{formatAmount(payment.paid_amount)} ₺</span>
           </span>
 
           <span className="payment-row-item">
             <span className="payment-row-label">Toplam:</span>
-            <span className="payment-row-amount">{payment.total_amount} ₺</span>
+            <span className="payment-row-amount">{formatAmount(payment.total_amount)} ₺</span>
           </span>
 
           {payment.remaining_amount !== undefined && (
             <span className="payment-row-item">
               <span className="payment-row-label">Kalan:</span>
-              <span className="payment-row-amount">{payment.remaining_amount} ₺</span>
+              <span className="payment-row-amount">{formatAmount(payment.remaining_amount)} ₺</span>
             </span>
           )}
 

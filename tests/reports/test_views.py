@@ -1,6 +1,7 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.test import APITestCase
@@ -9,6 +10,23 @@ from accounts.models import CustomUser
 from customer.models import Customer, CustomerTagHistory, Tag
 from events.models import Appointment, AppointmentPayment
 from products.models import Product
+from reports.services import count_working_days_excluding_sundays
+
+
+class WorkingDayCalculationTests(TestCase):
+    def test_working_day_count_excludes_sundays_for_explicit_date_range(self):
+        tz = timezone.get_current_timezone()
+        start_dt = timezone.make_aware(datetime(2026, 6, 1, 0, 0), tz)
+        end_dt = timezone.make_aware(datetime(2026, 6, 15, 0, 0), tz)
+
+        self.assertEqual(count_working_days_excluding_sundays(start_dt, end_dt), 12)
+
+    def test_working_day_count_preserves_preset_day_count_shape(self):
+        tz = timezone.get_current_timezone()
+        end_dt = timezone.make_aware(datetime(2026, 6, 9, 15, 0), tz)
+        start_dt = end_dt - timedelta(days=14)
+
+        self.assertEqual(count_working_days_excluding_sundays(start_dt, end_dt), 12)
 
 
 class ReportEndpointTests(APITestCase):
@@ -235,13 +253,21 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.data["summary"]["active_customer_count"], 2)
         self.assertEqual(response.data["summary"]["tag_change_count"], 2)
         self.assertEqual(response.data["summary"]["total_appointments"], 5)
+        self.assertGreaterEqual(response.data["summary"]["working_day_count"], 1)
+        self.assertEqual(
+            response.data["summary"]["daily_average_appointments"],
+            round(
+                5 / max(1, response.data["summary"]["working_day_count"]),
+                2,
+            ),
+        )
         self.assertEqual(response.data["summary"]["pending_appointments"], 1)
         self.assertEqual(response.data["summary"]["sales_appointments"], 4)
         self.assertEqual(response.data["summary"]["negative_appointments"], 0)
         self.assertEqual(response.data["summary"]["conversion_rate"], 80.0)
         self.assertEqual(response.data["summary"]["rejection_rate"], 0.0)
         self.assertEqual(
-            response.data["summary"]["top_product"]["product_name"], "Kalinlastirma"
+            response.data["summary"]["top_products"][0]["product_name"], "Kalinlastirma"
         )
 
     def test_my_performance_requires_authentication(self):
@@ -257,13 +283,23 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["summary"]["active_data"], 2)
         self.assertEqual(response.data["summary"]["total_appointments"], 5)
+        self.assertGreaterEqual(response.data["summary"]["working_day_count"], 1)
+        self.assertEqual(
+            response.data["summary"]["daily_average_appointments"],
+            round(
+                5 / max(1, response.data["summary"]["working_day_count"]),
+                2,
+            ),
+        )
         self.assertEqual(response.data["summary"]["pending"], 1)
         self.assertEqual(response.data["summary"]["sales"], 4)
         self.assertEqual(response.data["summary"]["negative"], 0)
         self.assertEqual(response.data["summary"]["conversion_rate"], 80.0)
         self.assertEqual(response.data["summary"]["rejection_rate"], 0.0)
-        self.assertEqual(response.data["top_product"]["product_name"], "Kalinlastirma")
-        self.assertEqual(response.data["top_product"]["count"], 2)
+        self.assertEqual(
+            response.data["top_products"][0]["product_name"], "Kalinlastirma"
+        )
+        self.assertEqual(response.data["top_products"][0]["count"], 2)
         self.assertEqual(
             response.data["appointment_status_distribution"],
             [
@@ -343,7 +379,8 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.data["summary"]["total_remaining_amount"], 600.0)
 
         product_rows = {
-            row["product_name"]: row for row in response.data["tables"]["product_breakdown"]
+            row["product_name"]: row
+            for row in response.data["tables"]["product_breakdown"]
         }
         self.assertEqual(product_rows["Sertlesme"]["total_sales_appointments"], 2)
         self.assertEqual(product_rows["Sertlesme"]["completed_appointments"], 1)
@@ -374,9 +411,7 @@ class ReportEndpointTests(APITestCase):
         self.assertEqual(response.data["summary"]["total_payment_rows"], 3)
         self.assertEqual(response.data["summary"]["total_paid_amount"], 350.0)
 
-        trend_days = {
-            row["day"] for row in response.data["charts"]["payment_trend"]
-        }
+        trend_days = {row["day"] for row in response.data["charts"]["payment_trend"]}
         self.assertNotIn(old_payment_date.date().isoformat(), trend_days)
 
     def test_product_price_distribution_includes_not_started_sales(self):

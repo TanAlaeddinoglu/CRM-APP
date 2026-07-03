@@ -1,6 +1,32 @@
-import React from "react";
-import { Filter, RefreshCcw, RotateCcw } from "lucide-react";
-import { formatMetric, renderCellValue } from "../../utils/reportUtils";
+import React, { useEffect, useRef, useState } from "react";
+import { RotateCcw } from "lucide-react";
+import { formatMetric, formatPercent, renderCellValue } from "../../utils/reportUtils";
+
+const KPI_MIN_WIDTH = 140;
+const KPI_GAP = 12;
+
+export function useCountUp(target, duration = 1100, enabled = false) {
+  const [display, setDisplay] = useState(0);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    if (!enabled || typeof target !== "number" || isNaN(target)) return;
+    cancelAnimationFrame(rafRef.current);
+    let startTime = null;
+    const animate = (ts) => {
+      if (!startTime) startTime = ts;
+      const progress = Math.min((ts - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setDisplay(eased * target);
+      if (progress < 1) rafRef.current = requestAnimationFrame(animate);
+      else setDisplay(target);
+    };
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [target, enabled, duration]);
+
+  return display;
+}
 
 export function TabButton({ active, onClick, label, icon: Icon }) {
   return (
@@ -14,47 +40,6 @@ export function TabButton({ active, onClick, label, icon: Icon }) {
   );
 }
 
-export function FilterPanel({ title, onSubmit, onReset, loading, children }) {
-  return (
-    <section className="reports-filter-panel">
-      <div className="reports-filter-panel__header">
-        <div className="reports-filter-panel__icon">
-          <Filter size={18} />
-        </div>
-
-        <h2 className="reports-filter-panel__title">
-          {title}
-        </h2>
-      </div>
-
-      {children}
-
-      <div className="reports-filter-panel__actions">
-        <button
-          type="button"
-          className="btn-secondary reports-action-button"
-          onClick={onReset}
-        >
-          <RefreshCcw size={16} />
-          Temizle
-        </button>
-
-        <button
-          type="button"
-          className="btn-primary reports-submit-button"
-          onClick={onSubmit}
-          disabled={loading}
-        >
-          {loading ? "Yükleniyor..." : "Raporu Getir"}
-        </button>
-      </div>
-    </section>
-  );
-}
-
-export function FilterGrid({ children }) {
-  return <div className="reports-filter-grid">{children}</div>;
-}
 
 export function EmptyReportState({ title, description, icon }) {
   return (
@@ -74,18 +59,73 @@ export function EmptyReportState({ title, description, icon }) {
 }
 
 export function KpiGrid({ items }) {
+  const containerRef = useRef(null);
+  const [cardWidth, setCardWidth] = useState(KPI_MIN_WIDTH);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const calculate = (width) => {
+      const count = items.length;
+      if (count === 0) return;
+      const fit = Math.floor((width + KPI_GAP) / (KPI_MIN_WIDTH + KPI_GAP));
+      const cols = Math.max(1, Math.min(fit, count));
+      const w = (width - (cols - 1) * KPI_GAP) / cols;
+      setCardWidth(Math.floor(w));
+    };
+
+    const ro = new ResizeObserver((entries) => {
+      calculate(entries[0].contentRect.width);
+    });
+    ro.observe(el);
+    calculate(el.getBoundingClientRect().width);
+
+    return () => ro.disconnect();
+  }, [items.length]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.15 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
-    <div className="reports-kpi-grid">
-      {items.map(([label, value]) => (
-        <div key={label} className="reports-kpi-card">
-          <div className="reports-kpi-card__label">
-            {label}
-          </div>
-          <div className="reports-kpi-card__value">
-            {formatMetric(label, value)}
-          </div>
-        </div>
+    <div ref={containerRef} className={`reports-kpi-scroll${visible ? " reports-kpi-scroll--in" : ""}`}>
+      {items.map(([label, value], idx) => (
+        <KpiCard
+          key={label}
+          label={label}
+          value={value}
+          animate={visible}
+          cardWidth={cardWidth}
+          idx={idx}
+        />
       ))}
+    </div>
+  );
+}
+
+function KpiCard({ label, value, animate, cardWidth, idx }) {
+  const animated = useCountUp(value, 1100, animate);
+  const isNum = typeof value === "number" && !isNaN(value);
+  const display = animate && isNum
+    ? formatMetric(label, Number.isInteger(value) ? Math.round(animated) : animated)
+    : formatMetric(label, value);
+
+  return (
+    <div
+      className="reports-kpi-card"
+      style={{ flex: `0 0 ${cardWidth}px`, minWidth: `${cardWidth}px`, animationDelay: `${idx * 55}ms` }}
+    >
+      <div className="reports-kpi-card__label">{label}</div>
+      <div className="reports-kpi-card__value">{display}</div>
     </div>
   );
 }
@@ -95,14 +135,76 @@ export function TwoColumnGrid({ children }) {
 }
 
 export function ReportCard({ title, children }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
   return (
-    <section className="reports-card">
-      <div className="reports-card__header">
+    <section ref={ref} className="reports-card">
+      <div className={`reports-card__header${visible ? " reports-card__header--in" : ""}`}>
         <h3 className="reports-card__title">
           {title}
         </h3>
       </div>
       {children}
+    </section>
+  );
+}
+
+export function SortableTableCard({ title, columns, rows, emptyText, defaultSort, showReset = true, minWidth, footer }) {
+  const initialSort = defaultSort || { key: columns[0]?.key, direction: "asc" };
+  const [sortConfig, setSortConfig] = React.useState(initialSort);
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.1 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <section ref={ref} className="reports-card">
+      <div className={`reports-card__header${visible ? " reports-card__header--in" : ""}`}>
+        <h3 className="reports-card__title">{title}</h3>
+        {showReset && rows.length > 0 && (
+          <button
+            type="button"
+            className="reports-sort-reset"
+            onClick={() => setSortConfig(initialSort)}
+            title="Varsayılan sıralamaya dön"
+          >
+            <RotateCcw size={14} />
+          </button>
+        )}
+      </div>
+      <SortableReportTable
+        columns={columns}
+        rows={rows}
+        emptyText={emptyText}
+        defaultSort={defaultSort}
+        showReset={false}
+        minWidth={minWidth}
+        sortConfig={sortConfig}
+        onSort={setSortConfig}
+        animate={visible}
+      />
+      {footer}
     </section>
   );
 }
@@ -168,12 +270,19 @@ export function SortableReportTable({
   defaultSort = null,
   showReset = true,
   minWidth,
+  sortConfig: externalSortConfig,
+  onSort: externalOnSort,
+  animate = false,
 }) {
   const initialSort = defaultSort || {
     key: columns[0]?.key,
     direction: "asc",
   };
-  const [sortConfig, setSortConfig] = React.useState(initialSort);
+  const [internalSortConfig, setInternalSortConfig] = React.useState(initialSort);
+
+  const isControlled = externalSortConfig !== undefined;
+  const sortConfig = isControlled ? externalSortConfig : internalSortConfig;
+  const setSortConfig = isControlled ? externalOnSort : setInternalSortConfig;
 
   const sortedRows = React.useMemo(() => {
     return [...rows].sort((a, b) => {
@@ -226,7 +335,7 @@ export function SortableReportTable({
 
   return (
     <div>
-      {showReset && (
+      {showReset && !isControlled && (
         <div className="reports-sortable-table__actions">
           <button
             type="button"
@@ -264,9 +373,9 @@ export function SortableReportTable({
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className={animate ? "reports-table-body--in" : ""}>
             {sortedRows.map((row, index) => (
-              <tr key={row.id || `${index}-${row[columns[0]?.key]}`}>
+              <tr key={row.id || `${index}-${row[columns[0]?.key]}`} style={animate ? { animationDelay: `${index * 40}ms` } : undefined}>
                 {columns.map((column) => (
                   <td
                     key={column.key}
@@ -320,19 +429,20 @@ export function ChartAxisTick({
 
 function SortableHeaderButton({ column, align, active, direction, onClick }) {
   const arrow = active ? (direction === "asc" ? "↑" : "↓") : "↕";
+  const centered = align === "right";
 
   return (
     <button
       type="button"
       className={[
         "reports-sort-header",
+        centered ? "reports-sort-header--center" : "",
         active ? "reports-sort-header--active" : "",
-        align === "right" ? "reports-sort-header--right" : "",
       ].filter(Boolean).join(" ")}
       onClick={onClick}
-      title={`${column.label} sıralama`}
+      title={column.label}
     >
-      <span>{column.label}</span>
+      <span className="reports-sort-header__label">{column.label}</span>
       <span aria-hidden="true" className="reports-sort-header__icon">
         {arrow}
       </span>
@@ -401,31 +511,114 @@ function truncateAxisLabel(label, maxLength) {
   return `${label.slice(0, Math.max(1, maxLength - 3))}...`;
 }
 
-export function InputField({ label, ...props }) {
+export function EmptyChart({ text }) {
+  return <div className="reports-empty-chart">{text}</div>;
+}
+
+export function LegendChip({ color, label }) {
   return (
-    <label className="reports-field">
-      <span className="reports-field__label">
-        {label}
-      </span>
-      <input {...props} className="reports-field__control" />
-    </label>
+    <div className="reports-legend-chip">
+      <span className="reports-legend-chip__dot" style={{ background: color }} />
+      <span>{label}</span>
+    </div>
   );
 }
 
-export function SelectField({ label, options, placeholder, ...props }) {
+export function SectionTitle({ icon: Icon, title, size = "md" }) {
+  const iconSize = size === "sm" ? 15 : 16;
   return (
-    <label className="reports-field">
-      <span className="reports-field__label">
-        {label}
+    <div className="reports-section-title">
+      <div className={`reports-section-title__icon${size === "sm" ? " reports-section-title__icon--sm" : ""}`}>
+        <Icon size={iconSize} />
+      </div>
+      <span className={`reports-section-title__text${size === "sm" ? " reports-section-title__text--sm" : ""}`}>
+        {title}
       </span>
-      <select {...props} className="reports-field__control">
-        <option value="">{placeholder}</option>
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </label>
+    </div>
+  );
+}
+
+export function getRateSemantic(value) {
+  if (value >= 70) return "success";
+  if (value >= 40) return "warning";
+  return "danger";
+}
+
+const RATE_FILLS = { success: "#16a34a", warning: "#f59e0b", danger: "#dc2626" };
+
+export function RateBadge({ value }) {
+  const numeric = Number(value ?? 0);
+  const semantic = getRateSemantic(numeric);
+  return (
+    <span className={`reports-rate-badge reports-semantic--${semantic}`}>
+      {formatPercent(numeric)}
+    </span>
+  );
+}
+
+export function RateProgress({ value }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } },
+      { threshold: 0.5 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  const numeric = Number(value ?? 0);
+  const animated = useCountUp(numeric, 900, visible);
+  const semantic = getRateSemantic(numeric);
+  const fill = RATE_FILLS[semantic];
+  const barWidth = Math.max(0, Math.min(100, visible ? animated : 0));
+
+  return (
+    <div ref={ref} className="reports-rate-progress">
+      <div className="reports-rate-progress__track">
+        <div
+          className="reports-rate-progress__bar"
+          style={{ width: `${barWidth}%`, background: fill, transition: "width 50ms linear" }}
+        />
+      </div>
+      <span className="reports-rate-progress__value" style={{ color: fill }}>
+        {formatPercent(visible ? animated : 0)}
+      </span>
+    </div>
+  );
+}
+
+export function ChartWhenVisible({ height, children }) {
+  const [visible, setVisible] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`reports-chart-wrap${visible ? " reports-chart-wrap--in" : ""}`}
+      style={{ height }}
+    >
+      {visible && children}
+    </div>
   );
 }

@@ -24,6 +24,7 @@ import PaymentReportSection from "../../components/reports/PaymentReportSection"
 import ProductPriceDistributionReportSection from "../../components/reports/ProductPriceDistributionReportSection";
 import TagStatisticsReportSection from "../../components/reports/TagStatisticsReportSection";
 import { usePageTransition } from "../../context/PageTransitionContext.jsx";
+import PageCard from "../../components/common/PageCard.jsx";
 import {
   buildUserLabel,
   extractList,
@@ -31,12 +32,6 @@ import {
 } from "../../utils/reportUtils";
 import "../../assets/css/reports.css";
 
-const PRESET_OPTIONS = [
-  { label: "7 Gün", value: "7" },
-  { label: "14 Gün", value: "14" },
-  { label: "30 Gün", value: "30" },
-  { label: "60 Gün", value: "60" },
-];
 
 const initialUserFilters = {
   preset: "7",
@@ -121,10 +116,12 @@ export default function ReportsPage() {
 
   const userOptions = useMemo(
     () =>
-      users.map((user) => ({
-        value: String(user.id),
-        label: buildUserLabel(user),
-      })),
+      users
+        .filter((user) => user.is_active)
+        .map((user) => ({
+          value: String(user.id),
+          label: buildUserLabel(user),
+        })),
     [users]
   );
 
@@ -219,6 +216,7 @@ export default function ReportsPage() {
   };
 
   return (
+    <PageCard>
     <div className="reports-page">
       <div className="reports-page__header">
         <h1 className="h1 reports-page__title">
@@ -268,7 +266,7 @@ export default function ReportsPage() {
             loading={userLoading}
             optionsLoading={optionsLoading}
             userOptions={userOptions}
-            presetOptions={PRESET_OPTIONS}
+
             onSubmit={submitUserReport}
             onReset={resetUserReport}
           />
@@ -283,7 +281,7 @@ export default function ReportsPage() {
             optionsLoading={optionsLoading}
             userOptions={userOptions}
             productOptions={productOptions}
-            presetOptions={PRESET_OPTIONS}
+
             onSubmit={submitAppointmentsReport}
             onReset={resetAppointmentsReport}
           />
@@ -298,7 +296,7 @@ export default function ReportsPage() {
             optionsLoading={optionsLoading}
             userOptions={userOptions}
             productOptions={productOptions}
-            presetOptions={PRESET_OPTIONS}
+
             onSubmit={submitPaymentReport}
             onReset={resetPaymentReport}
           />
@@ -313,7 +311,7 @@ export default function ReportsPage() {
             optionsLoading={optionsLoading}
             userOptions={userOptions}
             productOptions={productOptions}
-            presetOptions={PRESET_OPTIONS}
+
             onSubmit={submitPriceDistributionReport}
             onReset={resetPriceDistributionReport}
           />
@@ -327,6 +325,7 @@ export default function ReportsPage() {
         )}
       </div>
     </div>
+    </PageCard>
   );
 }
 

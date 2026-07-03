@@ -1,0 +1,11 @@
+# Test dosyaları
+tests/
+
+# Yerel build artifact'ları (Docker içinde yeniden oluşturulur)
+node_modules/
+dist/
+.vite/
+coverage/
+
+# Hassas dosyalar
+.env*
