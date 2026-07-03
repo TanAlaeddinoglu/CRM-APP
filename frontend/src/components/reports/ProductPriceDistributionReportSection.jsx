@@ -1,6 +1,8 @@
 import React from "react";
-import { BarChart3, CalendarDays, Filter, RotateCcw } from "lucide-react";
-import { SortableReportTable } from "./ReportUI";
+import { BarChart3, CalendarDays, RotateCcw } from "lucide-react";
+import { KpiGrid, RateProgress, SortableReportTable } from "./ReportUI";
+import { formatCurrency } from "../../utils/reportUtils";
+import FilterBar from "../common/FilterBar.jsx";
 
 const PRICE_DISTRIBUTION_COLUMNS = [
   {
@@ -16,7 +18,7 @@ const PRICE_DISTRIBUTION_COLUMNS = [
     type: "number",
     width: "12%",
     align: "right",
-    render: (row) => formatMoney(row.sale_price),
+    render: (row) => formatCurrency(row.sale_price),
   },
   {
     key: "sale_count",
@@ -39,7 +41,7 @@ const PRICE_DISTRIBUTION_COLUMNS = [
     type: "number",
     width: "13%",
     align: "right",
-    render: (row) => formatMoney(row.expected_total),
+    render: (row) => formatCurrency(row.expected_total),
   },
   {
     key: "collected_total",
@@ -47,7 +49,7 @@ const PRICE_DISTRIBUTION_COLUMNS = [
     type: "number",
     width: "13%",
     align: "right",
-    render: (row) => formatMoney(row.collected_total),
+    render: (row) => formatCurrency(row.collected_total),
   },
   {
     key: "remaining_total",
@@ -55,7 +57,7 @@ const PRICE_DISTRIBUTION_COLUMNS = [
     type: "number",
     width: "13%",
     align: "right",
-    render: (row) => formatMoney(row.remaining_total),
+    render: (row) => formatCurrency(row.remaining_total),
   },
   {
     key: "collection_rate",
@@ -63,9 +65,11 @@ const PRICE_DISTRIBUTION_COLUMNS = [
     type: "number",
     width: "11%",
     align: "right",
-    render: (row) => <CollectionRateCell value={row.collection_rate} />,
+    render: (row) => <RateProgress value={row.collection_rate} />,
   },
 ];
+
+const PRICE_DISTRIBUTION_DEFAULT_SORT = { key: "sale_count", direction: "desc" };
 
 export default function ProductPriceDistributionReportSection({
   filters,
@@ -75,17 +79,23 @@ export default function ProductPriceDistributionReportSection({
   optionsLoading,
   userOptions,
   productOptions,
-  presetOptions,
   onSubmit,
   onReset,
 }) {
   const summary = report?.summary || {};
   const rows = report?.tables?.price_distribution || [];
+  const [sortConfig, setSortConfig] = React.useState(PRICE_DISTRIBUTION_DEFAULT_SORT);
 
   const handleChange = (field, value) => {
+    setFilters((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleDateRangeChange = (key, from, to) => {
     setFilters((prev) => ({
       ...prev,
-      [field]: value,
+      preset: key === "custom" ? "" : key,
+      date_from: from,
+      date_to: to,
     }));
   };
 
@@ -93,98 +103,13 @@ export default function ProductPriceDistributionReportSection({
 
   return (
     <div className="reports-section-stack reports-section-stack--loose">
-      <div className="reports-panel">
-        <div className="reports-panel__header reports-panel__header--spacious">
-          <div className="reports-panel__icon">
-            <Filter size={20} />
-          </div>
-
-          <h3 className="reports-panel__title">
-            Filtreler
-          </h3>
-        </div>
-
-        <div className="reports-price-grid">
-          <Field label="Preset">
-            <select
-              value={filters.preset}
-              onChange={(e) => handleChange("preset", e.target.value)}
-              className="reports-field__control"
-            >
-              {presetOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Başlangıç Tarihi">
-            <input
-              type="date"
-              value={filters.date_from}
-              onChange={(e) => handleChange("date_from", e.target.value)}
-              className="reports-field__control"
-            />
-          </Field>
-
-          <Field label="Bitiş Tarihi">
-            <input
-              type="date"
-              value={filters.date_to}
-              onChange={(e) => handleChange("date_to", e.target.value)}
-              className="reports-field__control"
-            />
-          </Field>
-
-          <Field label="User">
-            <select
-              value={filters.user_id}
-              onChange={(e) => handleChange("user_id", e.target.value)}
-              disabled={optionsLoading}
-              className="reports-field__control"
-            >
-              <option value="">Tümü</option>
-              {userOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Ürün">
-            <select
-              value={filters.product_id}
-              onChange={(e) => handleChange("product_id", e.target.value)}
-              disabled={optionsLoading}
-              className="reports-field__control"
-            >
-              <option value="">Tümü</option>
-              {productOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-
-        <div className="reports-form-actions">
-          <button
-            className="btn-secondary reports-action-button"
-            onClick={onReset}
-            disabled={loading}
-          >
-            <RotateCcw size={16} />
-            Temizle
-          </button>
-
-          <button className="btn-primary" onClick={onSubmit} disabled={loading}>
-            {loading ? "Yükleniyor..." : "Raporu Getir"}
-          </button>
-        </div>
-      </div>
+      <FilterBar.Panel title="Filtreler" onSubmit={onSubmit} onReset={onReset} loading={loading}>
+        <FilterBar.Grid>
+          <FilterBar.Select label="User" value={filters.user_id} onChange={(e) => handleChange("user_id", e.target.value)} options={userOptions} placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"} />
+          <FilterBar.Select label="Ürün" value={filters.product_id} onChange={(e) => handleChange("product_id", e.target.value)} options={productOptions} placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"} />
+          <FilterBar.DateRange label="Tarih Aralığı" value={filters.preset} onChange={handleDateRangeChange} />
+        </FilterBar.Grid>
+      </FilterBar.Panel>
 
       {!hasReport && !loading && (
         <EmptyState
@@ -204,32 +129,16 @@ export default function ProductPriceDistributionReportSection({
 
       {hasReport && !loading && (
         <>
-          <div className="reports-summary-grid">
-            <SummaryCard
-              title="Toplam Satış Adedi"
-              value={summary.total_sales_count ?? 0}
-            />
-            <SummaryCard
-              title="Toplam Ödemeye Başlanmadı"
-              value={summary.total_not_started_sales_count ?? 0}
-            />
-            <SummaryCard
-              title="Toplam Beklenen Tutar"
-              value={formatMoney(summary.total_expected_amount)}
-            />
-            <SummaryCard
-              title="Toplam Tahsil Edilen"
-              value={formatMoney(summary.total_collected_amount)}
-            />
-            <SummaryCard
-              title="Toplam Kalan Tutar"
-              value={formatMoney(summary.total_remaining_amount)}
-            />
-            <SummaryCard
-              title="Genel Tahsilat Oranı"
-              value={`%${summary.overall_collection_rate ?? 0}`}
-            />
-          </div>
+          <KpiGrid
+            items={[
+              ["Toplam Satış Adedi",        summary.total_sales_count ?? 0],
+              ["Ödemeye Başlanmadı",         summary.total_not_started_sales_count ?? 0],
+              ["Toplam Beklenen Tutar",      summary.total_expected_amount],
+              ["Toplam Tahsil Edilen",       summary.total_collected_amount],
+              ["Toplam Kalan Tutar",         summary.total_remaining_amount],
+              ["Tahsilat Oranı %",           summary.overall_collection_rate ?? 0],
+            ]}
+          />
 
           <div className="reports-panel">
             <div className="reports-panel__header">
@@ -240,14 +149,28 @@ export default function ProductPriceDistributionReportSection({
               <h3 className="reports-panel__title">
                 Ürün Fiyat Dağılımı
               </h3>
+
+              {rows.length > 0 && (
+                <button
+                  type="button"
+                  className="reports-sort-reset"
+                  onClick={() => setSortConfig(PRICE_DISTRIBUTION_DEFAULT_SORT)}
+                  title="Varsayılan sıralamaya dön"
+                  style={{ marginLeft: "auto" }}
+                >
+                  <RotateCcw size={14} />
+                </button>
+              )}
             </div>
 
             <SortableReportTable
               columns={PRICE_DISTRIBUTION_COLUMNS}
               rows={rows}
               emptyText="Seçilen filtrelere uygun veri yok."
-              defaultSort={{ key: "sale_count", direction: "desc" }}
+              defaultSort={PRICE_DISTRIBUTION_DEFAULT_SORT}
               minWidth="980px"
+              sortConfig={sortConfig}
+              onSort={setSortConfig}
             />
           </div>
         </>
@@ -267,18 +190,7 @@ function Field({ label, children }) {
   );
 }
 
-function SummaryCard({ title, value }) {
-  return (
-    <div className="reports-summary-card">
-      <div className="reports-summary-card__title">
-        {title}
-      </div>
-      <div className="reports-summary-card__value">
-        {value}
-      </div>
-    </div>
-  );
-}
+
 
 function EmptyState({ icon, title, text }) {
   return (
@@ -300,36 +212,3 @@ function EmptyState({ icon, title, text }) {
   );
 }
 
-function CollectionRateCell({ value }) {
-  const numericValue = Number(value || 0);
-  const safeValue = Math.max(0, Math.min(100, numericValue));
-  const barColor = getCollectionBarColor(numericValue);
-
-  return (
-    <div className="reports-collection-rate">
-      <div className="reports-collection-rate__track">
-        <div
-          className="reports-collection-rate__bar"
-          style={{ width: `${safeValue}%`, background: barColor }}
-        />
-      </div>
-      <span className="reports-collection-rate__label" style={{ color: barColor }}>
-        %{numericValue.toFixed(1)}
-      </span>
-    </div>
-  );
-}
-
-function getCollectionBarColor(value) {
-  if (value >= 80) return "#16a34a";
-  if (value >= 50) return "#f59e0b";
-  return "#dc2626";
-}
-
-function formatMoney(value) {
-  const number = Number(value || 0);
-  return `${number.toLocaleString("tr-TR", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })} ₺`;
-}

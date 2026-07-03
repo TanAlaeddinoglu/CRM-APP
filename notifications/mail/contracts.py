@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from notifications.models import MailConfiguration
+from notifications.mail.models import MailConfiguration
 
 
 @dataclass(frozen=True)

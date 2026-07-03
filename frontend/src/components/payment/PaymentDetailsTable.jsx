@@ -1,4 +1,11 @@
 import { Trash } from "lucide-react";
+
+function formatAmount(value) {
+  return new Intl.NumberFormat("tr-TR", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
 import toast from "react-hot-toast";
 import { deleteAppointmentPayment } from "../../services/events";
 import "./payment.css";
@@ -35,8 +42,8 @@ export default function PaymentDetailsTable({ payments, onRefresh }) {
         {payments.map((p) => (
           <tr key={p.id}>
             <td>{new Date(p.payment_date).toLocaleDateString()}</td>
-            <td>{p.paid_amount} ₺</td>
-            <td>{p.remaining_amount} ₺</td>
+            <td>{formatAmount(p.paid_amount)} ₺</td>
+            <td>{formatAmount(p.remaining_amount)} ₺</td>
             <td>
               <PaymentStatusBadge
                 status={p.payment_status}

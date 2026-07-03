@@ -1,4 +1,19 @@
-REPORT_PRESET_VALUES = ("7", "14", "30", "60")
+REPORT_PRESET_VALUES = (
+    "7",
+    "14",
+    "30",
+    "60",
+    "today",
+    "yesterday",
+    "today_yesterday",
+    "last7",
+    "last14",
+    "last30",
+    "this_week",
+    "last_week",
+    "this_month",
+    "last_month",
+)
 DEFAULT_REPORT_PRESET = "7"
 MAX_REPORT_RANGE_DAYS = 180
 

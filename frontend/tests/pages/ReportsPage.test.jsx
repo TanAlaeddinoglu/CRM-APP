@@ -48,6 +48,13 @@ vi.mock('recharts', () => ({
 
 import { getUsers } from '../../src/services/user.js'
 import { getProducts } from '../../src/services/product.js'
+import {
+  getUserDashboardSummary,
+  getAppointmentsSummary,
+  getPaymentSummary,
+  getProductPriceDistributionSummary,
+} from '../../src/services/report.js'
+import toast from 'react-hot-toast'
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -132,7 +139,7 @@ describe('ReportsPage', () => {
     it('populates user options from API response', async () => {
       getUsers.mockResolvedValue({
         data: {
-          results: [{ id: 1, first_name: 'Ali', last_name: 'Veli', username: 'aveli' }],
+          results: [{ id: 1, first_name: 'Ali', last_name: 'Veli', username: 'aveli', is_active: true }],
           count: 1,
         },
       })
@@ -146,8 +153,100 @@ describe('ReportsPage', () => {
   describe('preset options', () => {
     it('renders preset options in user report filter', () => {
       render(<ReportsPage />)
-      expect(screen.getByText('7 Gün')).toBeInTheDocument()
-      expect(screen.getByText('30 Gün')).toBeInTheDocument()
+      expect(screen.getByText('Son 7 Gün')).toBeInTheDocument()
+      expect(screen.getByText('Son 30 Gün')).toBeInTheDocument()
+    })
+  })
+
+  describe('submitUserReport', () => {
+    it('blocks submit and warns when no user is selected', async () => {
+      render(<ReportsPage />)
+      await userEvent.click(screen.getByText('Raporu Getir'))
+      expect(toast.error).toHaveBeenCalledWith('Kullanıcı seçimi zorunludur.')
+      expect(getUserDashboardSummary).not.toHaveBeenCalled()
+    })
+
+    it('fetches the user report once a user is selected', async () => {
+      getUsers.mockResolvedValue({
+        data: { results: [{ id: 1, first_name: 'Ali', last_name: 'Veli', username: 'aveli', is_active: true }], count: 1 },
+      })
+      getUserDashboardSummary.mockResolvedValue({ data: { summary: {}, charts: {} } })
+      render(<ReportsPage />)
+
+      const userSelect = await screen.findByDisplayValue('User seç')
+      await userEvent.selectOptions(userSelect, '1')
+      await userEvent.click(screen.getByText('Raporu Getir'))
+
+      await waitFor(() => expect(getUserDashboardSummary).toHaveBeenCalled())
+      expect(toast.success).toHaveBeenCalledWith('Rapor getirildi.')
+    })
+  })
+
+  describe('other report submits', () => {
+    it('submits the appointments report', async () => {
+      getAppointmentsSummary.mockResolvedValue({ data: { summary: {}, charts: {} } })
+      render(<ReportsPage />)
+      await userEvent.click(screen.getByText('Randevu Raporu'))
+      await userEvent.click(screen.getByText('Raporu Getir'))
+      await waitFor(() => expect(getAppointmentsSummary).toHaveBeenCalled())
+      expect(toast.success).toHaveBeenCalledWith('Rapor getirildi.')
+    })
+
+    it('submits the payment report', async () => {
+      getPaymentSummary.mockResolvedValue({ data: { summary: {}, charts: {} } })
+      render(<ReportsPage />)
+      await userEvent.click(screen.getByText('Ödeme Raporu'))
+      await userEvent.click(screen.getByText('Raporu Getir'))
+      await waitFor(() => expect(getPaymentSummary).toHaveBeenCalled())
+    })
+
+    it('submits the price distribution report', async () => {
+      getProductPriceDistributionSummary.mockResolvedValue({ data: { summary: {}, price_distribution: [] } })
+      render(<ReportsPage />)
+      await userEvent.click(screen.getByText('Ürün Fiyat Dağılımı'))
+      await userEvent.click(screen.getByText('Raporu Getir'))
+      await waitFor(() => expect(getProductPriceDistributionSummary).toHaveBeenCalled())
+    })
+  })
+
+  describe('handleApiError', () => {
+    it('shows the detail string from the error response', async () => {
+      getAppointmentsSummary.mockRejectedValue({ response: { data: { detail: 'Yetkisiz erişim.' } } })
+      render(<ReportsPage />)
+      await userEvent.click(screen.getByText('Randevu Raporu'))
+      await userEvent.click(screen.getByText('Raporu Getir'))
+      await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Yetkisiz erişim.'))
+    })
+
+    it('shows the first field error message', async () => {
+      getAppointmentsSummary.mockRejectedValue({ response: { data: { date_from: ['Geçersiz tarih.'] } } })
+      render(<ReportsPage />)
+      await userEvent.click(screen.getByText('Randevu Raporu'))
+      await userEvent.click(screen.getByText('Raporu Getir'))
+      await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Geçersiz tarih.'))
+    })
+
+    it('falls back to a generic error message', async () => {
+      getAppointmentsSummary.mockRejectedValue(new Error('network'))
+      render(<ReportsPage />)
+      await userEvent.click(screen.getByText('Randevu Raporu'))
+      await userEvent.click(screen.getByText('Raporu Getir'))
+      await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Bir hata oluştu.'))
+    })
+  })
+
+  describe('reset', () => {
+    it('clears the fetched report and returns to the empty state', async () => {
+      getAppointmentsSummary.mockResolvedValue({
+        data: { summary: { total_appointments: 5 }, charts: { trend: [] } },
+      })
+      render(<ReportsPage />)
+      await userEvent.click(screen.getByText('Randevu Raporu'))
+      await userEvent.click(screen.getByText('Raporu Getir'))
+      await waitFor(() => expect(getAppointmentsSummary).toHaveBeenCalled())
+
+      await userEvent.click(screen.getByText('Temizle'))
+      await waitFor(() => expect(screen.getByText('Henüz veri yok')).toBeInTheDocument())
     })
   })
 })

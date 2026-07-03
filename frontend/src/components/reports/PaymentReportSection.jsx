@@ -1,10 +1,13 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   CreditCard,
   Package,
   BarChart3,
   PieChart,
   Activity,
+  Search,
+  ArrowUpRight,
+  Info,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -21,28 +24,35 @@ import {
   Cell,
 } from "recharts";
 
-import { formatCurrency, formatPercent } from "../../utils/reportUtils";
+import { formatCurrency, formatPercent, formatShortDate, compactCurrency } from "../../utils/reportUtils";
+import { getAppointmentPayments } from "../../services/events";
 import {
   ChartAxisTick,
+  ChartWhenVisible,
+  EmptyChart,
   EmptyReportState,
-  FilterGrid,
-  FilterPanel,
-  InputField,
   KpiGrid,
+  LegendChip,
   ReportCard,
-  SelectField,
-  SortableReportTable,
+  SectionTitle,
+  SortableTableCard,
   TwoColumnGrid,
 } from "./ReportUI";
+import FilterBar from "../common/FilterBar.jsx";
 
 const MAIN_CHART_HEIGHT = 300;
 const SIDE_CHART_HEIGHT = 280;
 
 const INFO_FILL = "#0f254f";
 
+const PAYMENT_DRILL_MAP = {
+  tahsil_edilen: "tamamlandi",
+  kalan: "kismi",
+};
+
 const PAYMENT_BALANCE_META = {
-  tahsil_edilen: { label: "Tahsil Edilen", fill: "#16a34a", semantic: "success" },
-  kalan:         { label: "Kalan",          fill: "#f59e0b", semantic: "warning" },
+  tahsil_edilen: { label: "Tahsil Edilen", fill: "#16a34a", semantic: "success", tooltip: "Tamamen tahsil edilmiş ödemeler." },
+  kalan:         { label: "Kalan",          fill: "#f59e0b", semantic: "warning", tooltip: "Kısmi ödeme yapılmış, bakiyesi devam eden randevular." },
 };
 
 const PRODUCT_BREAKDOWN_COLUMNS = [
@@ -63,27 +73,23 @@ export default function PaymentReportSection({
   optionsLoading,
   userOptions,
   productOptions,
-  presetOptions,
   onSubmit,
   onReset,
 }) {
+  const [drillDownKey, setDrillDownKey] = useState(null);
+
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
+    setFilters((prev) => ({ ...prev, [name]: value }));
+  };
 
-    setFilters((prev) => {
-      const next = { ...prev, [name]: value };
-
-      if (name === "preset" && value) {
-        next.date_from = "";
-        next.date_to = "";
-      }
-
-      if ((name === "date_from" || name === "date_to") && value) {
-        next.preset = "";
-      }
-
-      return next;
-    });
+  const handleDateRangeChange = (key, from, to) => {
+    setFilters((prev) => ({
+      ...prev,
+      preset: key === "custom" ? "" : key,
+      date_from: from,
+      date_to: to,
+    }));
   };
 
   const totalPaidAmount      = Number(report?.summary?.total_paid_amount      || 0);
@@ -118,36 +124,13 @@ export default function PaymentReportSection({
 
   return (
     <div className="reports-section-stack">
-      <FilterPanel title="Filtreler" onSubmit={onSubmit} onReset={onReset} loading={loading}>
-        <FilterGrid>
-          <SelectField
-            label="User"
-            name="user_id"
-            value={filters.user_id}
-            onChange={handleFilterChange}
-            options={userOptions}
-            placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"}
-          />
-          <SelectField
-            label="Product"
-            name="product_id"
-            value={filters.product_id}
-            onChange={handleFilterChange}
-            options={productOptions}
-            placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"}
-          />
-          <SelectField
-            label="Önerilen Aralık"
-            name="preset"
-            value={filters.preset}
-            onChange={handleFilterChange}
-            options={presetOptions}
-            placeholder="Aralık seç"
-          />
-          <InputField label="Başlangıç Tarihi" name="date_from" type="date" value={filters.date_from} onChange={handleFilterChange} />
-          <InputField label="Bitiş Tarihi"     name="date_to"   type="date" value={filters.date_to}   onChange={handleFilterChange} />
-        </FilterGrid>
-      </FilterPanel>
+      <FilterBar.Panel title="Filtreler" onSubmit={onSubmit} onReset={onReset} loading={loading}>
+        <FilterBar.Grid>
+          <FilterBar.Select label="User" name="user_id" value={filters.user_id} onChange={handleFilterChange} options={userOptions} placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"} />
+          <FilterBar.Select label="Product" name="product_id" value={filters.product_id} onChange={handleFilterChange} options={productOptions} placeholder={optionsLoading ? "Yükleniyor..." : "Tümü"} />
+          <FilterBar.DateRange label="Tarih Aralığı" value={filters.preset} onChange={handleDateRangeChange} />
+        </FilterBar.Grid>
+      </FilterBar.Panel>
 
       {!report ? (
         <EmptyReportState
@@ -165,32 +148,33 @@ export default function PaymentReportSection({
               ["Kısmi Satışlar",        report.summary?.partial_appointments],
               ["Ödemeye Başlanmadı",    report.summary?.not_started_appointments],
               ["Tahsilat Oranı %",      collectionRate],
-              ["Toplam Gelir",          totalPaidAmount],
-              ["Kalan Tutar",           totalRemainingAmount],
+              ["Toplam Ciro",          totalPaidAmount],
+              ["Açık Bakiye",           totalRemainingAmount],
             ]}
           />
 
-          <ReportCard title={<SectionTitle icon={Package} title="Ürün Kırılımı" />}>
-            <SortableReportTable
-              columns={PRODUCT_BREAKDOWN_COLUMNS}
-              rows={report.tables?.product_breakdown || []}
-              emptyText="Ödeme ürün kırılımı bulunamadı."
-              defaultSort={{ key: "total_sales_appointments", direction: "desc" }}
-              minWidth="980px"
-            />
-            <div className="reports-table-footer reports-table-footer--grid">
-              <SummaryRow label="Toplam Satış Appointment"    value={report.summary?.total_sales_appointments} />
-              <SummaryRow label="Toplam Alınan Ödeme Sayısı" value={report.summary?.total_payment_rows} />
-              <SummaryRow label="Toplam Gelir"                value={formatCurrency(totalPaidAmount)} />
-              <SummaryRow label="Toplam Kalan Tutar"          value={formatCurrency(totalRemainingAmount)} />
-            </div>
-          </ReportCard>
+          <SortableTableCard
+            title={<SectionTitle icon={Package} title="Ürün Kırılımı" />}
+            columns={PRODUCT_BREAKDOWN_COLUMNS}
+            rows={report.tables?.product_breakdown || []}
+            emptyText="Ödeme ürün kırılımı bulunamadı."
+            defaultSort={{ key: "total_sales_appointments", direction: "desc" }}
+            minWidth="980px"
+            footer={
+              <div className="reports-table-footer reports-table-footer--grid">
+                <SummaryRow label="Toplam Satış Appointment"    value={report.summary?.total_sales_appointments} />
+                <SummaryRow label="Toplam Alınan Ödeme Sayısı" value={report.summary?.total_payment_rows} />
+                <SummaryRow label="Toplam Gelir"                value={formatCurrency(totalPaidAmount)} />
+                <SummaryRow label="Toplam Kalan Tutar"          value={formatCurrency(totalRemainingAmount)} />
+              </div>
+            }
+          />
 
           <ReportCard title={<SectionTitle icon={BarChart3} title="Ürüne Göre Gelir" />}>
             {revenueChartData.length === 0 ? (
               <EmptyChart text="Gelir verisi bulunamadı." />
             ) : (
-              <div className="reports-chart-wrap" style={{ height: `${MAIN_CHART_HEIGHT}px` }}>
+              <ChartWhenVisible height={MAIN_CHART_HEIGHT}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={revenueChartData} margin={{ top: 10, right: 10, left: 0, bottom: 30 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
@@ -211,20 +195,33 @@ export default function PaymentReportSection({
                       tickLine={false}
                     />
                     <Tooltip content={<RevenueTooltip />} />
-                    <Bar dataKey="total_paid_amount" radius={[8, 8, 0, 0]} fill={INFO_FILL} barSize={42} />
+                    <Bar dataKey="total_paid_amount" radius={[8, 8, 0, 0]} fill={INFO_FILL} barSize={42} isAnimationActive={true} animationDuration={1400} animationEasing="ease-out" animationBegin={50} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
+              </ChartWhenVisible>
             )}
           </ReportCard>
 
           <TwoColumnGrid>
-            <ReportCard title={<SectionTitle icon={PieChart} title="Tahsil Edilen / Kalan" />}>
+            <ReportCard
+              title={
+                <div className="reports-section-title">
+                  <div className="reports-section-title__icon">
+                    <PieChart size={16} />
+                  </div>
+                  <span className="reports-section-title__text">Tahsil Edilen / Kalan</span>
+                  <span className="reports-section-title__hint">
+                    <ArrowUpRight size={12} />
+                    Detay için tıklayın
+                  </span>
+                </div>
+              }
+            >
               {paidVsRemainingData.length === 0 ? (
                 <EmptyChart text="Tahsilat dağılımı verisi bulunamadı." />
               ) : (
                 <div className="reports-pie-grid">
-                  <div className="reports-chart-wrap" style={{ height: `${SIDE_CHART_HEIGHT}px` }}>
+                  <ChartWhenVisible height={SIDE_CHART_HEIGHT}>
                     <ResponsiveContainer width="100%" height="100%">
                       <RechartsPieChart>
                         <Pie
@@ -237,6 +234,9 @@ export default function PaymentReportSection({
                           dataKey="value"
                           nameKey="name"
                           labelLine={false}
+                          isAnimationActive={true}
+                          animationDuration={1200}
+                          animationEasing="ease-out"
                         >
                           {paidVsRemainingData.map((entry) => (
                             <Cell key={entry.key} fill={PAYMENT_BALANCE_META[entry.key]?.fill || INFO_FILL} />
@@ -245,11 +245,15 @@ export default function PaymentReportSection({
                         <Tooltip content={<PaidVsRemainingTooltip />} />
                       </RechartsPieChart>
                     </ResponsiveContainer>
-                  </div>
+                  </ChartWhenVisible>
 
                   <div className="reports-pie-legend">
                     {paidVsRemainingData.map((item) => (
-                      <PaymentBalanceSummaryCard key={item.key} item={item} />
+                      <PaymentBalanceSummaryCard
+                        key={item.key}
+                        item={item}
+                        onClick={() => setDrillDownKey(item.key)}
+                      />
                     ))}
                   </div>
                 </div>
@@ -261,7 +265,7 @@ export default function PaymentReportSection({
                 <EmptyChart text="Ödeme trend verisi bulunamadı." />
               ) : (
                 <>
-                  <div className="reports-chart-wrap" style={{ height: `${SIDE_CHART_HEIGHT}px` }}>
+                  <ChartWhenVisible height={SIDE_CHART_HEIGHT}>
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart data={paymentTrendData} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
@@ -289,11 +293,11 @@ export default function PaymentReportSection({
                           tickLine={false}
                         />
                         <Tooltip content={<PaymentTrendTooltip />} />
-                        <Bar yAxisId="left" dataKey="total_payment_rows" name="Alınan Ödeme Sayısı" fill="#cbd5e1" radius={[8, 8, 0, 0]} barSize={26} />
-                        <Line yAxisId="right" type="linear" dataKey="total_paid_amount" name="Gelir" stroke="#4f46e5" strokeWidth={3} dot={{ r: 4, fill: "#4f46e5" }} activeDot={{ r: 6 }} />
+                        <Bar yAxisId="left" dataKey="total_payment_rows" name="Alınan Ödeme Sayısı" fill="#cbd5e1" radius={[8, 8, 0, 0]} barSize={26} isAnimationActive={true} animationDuration={1400} animationEasing="ease-out" animationBegin={50} />
+                        <Line yAxisId="right" type="linear" dataKey="total_paid_amount" name="Gelir" stroke="#4f46e5" strokeWidth={3} dot={{ r: 4, fill: "#4f46e5" }} activeDot={{ r: 6 }} isAnimationActive={true} animationDuration={1800} animationEasing="ease-out" />
                       </ComposedChart>
                     </ResponsiveContainer>
-                  </div>
+                  </ChartWhenVisible>
 
                   <div className="reports-legend">
                     <LegendChip color="#cbd5e1" label="Alınan Ödeme Sayısı" />
@@ -305,35 +309,140 @@ export default function PaymentReportSection({
           </TwoColumnGrid>
         </div>
       )}
+
+      {drillDownKey && (
+        <PaymentDrillDownModal
+          paymentKey={drillDownKey}
+          filters={filters}
+          onClose={() => setDrillDownKey(null)}
+        />
+      )}
     </div>
   );
 }
 
-function SectionTitle({ icon: Icon, title }) {
-  return (
-    <div className="reports-section-title">
-      <div className="reports-section-title__icon">
-        {React.createElement(Icon, { size: 16 })}
-      </div>
-      <span className="reports-section-title__text">{title}</span>
-    </div>
-  );
-}
-
-function PaymentBalanceSummaryCard({ item }) {
+function PaymentBalanceSummaryCard({ item, onClick }) {
   const meta = PAYMENT_BALANCE_META[item.key] || { fill: INFO_FILL, semantic: "info" };
 
   return (
-    <div className={`reports-status-card reports-semantic--${meta.semantic}`}>
+    <div
+      className={`reports-status-card reports-semantic--${meta.semantic}`}
+      onClick={onClick}
+      style={{ cursor: "pointer" }}
+    >
       <div className="reports-status-card__header">
         <span className="reports-status-dot" style={{ background: meta.fill }} />
         {item.name}
+        <span className="reports-status-info" onClick={(e) => e.stopPropagation()}>
+          <Info size={13} />
+          <span className="reports-status-info__tooltip">{meta.tooltip}</span>
+        </span>
       </div>
       <div className="reports-status-card__meta">
         Oran: <strong>{formatPercent(item.percent)}</strong>
       </div>
       <div className="reports-status-card__meta reports-status-card__meta--plain">
         Tutar: <strong>{formatCurrency(item.value)}</strong>
+      </div>
+    </div>
+  );
+}
+
+const PAYMENT_LABEL = {
+  tahsil_edilen: "Tahsil Edilen",
+  kalan: "Kalan (Kısmi)",
+};
+
+function PaymentDrillDownModal({ paymentKey, filters, onClose }) {
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    setLoading(true);
+    const params = { payment_status: PAYMENT_DRILL_MAP[paymentKey], page_size: 100 };
+    if (filters.user_id)   params.user_id   = filters.user_id;
+    if (filters.date_from) params.date_from = filters.date_from;
+    if (filters.date_to)   params.date_to   = filters.date_to;
+
+    getAppointmentPayments(params)
+      .then((res) => setRows(res.data?.results ?? res.data ?? []))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false));
+  }, [paymentKey, filters]);
+
+  const fill = PAYMENT_BALANCE_META[paymentKey]?.fill || "#6b7280";
+
+  const visible = search.trim()
+    ? rows.filter((r) => {
+        const q = search.toLowerCase();
+        return (
+          (r.customer_name || "").toLowerCase().includes(q) ||
+          (r.appointment_name || "").toLowerCase().includes(q)
+        );
+      })
+    : rows;
+
+  return (
+    <div className="drill-modal-overlay" onClick={onClose}>
+      <div className="drill-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="drill-modal__header">
+          <span className="drill-modal__dot" style={{ background: fill }} />
+          <h3 className="drill-modal__title">{PAYMENT_LABEL[paymentKey]} Ödemeleri</h3>
+          <div className="drill-modal__search">
+            <Search size={14} />
+            <input
+              placeholder="Müşteri veya randevu ara…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              autoFocus
+            />
+          </div>
+          <button className="drill-modal__close" onClick={onClose}>✕</button>
+        </div>
+
+        {loading ? (
+          <p className="drill-modal__empty">Yükleniyor…</p>
+        ) : visible.length === 0 ? (
+          <p className="drill-modal__empty">
+            {rows.length === 0 ? "Bu dönemde kayıt bulunamadı." : "Arama sonucu bulunamadı."}
+          </p>
+        ) : (
+          <div className="drill-modal__body">
+            <table className="drill-modal__table">
+              <thead>
+                <tr>
+                  <th>Müşteri</th>
+                  <th>Randevu</th>
+                  <th>Ödenen</th>
+                  <th>Kalan</th>
+                  <th>Tarih</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((r) => (
+                  <tr
+                    key={r.id}
+                    onClick={() =>
+                      r.customer_pk &&
+                      window.open(`/customers/${r.customer_pk}`, "_blank")
+                    }
+                  >
+                    <td>
+                      <span className={r.customer_pk ? "drill-modal__customer-link" : ""}>
+                        {r.customer_name || "-"}
+                      </span>
+                    </td>
+                    <td>{r.appointment_name || "-"}</td>
+                    <td>{formatCurrency(r.paid_amount)}</td>
+                    <td>{formatCurrency(r.remaining_amount)}</td>
+                    <td>{r.payment_date ? r.payment_date.slice(0, 10) : "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -346,19 +455,6 @@ function SummaryRow({ label, value }) {
       <strong className="reports-summary-row__value">{value ?? "-"}</strong>
     </div>
   );
-}
-
-function LegendChip({ color, label }) {
-  return (
-    <div className="reports-legend-chip">
-      <span className="reports-legend-chip__dot" style={{ background: color }} />
-      <span>{label}</span>
-    </div>
-  );
-}
-
-function EmptyChart({ text }) {
-  return <div className="reports-empty-chart">{text}</div>;
 }
 
 function RevenueTooltip({ active, payload, label }) {
@@ -396,16 +492,3 @@ function PaidVsRemainingTooltip({ active, payload }) {
   );
 }
 
-function formatShortDate(dateString) {
-  if (!dateString) return "-";
-  const parts = dateString.split("-");
-  if (parts.length !== 3) return dateString;
-  return `${parts[2]}.${parts[1]}`;
-}
-
-function compactCurrency(value) {
-  const numeric = Number(value || 0);
-  if (numeric >= 1_000_000) return `₺${(numeric / 1_000_000).toFixed(1)} Mn`;
-  if (numeric >= 1_000)     return `₺${(numeric / 1_000).toFixed(numeric >= 10_000 ? 0 : 1)} B`;
-  return `₺${numeric}`;
-}

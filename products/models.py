@@ -40,6 +40,61 @@ class Product(models.Model):
         return f"{self.name} - {self.description}"
 
 
+def normalize_product_lookup_text(value: str) -> str:
+    import re
+    import unicodedata
+
+    s = str(value or "").strip()
+    if not s:
+        return ""
+    tr_map = str.maketrans(
+        {
+            "ı": "i",
+            "İ": "i",
+            "ş": "s",
+            "Ş": "s",
+            "ğ": "g",
+            "Ğ": "g",
+            "ü": "u",
+            "Ü": "u",
+            "ö": "o",
+            "Ö": "o",
+            "ç": "c",
+            "Ç": "c",
+        }
+    )
+    s = s.translate(tr_map)
+    s = unicodedata.normalize("NFKD", s)
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    s = s.lower()
+    s = re.sub(r"[^a-z0-9]+", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+class ProductAlias(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="aliases",
+    )
+    alias = models.CharField(max_length=120, unique=True)
+    alias_normalized = models.CharField(max_length=120, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("alias",)
+        indexes = [
+            models.Index(fields=("alias_normalized",)),
+        ]
+
+    def save(self, *args, **kwargs):
+        self.alias_normalized = normalize_product_lookup_text(self.alias)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.alias} → {self.product.name}"
+
+
 class CustomerProduct(models.Model):
     product = models.ForeignKey(
         Product,

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import {
   getCustomerById, getCustomers, getMyCustomers, createCustomer, updateCustomer,
-  deleteCustomer, bulkUpdateCustomers, bulkUpsertCustomers,
+  deleteCustomer, bulkUpdateCustomers,
   getCustomerNotes, createCustomerNote, updateCustomerNote,
   getCustomerTagHistory, getTags, setCustomerTag, updateCustomerTag,
   deleteCustomerTag, resolveTagId, checkExistingByPhones,
@@ -93,13 +93,6 @@ describe('customer service', () => {
       })
     })
 
-    it('bulkUpsertCustomers() POSTs to /customers/bulk/upsert/', async () => {
-      api.post.mockResolvedValue({ data: {} })
-      await bulkUpsertCustomers([{ name: 'Ali', phone: '555' }])
-      expect(api.post).toHaveBeenCalledWith('/customers/bulk/upsert/', {
-        items: [{ name: 'Ali', phone: '555' }],
-      })
-    })
   })
 
   describe('notes', () => {

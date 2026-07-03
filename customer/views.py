@@ -11,7 +11,9 @@ from rest_framework.views import APIView  # ✅ NEW
 
 from accounts.authenticate import CustomAuthentication
 from common.pagination import CustomPagination
-from .bulkViews import CUSTOMER_FIELDS, _nullish, User, _set_customer_products
+from .helpers import _nullish, _set_customer_products
+from django.contrib.auth import get_user_model as _get_user_model
+User = _get_user_model()
 from .filters import CustomerFilter, TagHistoryFilter, NoteHistoryFilter
 from .serializers import (
     CustomerSerializer,
@@ -21,6 +23,8 @@ from .serializers import (
 )
 from .models import Customer, Tag, CustomerTagHistory, Notes
 from .services import is_admin_or_assigned_to_user
+
+CUSTOMER_FIELDS = {f.name for f in Customer._meta.fields}
 
 
 # -------------------------
@@ -338,6 +342,7 @@ class NotesViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+# TODO: CustomerTagStatsMeView ile CustomerTagStatsAdminView endpointlerini birleştir
 # ============================================================
 # ✅ NEW: Tag Statistics Endpoints (pagination bağımsız)
 # ============================================================

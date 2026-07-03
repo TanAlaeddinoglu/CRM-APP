@@ -14,6 +14,7 @@ export default function AddPaymentModal({
   onClose,
   onSuccess,
   appointmentId,
+  customerId,
 }) {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -30,9 +31,9 @@ export default function AddPaymentModal({
   });
 
   const formatAmount = (val) => {
-    const digits = String(val).replace(/\D/g, "");
-    if (!digits) return "";
-    return Number(digits).toLocaleString("tr-TR");
+    const num = parseFloat(String(val));
+    if (isNaN(num)) return "";
+    return Math.round(num).toLocaleString("tr-TR");
   };
 
   const parseAmount = (formatted) => formatted.replace(/\./g, "").replace(/,/g, "");
@@ -63,7 +64,7 @@ export default function AddPaymentModal({
     });
     setIsExistingPayment(false);
     checkedAppointmentRef.current = null;
-  }, [isOpen, appointmentId]);
+  }, [isOpen, appointmentId, customerId]);
 
   useEffect(() => {
     if (!isOpen || !appointmentId) return;
@@ -96,7 +97,7 @@ export default function AddPaymentModal({
   }, [isOpen, appointmentId]);
 
   useEffect(() => {
-    if (!isOpen || appointmentId) return;
+    if (!isOpen || appointmentId || customerId) return;
 
     const query = appointmentSearch.trim();
 
@@ -112,7 +113,9 @@ export default function AddPaymentModal({
         setSearchLoading(true);
 
         const res = await getAppointments({
-          search: query,
+          search: normalizeAppointmentSearchQuery(query),
+          excludeStatus: "olumsuz",
+          excludeAppointmentType: "hatirlatma",
           page: 1,
           page_size: 20,
         });
@@ -136,7 +139,31 @@ export default function AddPaymentModal({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [appointmentSearch, isOpen, appointmentId]);
+  }, [appointmentSearch, isOpen, appointmentId, customerId]);
+
+  useEffect(() => {
+    if (!isOpen || appointmentId || !customerId) return;
+
+    let cancelled = false;
+
+    async function loadCustomerAppointments() {
+      try {
+        setSearchLoading(true);
+        const res = await getAppointments({ customerId, page_size: 50 });
+        if (cancelled) return;
+        const list = res.data?.results || res.data || [];
+        setAppointments(Array.isArray(list) ? list : []);
+      } catch {
+        if (!cancelled) setAppointments([]);
+      } finally {
+        if (!cancelled) setSearchLoading(false);
+      }
+    }
+
+    loadCustomerAppointments();
+
+    return () => { cancelled = true; };
+  }, [isOpen, appointmentId, customerId]);
 
   useEffect(() => {
     if (!isOpen || !form.appointment) return;
@@ -163,13 +190,13 @@ export default function AddPaymentModal({
           setForm((prev) => ({
             ...prev,
             total_amount: latest.total_amount
-              ? Number(String(latest.total_amount).replace(/\D/g, "")).toLocaleString("tr-TR")
+              ? formatAmount(latest.total_amount)
               : "",
           }));
 
           setIsExistingPayment(true);
 
-          toast.info("Existing payment found. Total amount auto-filled.", {
+          toast("Mevcut ödeme bulundu. Toplam tutar otomatik dolduruldu.", {
             id: "existing-payment-info",
           });
         } else {
@@ -213,7 +240,9 @@ export default function AddPaymentModal({
       appointment: appointment.id,
     }));
 
-    const label = appointment.customer ?? "Bilinmeyen müşteri";
+    const label = customerId
+      ? (appointment.name ?? `Randevu #${appointment.id}`)
+      : (appointment.customer ?? "Bilinmeyen müşteri");
     setAppointmentSearch(label);
     setSelectedAppointmentLabel(label);
     setSelectedAppointmentProduct(appointment.product || "");
@@ -227,7 +256,7 @@ export default function AddPaymentModal({
 
   const handleSubmit = async () => {
     if (!form.appointment || !form.paid_amount || !form.payment_date) {
-      toast.error("Please fill all required fields");
+      toast.error("Lütfen tüm zorunlu alanları doldurun.");
       return;
     }
 
@@ -241,11 +270,11 @@ export default function AddPaymentModal({
         payment_date: formatPaymentDateForApi(form.payment_date),
       });
 
-      toast.success("Payment created successfully");
+      toast.success("Ödeme başarıyla oluşturuldu.");
       onSuccess?.();
       onClose();
     } catch {
-      toast.error("Payment creation failed");
+      toast.error("Ödeme oluşturulamadı.");
     } finally {
       setLoading(false);
     }
@@ -268,11 +297,63 @@ export default function AddPaymentModal({
               value={selectedAppointmentLabel || ` #${form.appointment}`}
               disabled
             />
+          ) : customerId ? (
+            <div className="appointment-search-block">
+              {searchLoading && (
+                <small className="info-text">Randevular yükleniyor...</small>
+              )}
+
+              {!searchLoading && appointments.length === 0 && !form.appointment && (
+                <small className="info-text">Bu müşteriye ait randevu bulunamadı.</small>
+              )}
+
+              {form.appointment ? (
+                <input
+                  type="text"
+                  value={selectedAppointmentLabel}
+                  disabled
+                />
+              ) : (
+                appointments.length > 0 && (
+                  <div className="appointment-search-results">
+                    {appointments.map((a) => (
+                      <button
+                        key={a.id}
+                        type="button"
+                        className="appointment-search-item"
+                        onClick={() => handleAppointmentSelect(a)}
+                      >
+                        <div className="appointment-search-title">
+                          <strong>{a.name ?? `Randevu #${a.id}`}</strong>
+                          {a.status !== "satis" && (
+                            <AlertTriangle
+                              size={14}
+                              className="appointment-search-warning"
+                              title="Bu randevuya ödeme başlatılamaz"
+                            />
+                          )}
+                        </div>
+                        <div className="appointment-search-subtitle">
+                          {[
+                            a.product,
+                            a.scheduled_for
+                              ? new Date(a.scheduled_for).toLocaleDateString("tr-TR")
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
           ) : (
             <div className="appointment-search-block">
               <input
                 type="text"
-                placeholder="Müşteri adı veya randevu adı ile ara"
+                placeholder="Müşteri adı, telefon veya randevu adı ile ara"
                 value={appointmentSearch}
                 onChange={(e) => {
                   setAppointmentSearch(e.target.value);
@@ -399,4 +480,9 @@ export default function AddPaymentModal({
       </div>
     </div>
   );
+}
+
+function normalizeAppointmentSearchQuery(query) {
+  const digits = String(query || "").replace(/\D/g, "");
+  return digits.length >= 6 ? digits : query;
 }

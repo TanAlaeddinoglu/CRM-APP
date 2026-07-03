@@ -2,11 +2,16 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
 import {
-  TabButton, FilterPanel, FilterGrid, EmptyReportState,
+  TabButton, EmptyReportState,
   KpiGrid, TwoColumnGrid, ReportCard, InfoCard, SimpleTable, SortableReportTable,
-  SelectField, InputField,
 } from '../../../src/components/reports/ReportUI.jsx'
+import FilterBar from '../../../src/components/common/FilterBar.jsx'
 import { BarChart3 } from 'lucide-react'
+
+const FilterPanel = FilterBar.Panel
+const FilterGrid = FilterBar.Grid
+const SelectField = FilterBar.Select
+const InputField = FilterBar.DateInput
 
 describe('ReportUI components', () => {
   describe('TabButton', () => {

@@ -1,164 +1,93 @@
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Q
+
+from notifications.mail.models import (
+    EmailLog,
+    MailConfiguration,
+    MailConfigurationTestSession,
+)
+
+__all__ = [
+    "EmailLog",
+    "MailConfiguration",
+    "MailConfigurationTestSession",
+    "Notification",
+    "NotificationRule",
+]
 
 
-class MailConfiguration(models.Model):
-    class BackendType(models.TextChoices):
-        SMTP = "smtp", "SMTP"
-
-    class TestStatus(models.TextChoices):
-        UNTESTED = "untested", "Untested"
-        PASSED = "passed", "Passed"
-        FAILED = "failed", "Failed"
-
-    name = models.CharField(max_length=120, default="Default SMTP")
-    backend_type = models.CharField(
-        max_length=20,
-        choices=BackendType.choices,
-        default=BackendType.SMTP,
-    )
-    host = models.CharField(max_length=255)
-    port = models.PositiveIntegerField()
-    use_tls = models.BooleanField(default=True)
-    use_ssl = models.BooleanField(default=False)
-    default_from_email = models.EmailField()
-    username_secret_name = models.CharField(max_length=255)
-    password_secret_name = models.CharField(max_length=255)
+class NotificationRule(models.Model):
+    type_key = models.CharField(max_length=120)
+    name = models.CharField(max_length=120)
+    channels = models.JSONField(default=list)
+    title_template = models.CharField(max_length=255, null=True, blank=True)
+    body_template = models.TextField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
-    last_test_status = models.CharField(
-        max_length=20,
-        choices=TestStatus.choices,
-        default=TestStatus.UNTESTED,
-    )
-    last_test_at = models.DateTimeField(null=True, blank=True)
-    last_test_recipient = models.EmailField(blank=True)
+    is_system_default = models.BooleanField(default=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="created_mail_configurations",
-    )
-    updated_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="updated_mail_configurations",
+        related_name="created_notification_rules",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["-updated_at", "-created_at"]
+        ordering = ["type_key", "-is_system_default", "name"]
         constraints = [
+            # Her bildirim tipi için yalnızca bir sistem varsayılan kuralı olabilir.
+            # get_or_create'in eşzamanlı iki süreç tarafından çağrılması durumunda
+            # ikinci INSERT IntegrityError fırlatır; Django bunu GET ile yakalar.
             models.UniqueConstraint(
-                fields=["is_active"],
-                condition=Q(is_active=True),
-                name="unique_active_mail_configuration",
-            ),
+                fields=["type_key"],
+                condition=models.Q(is_system_default=True),
+                name="notifications_notificationrule_unique_system_default",
+            )
         ]
 
     def __str__(self):
-        return f"{self.name} ({self.host}:{self.port})"
+        return f"{self.type_key} — {self.name}"
 
 
-class MailConfigurationTestSession(models.Model):
-    class Status(models.TextChoices):
-        PASSED = "passed", "Passed"
-        FAILED = "failed", "Failed"
-        EXPIRED = "expired", "Expired"
-
-    mail_configuration = models.ForeignKey(
-        MailConfiguration,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="test_sessions",
-    )
-    tested_by = models.ForeignKey(
+class Notification(models.Model):
+    recipient = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    type_key = models.CharField(max_length=120, db_index=True)
+    rule = models.ForeignKey(
+        NotificationRule,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="mail_configuration_test_sessions",
+        related_name="notifications",
     )
-    config_fingerprint = models.CharField(max_length=128)
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.PASSED,
-    )
-    recipient_email = models.EmailField()
-    expires_at = models.DateTimeField()
-    metadata = models.JSONField(default=dict, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"Mail test session {self.pk} ({self.status})"
-
-
-class EmailLog(models.Model):
-    class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        SENT = "sent", "Sent"
-        FAILED = "failed", "Failed"
-
-    class DeliveryType(models.TextChoices):
-        SYSTEM = "system", "System"
-        MANUAL = "manual", "Manual"
-        TEST = "test", "Test"
-
-    subject = models.CharField(max_length=255)
+    title = models.CharField(max_length=255)
     body = models.TextField()
-    from_email = models.EmailField(blank=True)
-    to_emails = models.JSONField(default=list)
-    cc_emails = models.JSONField(default=list, blank=True)
-    bcc_emails = models.JSONField(default=list, blank=True)
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.PENDING,
-    )
-    delivery_type = models.CharField(
-        max_length=20,
-        choices=DeliveryType.choices,
-        default=DeliveryType.SYSTEM,
-    )
-    metadata = models.JSONField(default=dict, blank=True)
-    error_message = models.TextField(blank=True)
-    sent_at = models.DateTimeField(null=True, blank=True)
-    mail_configuration = models.ForeignKey(
-        MailConfiguration,
+    context_payload = models.JSONField(default=dict)
+    target_content_type = models.ForeignKey(
+        ContentType,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="email_logs",
     )
-    test_session = models.ForeignKey(
-        MailConfigurationTestSession,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="email_logs",
-    )
-    created_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="email_logs",
-    )
+    target_object_id = models.PositiveIntegerField(null=True, blank=True)
+    target = GenericForeignKey("target_content_type", "target_object_id")
+    is_read = models.BooleanField(default=False, db_index=True)
+    read_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["recipient", "is_read"]),
+            models.Index(fields=["recipient", "created_at"]),
+        ]
 
     def __str__(self):
-        primary_recipient = self.to_emails[0] if self.to_emails else "no-recipient"
-        return f"{self.subject} -> {primary_recipient}"
+        return f"{self.type_key} → {self.recipient}"

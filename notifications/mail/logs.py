@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.utils import timezone
 
-from notifications.models import EmailLog
+from notifications.mail.models import EmailLog
 
 
 def mark_email_sent(email_log: EmailLog) -> EmailLog:

@@ -22,3 +22,21 @@ repos:
     rev: v1.10.0
     hooks:
       - id: mypy
+
+  - repo: local
+    hooks:
+      - id: backend-tests
+        name: "Backend Tests (pytest)"
+        entry: pytest
+        args: [--tb=short, -q]
+        language: system
+        pass_filenames: false
+        stages: [pre-push]
+
+      - id: frontend-tests
+        name: "Frontend Tests (vitest)"
+        entry: bash
+        args: [-c, "cd frontend && npm run test"]
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

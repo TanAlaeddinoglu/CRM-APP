@@ -1,84 +1,22 @@
 import { useAuth } from "../context/AuthContext";
+import { useNotifications } from "../context/NotificationContext";
 import { logout } from "../services/auth";
 import { clearExportHistoryCache } from "../services/export";
 import { useNavigate, useLocation, useNavigationType } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
-import { Bell, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Bell,
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+  PanelRightOpen,
+  Trash2,
+} from "lucide-react";
 import HeaderCustomerSearch from "./HeaderCustomerSearch";
+import NotificationTabbedList from "../components/notifications/NotificationTabbedList";
+import ConfirmModal from "../components/common/ConfirmModal";
+import { getNotificationUrl } from "../utils/notificationUrl";
 import "../assets/css/header.css";
-
-const INITIAL_NOTIFICATIONS = [
-  {
-    id: 1,
-    title: "Yeni event oluşturuldu",
-    message: "Ayşe Demir için kontrol randevusu eklendi.",
-    time: "2 dk önce",
-    isRead: false,
-  },
-  {
-    id: 2,
-    title: "Yaklaşan randevu",
-    message: "Mehmet Kaya randevusuna 1 saat kaldı.",
-    time: "8 dk önce",
-    isRead: false,
-  },
-  {
-    id: 3,
-    title: "Müşteri atandı",
-    message: "Zeynep Arslan kaydı sana atandı.",
-    time: "14 dk önce",
-    isRead: false,
-  },
-  {
-    id: 4,
-    title: "Ödeme güncellendi",
-    message: "Selin Yılmaz ödemesi tamamlandı.",
-    time: "25 dk önce",
-    isRead: true,
-  },
-  {
-    id: 5,
-    title: "Yeni müşteri eklendi",
-    message: "Onur Çetin havuza yeni müşteri ekledi.",
-    time: "40 dk önce",
-    isRead: true,
-  },
-  {
-    id: 6,
-    title: "Tag değişikliği",
-    message: "Müşteri etiketi sıcak lead olarak güncellendi.",
-    time: "55 dk önce",
-    isRead: true,
-  },
-  {
-    id: 7,
-    title: "Randevu yeniden planlandı",
-    message: "Elif Şahin randevusu yarın 11:30'a alındı.",
-    time: "1 sa önce",
-    isRead: true,
-  },
-  {
-    id: 8,
-    title: "Yeni not eklendi",
-    message: "Müşteri kartına yeni görüşme notu bırakıldı.",
-    time: "2 sa önce",
-    isRead: true,
-  },
-  {
-    id: 9,
-    title: "Müşteri arşivlendi",
-    message: "Kayıt pasif duruma alındı.",
-    time: "3 sa önce",
-    isRead: true,
-  },
-  {
-    id: 10,
-    title: "Event tamamlandı",
-    message: "Bugünkü bakım randevusu kapatıldı.",
-    time: "5 sa önce",
-    isRead: true,
-  },
-];
 
 export default function Header() {
   const { user, setUser } = useAuth();
@@ -186,16 +124,26 @@ export default function Header() {
 
   /* USER DROPDOWN STATE (SADECE BU) */
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
   const [notificationMenuOpen, setNotificationMenuOpen] = useState(false);
   const [notificationMenuVisible, setNotificationMenuVisible] = useState(false);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
   const userMenuRef = useRef(null);
   const notificationMenuRef = useRef(null);
 
+  const {
+    notifications,
+    unreadCount,
+    hasMore,
+    isLoadingMore,
+    loadOlderWeek,
+    markRead,
+    markAllRead,
+    removeNotification,
+    removeAll,
+    openPanel,
+  } = useNotifications();
+
   const firstLetter = user?.username?.[0]?.toUpperCase() || "?";
-  const unreadCount = notifications.filter(
-    (notification) => !notification.isRead
-  ).length;
 
   const openNotificationMenu = () => {
     setNotificationMenuVisible(true);
@@ -216,13 +164,16 @@ export default function Header() {
     openNotificationMenu();
   };
 
-  const handleMarkAllAsRead = () => {
-    setNotifications((prev) =>
-      prev.map((notification) => ({
-        ...notification,
-        isRead: true,
-      }))
-    );
+  const handleExpandToPanel = () => {
+    closeNotificationMenu();
+    openPanel();
+  };
+
+  const handleNotificationActivate = (notification) => {
+    markRead(notification);
+    closeNotificationMenu();
+    const url = getNotificationUrl(notification);
+    if (url) navigate(url);
   };
 
   /* ================= ACTIONS ================= */
@@ -280,6 +231,7 @@ export default function Header() {
 
   /* ================= RENDER ================= */
   return (
+    <>
     <header className="main-header">
 
       {/* Sol grup: geri/ileri + search */}
@@ -331,49 +283,46 @@ export default function Header() {
             >
               <div className="notification-menu-header">
                 <strong>Bildirimler</strong>
-                <button
-                  type="button"
-                  className="notification-header-action"
-                  onClick={handleMarkAllAsRead}
-                >
-                  Tümünü oku
-                </button>
-              </div>
-
-              <div className="notification-list">
-                {notifications.map((notification) => (
+                <div className="notification-menu-header-actions">
                   <button
-                    key={notification.id}
                     type="button"
-                    className={`notification-item ${
-                      notification.isRead ? "read" : "unread"
-                    }`}
+                    className="notification-icon-action"
+                    onClick={markAllRead}
+                    aria-label="Tümünü oku"
+                    title="Tümünü oku"
                   >
-                    <div className="notification-item-main">
-                      <div className="notification-item-title-row">
-                        <span className="notification-item-title">
-                          {notification.title}
-                        </span>
-                        {!notification.isRead && (
-                          <span className="notification-unread-dot" />
-                        )}
-                      </div>
-                      <p className="notification-item-message">
-                        {notification.message}
-                      </p>
-                    </div>
-                    <span className="notification-item-time">
-                      {notification.time}
-                    </span>
+                    <CheckCheck size={16} strokeWidth={2} />
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    className="notification-icon-action danger"
+                    onClick={() => setConfirmDeleteAll(true)}
+                    aria-label="Tümünü sil"
+                    title="Tümünü sil"
+                  >
+                    <Trash2 size={15} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
+                    className="notification-expand-btn"
+                    onClick={handleExpandToPanel}
+                    aria-label="Paneli genişlet"
+                    title="Paneli genişlet"
+                  >
+                    <PanelRightOpen size={16} strokeWidth={2.2} />
+                  </button>
+                </div>
               </div>
 
-              <div className="notification-menu-footer">
-                <button type="button" className="notification-footer-link">
-                  Eski bildirimleri yükle
-                </button>
-              </div>
+              <NotificationTabbedList
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onNotificationClick={handleNotificationActivate}
+                onDelete={removeNotification}
+                hasMore={hasMore}
+                isLoadingMore={isLoadingMore}
+                onLoadMore={loadOlderWeek}
+              />
             </div>
           )}
         </div>
@@ -416,5 +365,16 @@ export default function Header() {
       </div>
 
     </header>
+
+    <ConfirmModal
+      open={confirmDeleteAll}
+      title="Tüm Bildirimleri Sil"
+      description="Tüm bildirimler kalıcı olarak silinecek. Onaylıyor musun?"
+      confirmText="Evet, Sil"
+      cancelText="Vazgeç"
+      onCancel={() => setConfirmDeleteAll(false)}
+      onConfirm={() => { setConfirmDeleteAll(false); removeAll(); }}
+    />
+    </>
   );
 }

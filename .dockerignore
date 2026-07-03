@@ -1,0 +1,33 @@
+# Versiyon kontrolü
+.git
+.gitignore
+.github/
+
+# Backend test dosyaları
+tests/
+pytest.ini
+djangoCRM/settings_test.py
+requirements-dev.txt
+.coverage
+htmlcov/
+
+# Frontend test dosyaları (backend imajına girmemeli)
+frontend/tests/
+
+# Python dev artifact'ları
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Yerel geliştirici araçları
+.pre-commit-config.yaml
+.flake8
+mypy.ini
+Makefile
+.idea/
+.vscode/
+.claude/
+
+# Hassas env dosyaları (runtime'da docker-compose env_file ile verilir)
+.env

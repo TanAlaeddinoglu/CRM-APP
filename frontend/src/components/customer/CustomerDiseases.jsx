@@ -1,7 +1,7 @@
 // src/components/customer/CustomerDiseases.jsx
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
-import { SquarePen } from "lucide-react";
+import { SquarePen, HeartPulse } from "lucide-react";
 
 import "../../assets/css/CustomerDetailPage.css";
 
@@ -99,7 +99,7 @@ const saveDiseases = async () => {
   return (
     <div className="customer-diseases">
       <div className="section-header">
-        <label>Hastalıklar</label>
+        <label><HeartPulse size={13} /> Hastalıklar</label>
 
         {!isEditing && (
           <button

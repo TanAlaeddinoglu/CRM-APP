@@ -1,3 +1,15 @@
+class UnknownNotificationTypeError(Exception):
+    pass
+
+
+class ChannelNotRegisteredError(Exception):
+    pass
+
+
+class RuleNotEditableError(Exception):
+    pass
+
+
 class EmailDeliveryError(Exception):
     def __init__(
         self,
